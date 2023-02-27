@@ -1,0 +1,6 @@
+plotly
+obspy
+matplotlib
+h5py
+psycopg[binary]
+pymysql
