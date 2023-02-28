@@ -2,5 +2,10 @@ plotly
 obspy
 matplotlib
 h5py
-psycopg[binary]
+psycopg
 pymysql
+pandas
+numpy
+flask
+gunicorn
+python-dateutil

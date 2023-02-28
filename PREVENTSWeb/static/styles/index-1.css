@@ -1,0 +1,41 @@
+h2{
+    text-align:center;
+    margin-bottom:0px;
+}
+
+#header {
+    border-bottom:3px groove;
+    margin-bottom:15px;
+    display:grid;
+    grid-template-columns:auto 1fr;
+    padding-bottom:5px;
+}
+
+#HeaderRight{
+    text-align:right;
+    padding-right:15px;
+}
+
+div.plot{
+    display:grid;
+    grid-template-columns:auto minmax(300px,1fr) auto;
+    padding-left:10px;
+    padding-right:10px;
+    box-sizing:border-box;
+    column-gap:20px;
+    align-items:end;
+}
+
+.plotSelect{
+    margin-bottom:15px;
+}
+
+.removePlot{
+    cursor:pointer;
+    font-size:150%;
+    align-self:center;
+}
+
+div.placeholder{
+    margin-bottom:15px;
+}

@@ -1,17 +1,19 @@
 #!wing
-#!version=8.0
+#!version=9.0
 ##################################################################
 # Wing project file                                              #
 ##################################################################
 [project attributes]
 proj.directory-list = [{'dirloc': loc('.'),
-                        'excludes': ['etc',
-                                     'include',
-                                     'lib',
+                        'excludes': ['include',
+                                     'etc',
+                                     'env',
                                      'bin',
+                                     'lib',
                                      'share'],
                         'filter': '*',
                         'include_hidden': False,
                         'recursive': True,
                         'watch_for_changes': True}]
 proj.file-type = 'shared'
+proj.main-file = loc('run_web.py')
