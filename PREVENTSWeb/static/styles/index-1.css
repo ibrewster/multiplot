@@ -1,6 +1,8 @@
-h2{
+#header h2{
     text-align:center;
     margin-bottom:0px;
+    margin-top:5px;
+    grid-column: 1 / 3;
 }
 
 #header {
@@ -43,4 +45,27 @@ div.placeholder{
 .placeholder.error{
     text-align:center;
     font-weight:bold;
+}
+
+@media print{
+    @page {
+        size:letter portrait;
+    }
+    
+    .plotSelect{
+        display:none;
+    }
+    
+    .removePlot{
+        display:none;
+    }
+    
+    #header{
+        display:none;
+    }
+    
+    #addPlot{
+        display:none;
+    }
+    
 }

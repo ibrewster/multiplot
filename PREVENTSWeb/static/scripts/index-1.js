@@ -24,11 +24,28 @@ $(document).ready(function(){
     $('#addPlot').click(function(){createPlotDiv()});
     $('.rangeDate').blur(refreshPlots);
     $('#volcano').change(refreshPlots);
+    
+    $('#print').click(sizeAndPrint);
         
     // Create one plot by default, the color code plot
     createPlotDiv('Color Code')
     
 });
+
+function sizeAndPrint(){
+    const WIDTH=768; //~8 inches
+    $('.plotContent').each(function(){
+        Plotly.relayout(this,{'width':WIDTH});
+    });
+    
+    window.print();
+    
+    $('.plotContent').each(function(){
+        Plotly.relayout(this,{'width':null});
+        Plotly.Plots.resize(this);
+    });
+    
+}
 
 function createPlotDiv(type){
     const dest=$('#plots')
@@ -88,7 +105,6 @@ function setXaxis(layout,showLabels){
 
 function genPlot(){
     const plotDiv=$(this).siblings('div.plotContent').get(0);
-    Plotly.purge(plotDiv);
     
     const showXLabels=$(this).closest('div.plot').is(':last-child');
     $(this).siblings('div.plotContent').find('.placeholder').remove();
@@ -128,6 +144,7 @@ function genPlot(){
         plotDiv.on('plotly_relayout',plotRangeChanged);
     }).fail(function(e){
         if(e.status==404){
+            Plotly.purge(plotDiv);
             const errorPlaceholder=$('<div class="placeholder error">')
             errorPlaceholder.html(`Unable to show plot for selected volcano/plot type. 
             <br>No data found for this selection`);
