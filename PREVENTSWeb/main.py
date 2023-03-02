@@ -3,7 +3,8 @@ import flask
 
 from dateutil.parser import parse
 
-from . import app, generators
+from . import app
+from .generators import TYPES
 
 # TODO: better way of defining this?
 volcanoes = [
@@ -26,21 +27,18 @@ def index():
     plottypes = [
         "---General---", 
         'Color Code',
-        "---Seismology---", 
-        'Earthquakes',
+        # "---Seismology---", 
+        # 'Earthquakes',
+        '---Petrology---',
+        'Diffusion', 
         '---Thermal---', 
-        'Radiative Power']
+        'Radiative Power', 
+        'Detection Percent',
+    ]
     
     
     args['plotTypes'] = json.dumps(plottypes)
     return flask.render_template("index.html", **args)
-
-# Map plot type to generator functions that return the needed data
-TYPES = {
-    'Color Code': generators.get_color_codes,
-    'Radiative Power': generators.get_radiative_power
-}
-
 
 @app.route('/getPlot')
 def get_plot():
@@ -60,7 +58,11 @@ def get_plot():
     else:
         end_date = None
         
-    data = TYPES[plot_type](volcano, start_date, end_date)
+    try:
+        data = TYPES[plot_type](volcano, start_date, end_date)
+    except Exception as e:
+        return str(e), 404
+    
     return data
     
     

@@ -1,5 +1,5 @@
 $(document).ready(function(){    
-    $(document).on('change','.plotSelect',genPlot);
+    $(document).on('change','.plotSelect',refreshPlots);
     $(document).on('click','div.removePlot',removePlotDiv);
     
     //set date range to last five years
@@ -16,7 +16,7 @@ $(document).ready(function(){
     
     const curYear=curDate.getUTCFullYear();
     const dateTo=`${curYear}-${curMonth}-${curDay}`
-    const dateFrom=`${curYear-5}-${curMonth}-${curDay}`
+    const dateFrom=`${curYear-10}-${curMonth}-${curDay}`
     
     $('#dateFrom').val(dateFrom);
     $('#dateTo').val(dateTo);
@@ -57,32 +57,30 @@ function createPlotDiv(type){
     }
 }
 
-plotFuncs={
-    'Color Code':plotColorCode,
-    'Radiative Power':plotRadiativePower
-}
-
 function refreshPlots(){
     $('select.plotSelect').each(function(){
         genPlot.call(this);
     });
 }
 
-function setXRange(layout){
+function setXaxis(layout,showLabels){
     const dateFrom=$('#dateFrom').val();
     const dateTo=$('#dateTo').val();
     const range=[dateFrom,dateTo];
+    
     
     if('xaxis' in layout){
         layout['xaxis']['range']=range;
         layout['xaxis']['type']='date';
         layout['xaxis']['autorange']=false;
+        layout['xaxis']['showticklabels']=showLabels;
     }
     else{
         layout['xaxis']={
             range:range,
             type:'date',
-            autorange:false
+            autorange:false,
+            showticklabels:showLabels
         }
     }
     return layout;
@@ -90,6 +88,9 @@ function setXRange(layout){
 
 function genPlot(){
     const plotDiv=$(this).siblings('div.plotContent').get(0);
+    Plotly.purge(plotDiv);
+    
+    const showXLabels=$(this).closest('div.plot').is(':last-child');
     $(this).siblings('div.plotContent').find('.placeholder').remove();
     
     const plotType=this.value;
@@ -119,12 +120,22 @@ function genPlot(){
             layout['margin']={'l':left_margin,'r':right_margin}
         }
         
-        layout=setXRange(layout)
+        layout=setXaxis(layout,showXLabels)
         
         Plotly.newPlot(plotDiv,plotData,layout,config);
         
         plotDiv.removeListener('plotly_relayout',plotRangeChanged)
         plotDiv.on('plotly_relayout',plotRangeChanged);
+    }).fail(function(e){
+        if(e.status==404){
+            const errorPlaceholder=$('<div class="placeholder error">')
+            errorPlaceholder.html(`Unable to show plot for selected volcano/plot type. 
+            <br>No data found for this selection`);
+            $(plotDiv).append(errorPlaceholder)
+        }
+        else{
+            alert(`Error generating plot: ${e.status}, ${e.responseText}`)
+        }
     })
 }
 
@@ -141,98 +152,5 @@ function plotRangeChanged(eventdata){
 
 function removePlotDiv(){
     $(this).closest('div.plot').remove();
-}
-
-
-//---------PLOT FUNCTIONS-----------//
-function plotColorCode(data){
-    const layout={
-        height:60,
-        margin:{t:5,b:15},
-        showlegend:false,
-        yaxis:{
-            autorange:false,
-            range: [0,1],
-            dtick: 1,
-            fixedrange:true,
-            showticklabels:false,
-            showgrid:false
-        },
-        xaxis:{
-            showgrid:false
-        }
-    }
-    
-    const plotData=[]
-    for(let i=1;i<data.length;i++){
-        let record=data[i];
-        let prev=data[i-1];
-        let x=[prev['date'], record['date']];
-        let y=[1,1];
-        
-        let dataEntry={
-            type:'scatter',
-            x:x,
-            y:y,
-            fill:'tozeroy',
-            fillcolor:prev['color'],
-            line:{
-                color:prev['color'],
-                width:0
-            },
-            mode:'lines'
-        }
-        
-        plotData.push(dataEntry)
-    }
-    
-    return [plotData, layout]
-}
-
-function plotRadiativePower(data){
-    const plotData=[]
-    const viirs_data=data['viirs']
-    const viirs={
-        type:'scatter',
-        x:viirs_data['date'],
-        y:viirs_data['simple_radiance'],
-        name:'VIIRS',
-        mode:'lines',
-        line:{
-            color:'#F00',
-            width:1
-        }
-    }
-    
-    plotData.push(viirs)
-    
-    const layout={
-        height:200,
-        showlegend:true,
-        legend:{
-            x:0,
-            y:1,
-        },
-        margin:{t:5,b:15},
-        yaxis:{
-            type:'log',
-            autorange:true,
-            title:{
-                text:'Radiative Power<br>Mean (MW)'
-            },
-            showgrid:false,
-            linecolor: 'black',
-            mirror:true,
-            tickformat:'~e',
-            dtick:1
-        },
-        xaxis:{
-            showticklabels:false,
-            showgrid:false,
-            linecolor: 'black',
-            mirror:true,
-        }
-    }
-    
-    return [plotData,layout]
+    refreshPlots();
 }

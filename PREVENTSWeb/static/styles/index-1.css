@@ -39,3 +39,8 @@ div.plot{
 div.placeholder{
     margin-bottom:15px;
 }
+
+.placeholder.error{
+    text-align:center;
+    font-weight:bold;
+}

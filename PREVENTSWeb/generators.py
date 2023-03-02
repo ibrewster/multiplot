@@ -144,6 +144,7 @@ def get_radiative_power(volcano, start = None, end = None):
     month_grouper = pandas.Grouper(key = 'image_time', freq = 'M')
     
     viirs_radiance = viirs_data.groupby(month_grouper).mean(numeric_only = True)['simple_radiance']
+    viirs_radiance /= 1000000 # Convert to MW
     
     # Replace NaN values with zero and convert to a dataframe so we can add the date column
     viirs_radiance = viirs_radiance.fillna(1).to_frame()
@@ -164,3 +165,105 @@ def get_radiative_power(volcano, start = None, end = None):
     }
             
     return ret_data
+
+def get_image_with_det_percent(volcano, start = None, end = None):
+    viirs_csv_filename = f"V4_{FILE_LOOKUP[volcano]}.csv"
+    viirs_csv_path = os.path.join(utils.DATA_DIR, 'VIIRS 2012-2022', viirs_csv_filename)
+    
+    viirs_data = pandas.read_csv(viirs_csv_path)
+    viirs_data['unet_class'] = viirs_data['unet_class'].replace({'True': 1, 'False': 0, "0.0":
+                                                                 0}).astype(int)
+    viirs_data['image_time'] = pandas.to_datetime(viirs_data['image_time'])
+    
+    month_grouper = pandas.Grouper(key = 'image_time', freq = 'M')
+    
+    viirs_percent = viirs_data.groupby(month_grouper).mean()['unet_class']
+    viirs_percent *= 100
+    viirs_percent = viirs_percent.round(1)
+    
+    viirs = viirs_percent.to_frame().reset_index().rename(columns = {
+        'image_time': 'date',
+        'unet_class': 'percent',
+    })
+    viirs.sort_values('date', inplace = True)
+    
+    viirs['date'] = viirs['date'].apply(lambda x: pandas.to_datetime(x).isoformat())
+    
+    ret_data = {
+        'viirs': viirs.to_dict(orient = 'list'),
+    }
+    
+    return ret_data
+
+def petrology_timescale(volcano, start = None, end = None):
+    data_filename = f"{volcano} Moshrefzadeh 2023.csv"
+    data_path = os.path.join(utils.DATA_DIR, data_filename)
+    date_cols = [
+        'cpx date',
+        'cpx date neg',
+        'cpx date pos',
+        'Plag Date',
+        'Plag Date Neg',
+        'plag date pos'
+    ]
+    data = pandas.read_csv(data_path, parse_dates = date_cols)
+    cpx_data = data.loc[:, ['cpx date', 'cpx date neg', 'cpx date pos']]
+    cpx_data.dropna(inplace = True)
+    plag_data = data.loc[:, ['Plag Date', 'Plag Date Neg', 'plag date pos']]
+    plag_data.dropna(inplace = True)
+    
+    # Add a type column so we can combine the two types into a single, 
+    # sortable, dataframe without loosing that information.
+    cpx_data.loc[:, 'type'] = 'cpx'
+    plag_data.loc[:, 'type'] = 'plag'
+    
+    cpx_data.rename(columns = {
+        'cpx date': "date",
+        'cpx date neg': "date neg",
+        'cpx date pos': "date pos",
+    }, inplace = True)
+    
+    plag_data.rename(columns = {
+        'Plag Date': "date",
+        'Plag Date Neg': "date neg",
+        'plag date pos': "date pos",
+    }, inplace = True)
+    
+    data = pandas.concat([cpx_data, plag_data]).sort_values(
+        'date',
+        ascending = False,
+        ignore_index = True
+    )
+    
+    data.loc[:, 'index'] = data.index
+    
+    data.loc[:, 'date'] = data['date'].apply(lambda x: pandas.to_datetime(x).isoformat())
+    data.loc[:, 'date neg'] = data['date neg'].apply(lambda x: pandas.to_datetime(x).isoformat())
+    data.loc[:, 'date pos'] = data['date pos'].apply(lambda x: pandas.to_datetime(x).isoformat())
+    
+    lines = data.loc[:, ['date neg', 'date pos', 'index']]
+    
+    cpx_points = data.loc[data['type']=='cpx', ['date', 'index']]
+    plag_points = data.loc[data['type']=='plag', ['date', 'index']]
+    
+    ret_data = {
+        'cpx': cpx_points.to_dict(orient = "list"), 
+        'plag': plag_points.to_dict(orient = "list"),
+        'lines': lines.to_dict(orient = "records"),
+    }
+    
+    return ret_data
+    
+    
+    
+    
+    
+############# END GENERATOR FUNCTIONS################
+    
+# Map plot type to generator functions that return the needed data
+TYPES = {
+    'Color Code': get_color_codes,
+    'Radiative Power': get_radiative_power,
+    'Detection Percent': get_image_with_det_percent,
+    'Diffusion': petrology_timescale,
+} 
