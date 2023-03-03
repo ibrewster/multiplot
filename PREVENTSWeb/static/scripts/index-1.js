@@ -48,6 +48,28 @@ function sizeAndPrint(){
     
 }
 
+const PAGE_HEIGHT=984;
+
+function calcPageBreaks(){
+    let lastPage=0;
+    const plotsTop=$('#plots').offset().top
+    $('div.plot').each(function(){
+        const plotContainer=$(this);
+        const plotHeight=$(this).height();
+        // Find the "print" height of the top of this div.
+        const plotTop=plotContainer.offset().top-plotsTop;
+        const plotBottom=plotTop+plotHeight;
+        if(plotBottom>lastPage+PAGE_HEIGHT){
+            plotContainer.addClass('pagebreak');
+            lastPage+=PAGE_HEIGHT;
+        }
+        else{
+            plotContainer.removeClass('pagebreak');
+        }
+        
+    });
+}
+
 function createPlotDiv(type){
     const dest=$('#plots')
     const div=$('<div class="plot">')
@@ -102,29 +124,6 @@ function setXaxis(layout,showLabels){
         }
     }
     return layout;
-}
-
-let lastPage=0;
-const PAGE_HEIGHT=984;
-
-function calcPageBreaks(){
-    lastPage=0;
-    const plotsTop=$('#plots').offset().top
-    $('div.plot').each(function(){
-        const plotContainer=$(this);
-        const plotHeight=$(this).find('div.plotContent').get(0).layout.height;
-        // Find the "print" height of the top of this div.
-        const plotTop=plotContainer.offset().top-plotsTop;
-        const plotBottom=plotTop+plotHeight;
-        if(plotBottom>lastPage+PAGE_HEIGHT){
-            plotContainer.addClass('pagebreak');
-            lastPage+=PAGE_HEIGHT;
-        }
-        else{
-            plotContainer.removeClass('pagebreak');
-        }
-        
-    });
 }
 
 function genPlot(){
