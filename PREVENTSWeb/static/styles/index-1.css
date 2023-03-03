@@ -68,4 +68,8 @@ div.placeholder{
         display:none;
     }
     
+    .pagebreak { 
+        page-break-before: always; 
+    }
+    
 }

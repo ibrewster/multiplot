@@ -37,6 +37,7 @@ function sizeAndPrint(){
     $('.plotContent').each(function(){
         Plotly.relayout(this,{'width':WIDTH});
     });
+    calcPageBreaks();
     
     window.print();
     
@@ -103,11 +104,37 @@ function setXaxis(layout,showLabels){
     return layout;
 }
 
+let lastPage=0;
+const PAGE_HEIGHT=984;
+
+function calcPageBreaks(){
+    lastPage=0;
+    const plotsTop=$('#plots').offset().top
+    $('div.plot').each(function(){
+        const plotContainer=$(this);
+        const plotHeight=$(this).find('div.plotContent').get(0).layout.height;
+        // Find the "print" height of the top of this div.
+        const plotTop=plotContainer.offset().top-plotsTop;
+        const plotBottom=plotTop+plotHeight;
+        if(plotBottom>lastPage+PAGE_HEIGHT){
+            plotContainer.addClass('pagebreak');
+            lastPage+=PAGE_HEIGHT;
+        }
+        else{
+            plotContainer.removeClass('pagebreak');
+        }
+        
+    });
+}
+
 function genPlot(){
-    const plotDiv=$(this).siblings('div.plotContent').get(0);
-    
-    const showXLabels=$(this).closest('div.plot').is(':last-child');
-    $(this).siblings('div.plotContent').find('.placeholder').remove();
+    const plotDiv=$(this).siblings('div.plotContent');
+    const plotContainer=$(this).closest('div.plot');
+
+    plotDiv.find('.placeholder').remove();
+
+    const plotElement=plotDiv.get(0);
+    const showXLabels=plotContainer.is(':last-child');
     
     const plotType=this.value;
     const volcano=$('#volcano').val()
@@ -138,10 +165,10 @@ function genPlot(){
         
         layout=setXaxis(layout,showXLabels)
         
-        Plotly.newPlot(plotDiv,plotData,layout,config);
+        Plotly.newPlot(plotElement,plotData,layout,config);
         
-        plotDiv.removeListener('plotly_relayout',plotRangeChanged)
-        plotDiv.on('plotly_relayout',plotRangeChanged);
+        plotElement.removeListener('plotly_relayout',plotRangeChanged)
+        plotElement.on('plotly_relayout',plotRangeChanged);
     }).fail(function(e){
         if(e.status==404){
             Plotly.purge(plotDiv);
