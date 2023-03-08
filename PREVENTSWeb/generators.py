@@ -1,12 +1,15 @@
 #####################
 # Code to load and generate the data needed for various types of graphs
 #####################
+import glob
 import os
 
-from datetime import datetime
+from datetime import datetime, timezone
+
 import pandas
 
 from . import utils
+from .utils import generator
 
 ######### COLOR CODES##########
 COLORS = {
@@ -17,8 +20,8 @@ COLORS = {
     'RED': '#FF0000',
 }
 
-
-def get_color_codes(volcano, start = None, end = None):
+@generator("General", "Color Code")
+def plot_color_code(volcano, start = None, end = None):
     args = [volcano, ]
     SQL_BASE = """
     SELECT sent_utc,color_code
@@ -134,7 +137,8 @@ FILE_LOOKUP = {
     'Veniaminof': 'veni_mirova',    
 }
 
-def get_radiative_power(volcano, start = None, end = None):
+@generator("Thermal", "Radiative Power")
+def plot_radiative_power(volcano, start = None, end = None):
     viirs_csv_filename = f"V4_{FILE_LOOKUP[volcano]}.csv"
     viirs_csv_path = os.path.join(utils.DATA_DIR, 'VIIRS 2012-2022', viirs_csv_filename)
     
@@ -166,7 +170,9 @@ def get_radiative_power(volcano, start = None, end = None):
             
     return ret_data
 
-def get_image_with_det_percent(volcano, start = None, end = None):
+
+@generator("Thermal", "Detection Percent")
+def plot_image_detect_percent(volcano, start = None, end = None):
     viirs_csv_filename = f"V4_{FILE_LOOKUP[volcano]}.csv"
     viirs_csv_path = os.path.join(utils.DATA_DIR, 'VIIRS 2012-2022', viirs_csv_filename)
     
@@ -195,7 +201,9 @@ def get_image_with_det_percent(volcano, start = None, end = None):
     
     return ret_data
 
-def petrology_timescale(volcano, start = None, end = None):
+
+@generator("Petrology", "Diffusion")
+def plot_diffusion(volcano, start = None, end = None):
     data_filename = f"{volcano} Moshrefzadeh 2023.csv"
     data_path = os.path.join(utils.DATA_DIR, data_filename)
     date_cols = [
@@ -254,16 +262,74 @@ def petrology_timescale(volcano, start = None, end = None):
     
     return ret_data
     
+
+@generator("Seismology", "Frequency Index (TC)")
+def eq_frequency_index_tc(volcano, start = None, end = None):
+    data_dir = os.path.join(utils.DATA_DIR, "SeismoAcoustic_Data")
+    volc_dir = glob.glob(os.path.join(data_dir, f"{volcano}*") )
+    if not volc_dir:
+        raise FileNotFoundError(f"No data found for {volcano}")
     
+    volc_dir = volc_dir[0]
+    data_file = glob.glob(os.path.join(volc_dir, "*_temporally_complete_event_list.csv") )
+    data_file = data_file[0]
+    data = pandas.read_csv(data_file).rename(columns = {'UTCDateTime': 'date',})
     
+    return data.to_dict(orient = "list")
+
+@generator("Seismology", "Frequency Index (REC)")
+def eq_frequency_index_rec(volcano, start = None, end = None):
+    data_dir = os.path.join(utils.DATA_DIR, "SeismoAcoustic_Data")
+    volc_dir = glob.glob(os.path.join(data_dir, f"{volcano}*") )
+    if not volc_dir:
+        raise FileNotFoundError(f"No data found for {volcano}")
     
+    volc_dir = volc_dir[0]
+    data_file = glob.glob(os.path.join(volc_dir, "*_relocated_catalog.csv") )
+    data_file = data_file[0] 
+    data = pandas.read_csv(data_file).rename(columns = {'UTCDateTime': 'date',})
+    data = data.loc[:, ['date', 'FI']]
+    
+    return data.to_dict(orient = "list")
+
+@generator("Seismology", "EQ Magnitude")
+def eq_magnitude(volcano, start = None, end = None):
+    data_dir = os.path.join(utils.DATA_DIR, "SeismoAcoustic_Data")
+    volc_dir = glob.glob(os.path.join(data_dir, f"{volcano}*") )
+    if not volc_dir:
+        raise FileNotFoundError(f"No data found for {volcano}")
+    
+    volc_dir = volc_dir[0]
+    data_file = glob.glob(os.path.join(volc_dir, "*_relocated_catalog.csv") )
+    data_file = data_file[0] 
+    data = pandas.read_csv(data_file).rename(columns = {'UTCDateTime': 'date',})
+    data = data.loc[:, ['date', 'Magnitude']]
+    
+    return data.to_dict(orient = "list")
+
+@generator("Seismology", "EQ Location/Depth")
+def eq_location_depth(volcano, start = None, end = None):
+    data_dir = os.path.join(utils.DATA_DIR, "SeismoAcoustic_Data")
+    volc_dir = glob.glob(os.path.join(data_dir, f"{volcano}*") )
+    if not volc_dir:
+        raise FileNotFoundError(f"No data found for {volcano}")
+    
+    volc_dir = volc_dir[0]
+    data_file = glob.glob(os.path.join(volc_dir, "*_relocated_catalog.csv") )
+    data_file = data_file[0] 
+    data = pandas.read_csv(data_file).rename(columns = {'UTCDateTime': 'date',})
+    data = data.loc[:, ['date', 'Latitude', 'Longitude', 'Depth_km']]
+    if start is not None or end is not None:
+        dateFilter = pandas.to_datetime(data['date'])
+        if start is not None:
+            start = start.replace(tzinfo = timezone.utc)
+            data = data[dateFilter>=start]
+            
+        if end is not None:
+            end = end.replace(tzinfo = timezone.utc)
+            data = data[dateFilter<=end]
+        
+    
+    return data.to_dict(orient = "list")
     
 ############# END GENERATOR FUNCTIONS################
-    
-# Map plot type to generator functions that return the needed data
-TYPES = {
-    'Color Code': get_color_codes,
-    'Radiative Power': get_radiative_power,
-    'Detection Percent': get_image_with_det_percent,
-    'Diffusion': petrology_timescale,
-} 

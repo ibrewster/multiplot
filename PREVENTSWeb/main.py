@@ -3,39 +3,32 @@ import flask
 
 from dateutil.parser import parse
 
-from . import app
-from .generators import TYPES
+from . import app, utils
 
 # TODO: better way of defining this?
-volcanoes = [
-    'Augustine',
-    'Bogoslof', 
-    'Redoubt',
-    'Cleveland',
-    'Okmok',
-    'Pavlof',
-    'Shishaldin',
-    'Veniaminof',
-]
+volcanoes = {
+    'Augustine': [59.3626,-153.435,12],
+    'Bogoslof': [53.9272,-168.0344,11], 
+    'Redoubt': [60.4852,-152.7438,11],
+    'Cleveland':[52.8222,-169.945,10] ,
+    'Okmok': [53.397,-168.166,10], 
+    'Pavlof': [55.4173,-161.8937,11],
+    'Shishaldin': [54.7554,-163.9711,11],
+    'Veniaminof': [56.1979,-159.3931,10],
+}
 
 @app.route('/')
 def index():
     args = {
-        'volcanoes': sorted(volcanoes),
+        'volcanoes': sorted(volcanoes.items(), key = lambda x: x[1][1], reverse = True),
+        'js_funcs': json.dumps(utils.JS_FUNCS),
     }
     
-    plottypes = [
-        "---General---", 
-        'Color Code',
-        # "---Seismology---", 
-        # 'Earthquakes',
-        '---Petrology---',
-        'Diffusion', 
-        '---Thermal---', 
-        'Radiative Power', 
-        'Detection Percent',
-    ]
-    
+    plottypes = []
+    for cat, types in sorted(utils.GEN_CATEGORIES.items(), key = lambda x: x[0]):
+        plottypes.append(f"---{cat}---")
+        for item in sorted(types):
+            plottypes.append(item)
     
     args['plotTypes'] = json.dumps(plottypes)
     return flask.render_template("index.html", **args)
@@ -59,7 +52,7 @@ def get_plot():
         end_date = None
         
     try:
-        data = TYPES[plot_type](volcano, start_date, end_date)
+        data = utils.GEN_FUNCS[plot_type](volcano, start_date, end_date)
     except Exception as e:
         return str(e), 404
     

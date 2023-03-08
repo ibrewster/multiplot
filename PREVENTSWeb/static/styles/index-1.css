@@ -28,6 +28,10 @@ div.plot{
     align-items:end;
 }
 
+#plots {
+    margin-bottom:8px;
+}
+
 .plotSelect{
     margin-bottom:15px;
 }

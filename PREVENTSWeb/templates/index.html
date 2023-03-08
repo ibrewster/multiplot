@@ -6,9 +6,11 @@
     <script src="{{ url_for('static', filename='scripts/index-1.js') }}" defer></script>
     <script type="text/javascript">
         const plotTypes={{plotTypes| safe}}
+        const plotFuncs={{js_funcs | safe}}
     </script>
     
     <link href="{{ url_for('static', filename='/styles/index-1.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='/styles/graffana-1.css') }}" rel="stylesheet">
     
 </head>
 <body>
@@ -17,7 +19,7 @@
         <div>
             Volcano: <select id="volcano">
                 {% for volc in volcanoes %}
-                <option>{{volc}}</option>
+                <option data-loc="{{volc[1]|safe}}">{{volc[0]}}</option>
                 {%endfor%}
             </select>
             Date Range:

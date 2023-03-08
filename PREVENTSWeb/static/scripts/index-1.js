@@ -36,16 +36,19 @@ function sizeAndPrint(){
     const WIDTH=768; //~8 inches
     $('.plotContent').each(function(){
         Plotly.relayout(this,{'width':WIDTH});
+        Plotly.Plots.resize(this);
     });
     calcPageBreaks();
     
-    window.print();
-    
-    $('.plotContent').each(function(){
-        Plotly.relayout(this,{'width':null});
-        Plotly.Plots.resize(this);
-    });
-    
+    //slight delay here so things can figure themselves out
+    setTimeout(function(){
+        window.print();
+       
+        $('.plotContent').each(function(){
+           Plotly.relayout(this,{'width':null});
+           Plotly.Plots.resize(this);
+        });
+    },50)
 }
 
 const PAGE_HEIGHT=984;
@@ -87,7 +90,9 @@ function createPlotDiv(type){
         }
         typeSelect.append(opt)
     }
-    div.append(typeSelect)
+    const selectDiv=$('<div class="typeSelectWrapper">')
+    selectDiv.append(typeSelect)
+    div.append(selectDiv)
     div.append('<div class="plotContent"><div class="placeholder"><---Select a plot type</div></div>')
     div.append('<div class=removePlot>&times;</div>')
     dest.append(div)
@@ -103,10 +108,12 @@ function refreshPlots(){
     });
 }
 
-function setXaxis(layout,showLabels){
+function setLayoutDefaults(layout,showLabels){
     const dateFrom=$('#dateFrom').val();
     const dateTo=$('#dateTo').val();
     const range=[dateFrom,dateTo];
+    const left_margin=90;
+    const right_margin=10;
     
     
     if('xaxis' in layout){
@@ -114,20 +121,48 @@ function setXaxis(layout,showLabels){
         layout['xaxis']['type']='date';
         layout['xaxis']['autorange']=false;
         layout['xaxis']['showticklabels']=showLabels;
+        layout['xaxis']['gridcolor']='#373A3F';
+        layout['xaxis']['tickfont']={
+            'size':14,
+            'color':'rgb(204,204,220)'
+        }
     }
     else{
         layout['xaxis']={
             range:range,
             type:'date',
             autorange:false,
-            showticklabels:showLabels
+            showticklabels:showLabels,
+            gridcolor:'#373A3F',
+            tickfont:{
+                'size':14,
+                'color':'rgb(204,204,220)'
+            }
         }
     }
+    
+    //top-level layout stuff
+    layout['paper_bgcolor']='rgba(0,0,0,0)'
+    layout['plot_bgcolor']='rgba(0,0,0,0)'
+    
+    if('margin' in layout){
+        layout['margin']['l']=left_margin;
+        layout['margin']['r']=right_margin;
+    }
+    else{
+        layout['margin']={'l':left_margin,'r':right_margin}
+    }
+    
+    if('yaxis' in layout){
+        layout['yaxis']['color']='rgb(204,204,220)'
+        layout['yaxis']['gridcolor']='#373A3F'
+    }
+    
     return layout;
 }
 
 function genPlot(){
-    const plotDiv=$(this).siblings('div.plotContent');
+    const plotDiv=$(this).parent().siblings('div.plotContent');
     const plotContainer=$(this).closest('div.plot');
 
     plotDiv.find('.placeholder').remove();
@@ -147,22 +182,12 @@ function genPlot(){
         'dateTo':dateTo
     }).done(function(data){
         let plotData,layout;
-        [plotData,layout]=plotFuncs[plotType](data);
+        const plotFunc=plotFuncs[plotType];
+        [plotData,layout]=window[plotFunc](data);
         
         config={'responsive':true}
         
-        const left_margin=90;
-        const right_margin=10;
-        
-        if('margin' in layout){
-            layout['margin']['l']=left_margin;
-            layout['margin']['r']=right_margin;
-        }
-        else{
-            layout['margin']={'l':left_margin,'r':right_margin}
-        }
-        
-        layout=setXaxis(layout,showXLabels)
+        layout=setLayoutDefaults(layout,showXLabels)
         
         Plotly.newPlot(plotElement,plotData,layout,config);
         
@@ -171,6 +196,7 @@ function genPlot(){
     }).fail(function(e){
         if(e.status==404){
             Plotly.purge(plotDiv);
+            $(plotDiv).empty();
             const errorPlaceholder=$('<div class="placeholder error">')
             errorPlaceholder.html(`Unable to show plot for selected volcano/plot type. 
             <br>No data found for this selection`);
