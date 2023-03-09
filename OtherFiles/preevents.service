@@ -3,8 +3,8 @@ Description = PREEVENTS multidisciplinary graphing tool
 After = network.target
 
 [Service]
-ExecStart = /apps/prevents/env/bin/gunicorn -c /apps/prevents/OtherFiles/gunicorn.conf.py
-WorkingDirectory=/apps/prevents
+ExecStart = /apps/preevents/env/bin/gunicorn -c /apps/preevents/OtherFiles/gunicorn.conf.py
+WorkingDirectory=/apps/preevents
 User=nginx
 Group=nginx
 RuntimeDirectory = preevents

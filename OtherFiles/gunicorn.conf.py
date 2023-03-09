@@ -3,7 +3,7 @@ import os
 script_dir = os.path.dirname(__file__)
 script_dir = os.path.abspath(os.path.join(script_dir,'..'))
 
-wsgi_app = "PREVENTSWeb:app"
+wsgi_app = "PREEVENTSWeb:app"
 chdir = script_dir
 # user = "mapgen"
 # group = "nginx"
