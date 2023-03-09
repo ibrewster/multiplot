@@ -183,7 +183,7 @@ def plot_image_detect_percent(volcano, start = None, end = None):
     
     month_grouper = pandas.Grouper(key = 'image_time', freq = 'M')
     
-    viirs_percent = viirs_data.groupby(month_grouper).mean()['unet_class']
+    viirs_percent = viirs_data.groupby(month_grouper).mean(numeric_only = True)['unet_class']
     viirs_percent *= 100
     viirs_percent = viirs_percent.round(1)
     
