@@ -288,7 +288,7 @@ def eq_frequency_index_rec(volcano, start = None, end = None):
     data_file = glob.glob(os.path.join(volc_dir, "*_relocated_catalog.csv") )
     data_file = data_file[0] 
     data = pandas.read_csv(data_file).rename(columns = {'UTCDateTime': 'date',})
-    data = data.loc[:, ['date', 'FI']]
+    data = data.loc[:, ['date', 'FI']][data['Magnitude'] > -5]
     
     return data.to_dict(orient = "list")
 
@@ -303,7 +303,7 @@ def eq_magnitude(volcano, start = None, end = None):
     data_file = glob.glob(os.path.join(volc_dir, "*_relocated_catalog.csv") )
     data_file = data_file[0] 
     data = pandas.read_csv(data_file).rename(columns = {'UTCDateTime': 'date',})
-    data = data.loc[:, ['date', 'Magnitude']]
+    data = data.loc[:, ['date', 'Magnitude']][data['Magnitude'] > -5]
     
     return data.to_dict(orient = "list")
 
@@ -318,7 +318,7 @@ def eq_location_depth(volcano, start = None, end = None):
     data_file = glob.glob(os.path.join(volc_dir, "*_relocated_catalog.csv") )
     data_file = data_file[0] 
     data = pandas.read_csv(data_file).rename(columns = {'UTCDateTime': 'date',})
-    data = data.loc[:, ['date', 'Latitude', 'Longitude', 'Depth_km']]
+    data = data.loc[:, ['date', 'Latitude', 'Longitude', 'Depth_km']][data['Magnitude'] > -5]
     if start is not None or end is not None:
         dateFilter = pandas.to_datetime(data['date'])
         if start is not None:
