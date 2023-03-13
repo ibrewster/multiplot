@@ -313,6 +313,49 @@ function eq_magnitude(data){
     return [plotData, layout]
 }
 
+function eq_depth(data){
+    let layout, plotData;
+    [plotData, layout]=eq_magnitude(data);
+    layout['yaxis']['title']['text']="Depth (km)"
+    plotData[0]['y']=data['Depth_km']
+    
+    return [plotData, layout];
+}
+
+function eq_distance(data){
+    let layout, plotData;
+    [plotData, layout]=eq_magnitude(data);
+    layout['yaxis']['title']['text']="Distance (km)"
+    plotData[0]['y']=data['Distance']
+    
+    return [plotData, layout];
+}
+
+function tc_event_count(data){
+    const layout={
+        height:200,
+        margin:{t:5,b:20},
+        yaxis:{
+            title:{
+                text:'TC Event Count'
+            },
+            zeroline:false,
+        }
+    }
+    
+    const plotData=[
+        {
+            type:"scatter",
+            x:data['date'],
+            y:data['Count'],
+            mode:'markers'
+        }
+    ]
+    
+    return [plotData, layout]
+}
+
+
 function eq_location_depth(data){
     const lat=data['Latitude'];
     const lon=data['Longitude'];

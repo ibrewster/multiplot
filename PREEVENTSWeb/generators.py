@@ -201,6 +201,9 @@ def plot_image_detect_percent(volcano, start = None, end = None):
     
     return ret_data
 
+##############END Thermal################
+
+##############Petrology###############
 
 @generator("Petrology", "Diffusion")
 def plot_diffusion(volcano, start = None, end = None):
@@ -261,10 +264,13 @@ def plot_diffusion(volcano, start = None, end = None):
     }
     
     return ret_data
-    
 
-@generator("Seismology", "Frequency Index (TC)")
-def eq_frequency_index_tc(volcano, start = None, end = None):
+##############END PETROLOGY################
+
+##############SEISMOLOGY###############
+
+def get_seismology_tc(volcano):
+    """Utility function to retrieve the temporally complete event list for a volcano as a pandas data frame"""
     data_dir = os.path.join(utils.DATA_DIR, "SeismoAcoustic_Data")
     volc_dir = glob.glob(os.path.join(data_dir, f"{volcano}*") )
     if not volc_dir:
@@ -273,12 +279,14 @@ def eq_frequency_index_tc(volcano, start = None, end = None):
     volc_dir = volc_dir[0]
     data_file = glob.glob(os.path.join(volc_dir, "*_temporally_complete_event_list.csv") )
     data_file = data_file[0]
-    data = pandas.read_csv(data_file).rename(columns = {'UTCDateTime': 'date',})
+    data = pandas.read_csv(data_file, parse_dates = ['UTCDateTime']).rename(columns = {'UTCDateTime': 'date',})
+    data.set_index('date', drop = False, inplace = True)
+    data['date'] = data['date'].apply(lambda x: pandas.to_datetime(x).isoformat());
     
-    return data.to_dict(orient = "list")
+    return data
 
-@generator("Seismology", "Frequency Index (REC)")
-def eq_frequency_index_rec(volcano, start = None, end = None):
+def get_seismology_rec(volcano):
+    """Utility function to retrieve the relocated catalog for a volcano as a pandas data frame"""
     data_dir = os.path.join(utils.DATA_DIR, "SeismoAcoustic_Data")
     volc_dir = glob.glob(os.path.join(data_dir, f"{volcano}*") )
     if not volc_dir:
@@ -287,38 +295,74 @@ def eq_frequency_index_rec(volcano, start = None, end = None):
     volc_dir = volc_dir[0]
     data_file = glob.glob(os.path.join(volc_dir, "*_relocated_catalog.csv") )
     data_file = data_file[0] 
-    data = pandas.read_csv(data_file).rename(columns = {'UTCDateTime': 'date',})
-    data = data.loc[:, ['date', 'FI']][data['Magnitude'] > -5]
+    data = pandas.read_csv(
+        data_file,
+        parse_dates = ['UTCDateTime']).rename(columns = {'UTCDateTime': 'date',})
+    data.set_index('date', drop = False, inplace = True)
+    data['date'] = data['date'].apply(lambda x: pandas.to_datetime(x).isoformat());
+    
+    return data.loc[data['Magnitude']>-5]
+    
+@generator("Seismology", "Weekly TC Event Count")
+def tc_event_count(volcano, start = None, end = None):
+    data = get_seismology_tc(volcano)
+    
+    # Group by the index, which is the date as an object
+    grouper = pandas.Grouper(level = 0, freq = 'W')
+    # Too much chaining to get a single-line function :-)
+    counts = data.loc[:, 'FI'].groupby([grouper]).count().reset_index(drop = False).rename(columns = {'FI': 'Count'})
+    
+    #Plotly wants an ISO string for the date, simple json doesn't convert correctly.
+    counts['date'] = counts['date'].apply(lambda x: pandas.to_datetime(x).isoformat());
+    
+    return counts.to_dict(orient = "list")
+
+
+@generator("Seismology", "Frequency Index (TC)")
+def eq_frequency_index_tc(volcano, start = None, end = None):
+    data = get_seismology_tc(volcano)
+    
+    return data.to_dict(orient = "list")
+    
+@generator("Seismology", "Frequency Index (REC)")
+def eq_frequency_index_rec(volcano, start = None, end = None):
+    data = get_seismology_rec(volcano)
+    data = data.loc[:, ['date', 'FI']]
     
     return data.to_dict(orient = "list")
 
 @generator("Seismology", "EQ Magnitude")
 def eq_magnitude(volcano, start = None, end = None):
-    data_dir = os.path.join(utils.DATA_DIR, "SeismoAcoustic_Data")
-    volc_dir = glob.glob(os.path.join(data_dir, f"{volcano}*") )
-    if not volc_dir:
-        raise FileNotFoundError(f"No data found for {volcano}")
+    data = get_seismology_rec(volcano)
+    data = data.loc[:, ['date', 'Magnitude']]
     
-    volc_dir = volc_dir[0]
-    data_file = glob.glob(os.path.join(volc_dir, "*_relocated_catalog.csv") )
-    data_file = data_file[0] 
-    data = pandas.read_csv(data_file).rename(columns = {'UTCDateTime': 'date',})
-    data = data.loc[:, ['date', 'Magnitude']][data['Magnitude'] > -5]
+    return data.to_dict(orient = "list")
+
+@generator("Seismology", "Time/Depth (REC)")
+def eq_depth(volcano, start = None, end = None):
+    data = get_seismology_rec(volcano)
+    data = data.loc[:, ['date', 'Depth_km']]
+    
+    return data.to_dict(orient = "list")
+
+@generator("Seismology", "Time/Distance (REC)")
+def eq_distance(volcano, start = None, end = None):
+    data = get_seismology_rec(volcano)
+    data = data.loc[data['Magnitude'] > -5, ['date', 'Latitude', 'Longitude']]
+    # TODO: Calculate distance to volcano
+    v_lat,v_lon = utils.VOLCANOES[volcano][:2]
+    distances = utils.haversine_np(v_lon, v_lat, data['Longitude'], data['Latitude'])
+    data.loc[:, 'Distance'] = distances
     
     return data.to_dict(orient = "list")
 
 @generator("Seismology", "EQ Location/Depth")
 def eq_location_depth(volcano, start = None, end = None):
-    data_dir = os.path.join(utils.DATA_DIR, "SeismoAcoustic_Data")
-    volc_dir = glob.glob(os.path.join(data_dir, f"{volcano}*") )
-    if not volc_dir:
-        raise FileNotFoundError(f"No data found for {volcano}")
+    data = get_seismology_rec(volcano)
+    data = data.loc[:, ['date', 'Latitude', 'Longitude', 'Depth_km']]
     
-    volc_dir = volc_dir[0]
-    data_file = glob.glob(os.path.join(volc_dir, "*_relocated_catalog.csv") )
-    data_file = data_file[0] 
-    data = pandas.read_csv(data_file).rename(columns = {'UTCDateTime': 'date',})
-    data = data.loc[:, ['date', 'Latitude', 'Longitude', 'Depth_km']][data['Magnitude'] > -5]
+    # Filter the data by date, since we do not have a date axis 
+    # to zoom on with our plotly grah for this.
     if start is not None or end is not None:
         dateFilter = pandas.to_datetime(data['date'])
         if start is not None:
@@ -331,5 +375,7 @@ def eq_location_depth(volcano, start = None, end = None):
         
     
     return data.to_dict(orient = "list")
+##############END SEISMOLOGY################
+
     
 ############# END GENERATOR FUNCTIONS################

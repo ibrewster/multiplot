@@ -5,22 +5,11 @@ from dateutil.parser import parse
 
 from . import app, utils
 
-# TODO: better way of defining this?
-volcanoes = {
-    'Augustine': [59.3626,-153.435,12],
-    'Bogoslof': [53.9272,-168.0344,11], 
-    'Redoubt': [60.4852,-152.7438,11],
-    'Cleveland':[52.8222,-169.945,10] ,
-    'Okmok': [53.397,-168.166,10], 
-    'Pavlof': [55.4173,-161.8937,11],
-    'Shishaldin': [54.7554,-163.9711,11],
-    'Veniaminof': [56.1979,-159.3931,10],
-}
 
 @app.route('/')
 def index():
     args = {
-        'volcanoes': sorted(volcanoes.items(), key = lambda x: x[1][1], reverse = True),
+        'volcanoes': sorted(utils.VOLCANOES.items(), key = lambda x: x[1][1], reverse = True),
         'js_funcs': json.dumps(utils.JS_FUNCS),
     }
     

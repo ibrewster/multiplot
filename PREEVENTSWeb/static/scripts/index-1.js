@@ -1,5 +1,5 @@
 $(document).ready(function(){    
-    $(document).on('change','.plotSelect',refreshPlots);
+    $(document).on('change','.plotSelect', genPlot);
     $(document).on('click','div.removePlot',removePlotDiv);
     
     //set date range to last five years
@@ -108,6 +108,17 @@ function refreshPlots(){
     });
 }
 
+function clearDateAxis(setLast){
+    $('.js-plotly-plot').each(function(){
+        Plotly.relayout(this,{'xaxis.showticklabels':false})
+    });
+    
+    if(setLast===true){            
+        const lastPlot=$('.js-plotly-plot:last').get(0)
+        Plotly.relayout(lastPlot,{'xaxis.showticklabels':true})
+    }
+}
+
 function setLayoutDefaults(layout,showLabels){
     const dateFrom=$('#dateFrom').val();
     const dateTo=$('#dateTo').val();
@@ -205,6 +216,8 @@ function genPlot(){
         else{
             alert(`Error generating plot: ${e.status}, ${e.responseText}`)
         }
+    }).always(function(){
+        clearDateAxis(true);
     })
 }
 
@@ -221,5 +234,5 @@ function plotRangeChanged(eventdata){
 
 function removePlotDiv(){
     $(this).closest('div.plot').remove();
-    refreshPlots();
+    clearDateAxis(true);
 }
