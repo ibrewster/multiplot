@@ -357,6 +357,7 @@ function tc_event_count(data){
 
 
 function eq_location_depth(data){
+    isSpatial=true;
     const lat=data['Latitude'];
     const lon=data['Longitude'];
     const depth=data['Depth_km'];

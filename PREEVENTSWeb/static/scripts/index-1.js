@@ -109,12 +109,12 @@ function refreshPlots(){
 }
 
 function clearDateAxis(setLast){
-    $('.js-plotly-plot').each(function(){
+    $('.js-plotly-plot:not(.spatial)').each(function(){
         Plotly.relayout(this,{'xaxis.showticklabels':false})
     });
     
     if(setLast===true){            
-        const lastPlot=$('.js-plotly-plot:last').get(0)
+        const lastPlot=$('.js-plotly-plot:not(.spatial):last').get(0)
         Plotly.relayout(lastPlot,{'xaxis.showticklabels':true})
     }
 }
@@ -172,6 +172,7 @@ function setLayoutDefaults(layout,showLabels){
     return layout;
 }
 
+let isSpatial=false;
 function genPlot(){
     const plotDiv=$(this).parent().siblings('div.plotContent');
     const plotContainer=$(this).closest('div.plot');
@@ -194,7 +195,16 @@ function genPlot(){
     }).done(function(data){
         let plotData,layout;
         const plotFunc=plotFuncs[plotType];
+        
+        isSpatial=false;
         [plotData,layout]=window[plotFunc](data);
+        
+        if(isSpatial){
+            plotDiv.addClass('spatial');
+        }
+        else{
+            plotDiv.removeClass('spatial');
+        }
         
         config={'responsive':true}
         
@@ -204,6 +214,8 @@ function genPlot(){
         
         plotElement.removeListener('plotly_relayout',plotRangeChanged)
         plotElement.on('plotly_relayout',plotRangeChanged);
+        
+        
     }).fail(function(e){
         if(e.status==404){
             Plotly.purge(plotDiv);
