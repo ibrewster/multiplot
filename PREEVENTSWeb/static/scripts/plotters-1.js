@@ -426,3 +426,12 @@ function aqms_depth(data){
 
     return [plotData, layout];
 }
+
+function aqms_event_count(data){
+    let layout, plotData;
+    [plotData, layout]=eq_magnitude(data);
+    layout['yaxis']['title']['text']="Events/week"
+    plotData[0]['y']=data['Count']
+
+    return [plotData, layout];
+}

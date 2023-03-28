@@ -51,6 +51,17 @@ div.placeholder{
     font-weight:bold;
 }
 
+.download {
+    display:inline-block;
+    cursor:pointer;
+    vertical-align: bottom;
+    margin-left: 10px;
+}
+
+.download svg {
+    height: 1.5em;
+}
+
 @media print{
     @page {
         size:letter portrait;
@@ -74,6 +85,10 @@ div.placeholder{
     
     .pagebreak { 
         page-break-before: always; 
+    }
+
+    .download {
+        display:none;
     }
     
 }

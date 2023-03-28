@@ -148,3 +148,19 @@ def aqms_depth(volcano, start = None, end = None):
     data = data.loc[:, ['date', 'depthKM']]
 
     return data.to_dict(orient = "list")
+
+
+@generator("Weekly Event Count")
+def aqms_event_count(volcano, start = None, end = None):
+    data = get_aqms_data(volcano, start, end)
+
+    # Group by the index, which is the date as an object
+    grouper = pandas.Grouper(level = 0, freq = 'W')
+
+    # Too much chaining to get a single-line function :-)
+    counts = data.loc[:, 'mag'].groupby([grouper]).count().reset_index(drop = False).rename(columns = {'mag': 'Count'})
+
+    #Plotly wants an ISO string for the date, simple json doesn't convert correctly.
+    counts['date'] = counts['date'].apply(lambda x: pandas.to_datetime(x).isoformat())
+
+    return counts.to_dict(orient = "list")

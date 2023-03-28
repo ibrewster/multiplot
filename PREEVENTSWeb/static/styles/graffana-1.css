@@ -76,3 +76,7 @@ select.plotSelect {
 div.placeholder{
     text-align:center;
 }
+
+.download path{
+    fill:whitesmoke;
+}
