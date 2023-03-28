@@ -1,14 +1,3 @@
-// Plot function lookup object. Associate the proper plotting 
-// function with each SELECT menu option.
-
-//plotFuncs={
-    //'Color Code':plotColorCode,
-    //'Radiative Power':plotRadiativePower,
-    //'Detection Percent':plotImageDetectPercent,
-    //'Diffusion':plotDiffusion,
-    //'Frequency Index (Temporally Complete)':plotEQFrequency,
-//}
-
 //---------PLOTTING FUNCTIONS-----------//
 function plot_color_code(data){
     const layout={
@@ -28,14 +17,14 @@ function plot_color_code(data){
             showgrid:false
         }
     }
-    
+
     const plotData=[]
     for(let i=1;i<data.length;i++){
         let record=data[i];
         let prev=data[i-1];
         let x=[prev['date'], record['date']];
         let y=[1,1];
-        
+
         let dataEntry={
             type:'scatter',
             x:x,
@@ -48,10 +37,10 @@ function plot_color_code(data){
             },
             mode:'lines'
         }
-        
+
         plotData.push(dataEntry)
     }
-    
+
     return [plotData, layout]
 }
 
@@ -71,9 +60,9 @@ function plot_radiative_power(data){
             width:1
         }
     }
-    
+
     plotData.push(viirs)
-    
+
     const layout={
         height:205,
         showlegend:true,
@@ -102,7 +91,7 @@ function plot_radiative_power(data){
             linecolor: 'black',
         }
     }
-    
+
     return [plotData,layout]
 }
 
@@ -131,7 +120,7 @@ function plot_image_detect_percent(data){
             showticklabels:false
         }
     }
-    
+
     const plotData=[]
     const viirs_data=data['viirs']
     const viirs={
@@ -146,9 +135,9 @@ function plot_image_detect_percent(data){
             width:1
         }
     }
-    
+
     plotData.push(viirs)
-    
+
     return [plotData, layout]
 }
 
@@ -178,9 +167,9 @@ function plot_diffusion(data){
             linecolor:'black',
         }
     }
-    
+
     const plotData=[]
-    
+
     const lineData=data['lines']
 
     // draw the error lines
@@ -199,11 +188,11 @@ function plot_diffusion(data){
                 width:1
             }
         }
-        
+
         plotData.push(entry)
     }
-    
-    
+
+
     const cpx={
         type:"scatter",
         x:data['cpx']['date'],
@@ -221,9 +210,9 @@ function plot_diffusion(data){
             }
         }
     }
-    
+
     plotData.push(cpx)
-    
+
     const plag={
         type:"scatter",
         x:data['plag']['date'],
@@ -241,9 +230,9 @@ function plot_diffusion(data){
             }
         }
     }
-    
+
     plotData.push(plag)
-    
+
     return [plotData, layout]
 }
 
@@ -265,7 +254,7 @@ function eq_frequency_index_tc(data){
             linecolor:'black',
         }
     }
-    
+
     const plotData=[
         {
             type:"scatter",
@@ -274,7 +263,7 @@ function eq_frequency_index_tc(data){
             mode:'markers'
         }
     ]
-    
+
     return [plotData, layout]
 }
 
@@ -300,7 +289,7 @@ function eq_magnitude(data){
             linecolor:'black',
         }
     }
-    
+
     const plotData=[
         {
             type:"scatter",
@@ -309,7 +298,7 @@ function eq_magnitude(data){
             mode:'markers'
         }
     ]
-    
+
     return [plotData, layout]
 }
 
@@ -318,7 +307,7 @@ function eq_depth(data){
     [plotData, layout]=eq_magnitude(data);
     layout['yaxis']['title']['text']="Depth (km)"
     plotData[0]['y']=data['Depth_km']
-    
+
     return [plotData, layout];
 }
 
@@ -327,7 +316,7 @@ function eq_distance(data){
     [plotData, layout]=eq_magnitude(data);
     layout['yaxis']['title']['text']="Distance (km)"
     plotData[0]['y']=data['Distance']
-    
+
     return [plotData, layout];
 }
 
@@ -342,7 +331,7 @@ function tc_event_count(data){
             zeroline:false,
         }
     }
-    
+
     const plotData=[
         {
             type:"scatter",
@@ -351,7 +340,7 @@ function tc_event_count(data){
             mode:'markers'
         }
     ]
-    
+
     return [plotData, layout]
 }
 
@@ -362,7 +351,7 @@ function eq_location_depth(data){
     const lon=data['Longitude'];
     const depth=data['Depth_km'];
     const location=$('#volcano option:selected').data('loc');
-    
+
     const plotData=[{
         type:'scattermapbox',
         mode:'markers',
@@ -384,7 +373,7 @@ function eq_location_depth(data){
             }
         }
     }];
-    
+
     const layout={
         dragmode:"zoom",
         margin:{t:5,b:5},
@@ -406,6 +395,34 @@ function eq_location_depth(data){
         },
         height:600,
     }
-    
+
     return [plotData,layout];
+}
+
+
+function aqms_distances(data){
+    let layout, plotData;
+    [plotData, layout]=eq_magnitude(data);
+    layout['yaxis']['title']['text']="Distance (km)"
+    plotData[0]['y']=data['distance']
+
+    return [plotData, layout];
+}
+
+
+function aqms_magnitude(data){
+    let layout, plotData;
+    [plotData, layout]=eq_magnitude(data);
+    plotData[0]['y']=data['mag']
+
+    return [plotData, layout];
+}
+
+function aqms_depth(data){
+    let layout, plotData;
+    [plotData, layout]=eq_magnitude(data);
+    layout['yaxis']['title']['text']="Depth (km)"
+    plotData[0]['y']=data['depthKM']
+
+    return [plotData, layout];
 }

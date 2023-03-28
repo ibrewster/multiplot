@@ -1,35 +1,35 @@
-$(document).ready(function(){    
+$(document).ready(function(){
     $(document).on('change','.plotSelect', genPlot);
     $(document).on('click','div.removePlot',removePlotDiv);
-    
+
     //set date range to last five years
     const curDate=new Date();
     let curMonth=curDate.getUTCMonth()+1
     if(curMonth<10){
         curMonth=`0${curMonth}`
     }
-    
+
     let curDay=curDate.getUTCDate();
     if(curDay<10){
         curDay=`0${curDay}`;
     }
-    
+
     const curYear=curDate.getUTCFullYear();
     const dateTo=`${curYear}-${curMonth}-${curDay}`
     const dateFrom=`${curYear-10}-${curMonth}-${curDay}`
-    
+
     $('#dateFrom').val(dateFrom);
     $('#dateTo').val(dateTo);
-    
+
     $('#addPlot').click(function(){createPlotDiv()});
     $('.rangeDate').blur(refreshPlots);
     $('#volcano').change(refreshPlots);
-    
+
     $('#print').click(sizeAndPrint);
-        
+
     // Create one plot by default, the color code plot
-    createPlotDiv('Color Code')
-    
+    createPlotDiv('General|Color Code')
+
 });
 
 function sizeAndPrint(){
@@ -39,11 +39,11 @@ function sizeAndPrint(){
         Plotly.Plots.resize(this);
     });
     calcPageBreaks();
-    
+
     //slight delay here so things can figure themselves out
     setTimeout(function(){
         window.print();
-       
+
         $('.plotContent').each(function(){
            Plotly.relayout(this,{'width':null});
            Plotly.Plots.resize(this);
@@ -69,7 +69,7 @@ function calcPageBreaks(){
         else{
             plotContainer.removeClass('pagebreak');
         }
-        
+
     });
 }
 
@@ -78,15 +78,21 @@ function createPlotDiv(type){
     const div=$('<div class="plot">')
     const typeSelect=$('<select class="plotSelect">')
     typeSelect.append('<option value="">Select...</option>')
-    
+
     for(const plot of plotTypes){
         let opt;
-        if(plot.startsWith('-')){
-            opt=`<optgroup label=${plot}></optgroup`
+        if(typeof(plot)=='string' && plot.startsWith('-')){
+            opt=`<optgroup label="${plot}"></optgroup`
         }
         else{
+            let tag,label;
+            [tag,label]=plot
             opt=$('<option>');
-            opt.text(plot)
+            opt.text(label)
+            opt.val(tag)
+            if(typeof(type)!='undefined' && type==tag){
+                opt.attr('selected',true)
+            }
         }
         typeSelect.append(opt)
     }
@@ -96,9 +102,9 @@ function createPlotDiv(type){
     div.append('<div class="plotContent"><div class="placeholder"><---Select a plot type</div></div>')
     div.append('<div class=removePlot>&times;</div>')
     dest.append(div)
-    
+
     if(typeof(type)!=='undefined'){
-        typeSelect.val(type).change()
+        typeSelect.change()
     }
 }
 
@@ -112,8 +118,8 @@ function clearDateAxis(setLast){
     $('.js-plotly-plot:not(.spatial)').each(function(){
         Plotly.relayout(this,{'xaxis.showticklabels':false})
     });
-    
-    if(setLast===true){            
+
+    if(setLast===true){
         const lastPlot=$('.js-plotly-plot:not(.spatial):last').get(0)
         Plotly.relayout(lastPlot,{'xaxis.showticklabels':true})
     }
@@ -125,8 +131,8 @@ function setLayoutDefaults(layout,showLabels){
     const range=[dateFrom,dateTo];
     const left_margin=90;
     const right_margin=10;
-    
-    
+
+
     if('xaxis' in layout){
         layout['xaxis']['range']=range;
         layout['xaxis']['type']='date';
@@ -151,11 +157,11 @@ function setLayoutDefaults(layout,showLabels){
             }
         }
     }
-    
+
     //top-level layout stuff
     layout['paper_bgcolor']='rgba(0,0,0,0)'
     layout['plot_bgcolor']='rgba(0,0,0,0)'
-    
+
     if('margin' in layout){
         layout['margin']['l']=left_margin;
         layout['margin']['r']=right_margin;
@@ -163,12 +169,12 @@ function setLayoutDefaults(layout,showLabels){
     else{
         layout['margin']={'l':left_margin,'r':right_margin}
     }
-    
+
     if('yaxis' in layout){
         layout['yaxis']['color']='rgb(204,204,220)'
         layout['yaxis']['gridcolor']='#373A3F'
     }
-    
+
     return layout;
 }
 
@@ -181,12 +187,12 @@ function genPlot(){
 
     const plotElement=plotDiv.get(0);
     const showXLabels=plotContainer.is(':last-child');
-    
+
     const plotType=this.value;
     const volcano=$('#volcano').val()
     const dateFrom=$('#dateFrom').val()
     const dateTo=$('#dateTo').val()
-    
+
     $.getJSON('getPlot',{
         'plotType':plotType,
         'volcano':volcano,
@@ -195,33 +201,33 @@ function genPlot(){
     }).done(function(data){
         let plotData,layout;
         const plotFunc=plotFuncs[plotType];
-        
+
         isSpatial=false;
         [plotData,layout]=window[plotFunc](data);
-        
+
         if(isSpatial){
             plotDiv.addClass('spatial');
         }
         else{
             plotDiv.removeClass('spatial');
         }
-        
+
         config={'responsive':true}
-        
+
         layout=setLayoutDefaults(layout,showXLabels)
-        
+
         Plotly.newPlot(plotElement,plotData,layout,config);
-        
+
         plotElement.removeListener('plotly_relayout',plotRangeChanged)
         plotElement.on('plotly_relayout',plotRangeChanged);
-        
-        
+
+
     }).fail(function(e){
         if(e.status==404){
             Plotly.purge(plotDiv);
             $(plotDiv).empty();
             const errorPlaceholder=$('<div class="placeholder error">')
-            errorPlaceholder.html(`Unable to show plot for selected volcano/plot type. 
+            errorPlaceholder.html(`Unable to show plot for selected volcano/plot type.
             <br>No data found for this selection`);
             $(plotDiv).append(errorPlaceholder)
         }

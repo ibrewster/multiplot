@@ -5,4 +5,11 @@ app = Flask(__name__)
 from . import main
 
 # imported to register functions
-from . import generators
+from .generators import (
+    General,
+    Petrology,
+    Seismology_TC,
+    Seismology_AQMS,
+    Seismology_REC,
+    Thermal
+)
