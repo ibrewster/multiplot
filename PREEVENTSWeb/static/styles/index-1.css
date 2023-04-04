@@ -62,6 +62,25 @@ div.placeholder{
     height: 1.5em;
 }
 
+.customSelector {
+    display:inline-block;
+    margin-left:5px;
+    position:relative;
+}
+
+div.rsTypeSelector{
+    position:fixed;
+    left:50%;
+    top:40%;
+    width:250px;
+    margin-left:-125px;
+    padding:10px;
+    background-color:black;
+    color:white;
+    border:3px outset;
+    box-shadow: 3px 3px 3px rgba(0,0,0,.25);
+}
+
 @media print{
     @page {
         size:letter portrait;

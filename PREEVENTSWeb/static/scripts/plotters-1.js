@@ -1,4 +1,256 @@
+//---------Custom plot selectors--------//
+CUSTOM_SELECTORS={
+    'Remote Sensing|Detections':addRSTypeSelector,
+}
+
+/////////////////////////////////
+// Remote sensing detection type selector
+////////////////////////////////
+function addRSTypeSelector(){
+    const selButton=$('<button>');
+    selButton.text("Types...");
+    selButton.click(showRSTypeSelector);
+
+    const selectorHTML=`
+        <div class="rsTypeSelector" style="display:none">
+            <div class=rsTypeHeader>Select detection types to show</div>
+            <form class="addArgs">
+                <div class=rsTypes>
+                    <input type="checkbox" name="detectTypes" checked value="Ash"> Ash
+                    <input type="checkbox" name="detectTypes" checked value="so2"> SO <sub>2</sub>
+                    <input type="checkbox" name="detectTypes" checked value="surfaceTemp"> Elevated Temps
+                </div>
+            </form>
+            <div class="rsTypesFooter">
+                <button type="button" class="close" onclick=closeRSTypeSelector>Close</button>
+            </div>
+        </div>
+    `
+    const wrapper=$('<div class="rsTypeSelectorWrapper">');
+    wrapper.append(selButton);
+    wrapper.append(selectorHTML);
+    return wrapper;
+}
+
+function closeRSTypeSelector(){
+    $(this).closest('.rsTypeSelector').hide();
+}
+
+function showRSTypeSelector(){
+    $(this).closest('div').find('.rsTypeSelector').show();
+}
+////////////////////////////////
+
 //---------PLOTTING FUNCTIONS-----------//
+
+
+///////////////////////////////////////////////////////////////////
+// A generic plotting function that creates a scatter plot with date on the x axis
+// and the specified data and label on the Y axis.
+// Can be modified, if needed, by editing the returned layout and PlotData objects
+// in the calling function.
+///////////////////////////////////////////////////////////////////
+function generic_plot(data,ylabel,ydata){
+    // ydata can be specified either as a data set, in which case it is used directly, or
+    // as string, in which case it must be a key of the data object.
+    if(typeof(ydata)=="string"){
+        ydata=data[ydata]
+    }
+
+    const layout={
+        height:200,
+        margin:{t:5,b:20},
+        yaxis:{
+            linecolor:'black',
+            title:{
+                text: ylabel
+            },
+            zeroline:false,
+
+        },
+        xaxis:{
+            linecolor:'black',
+        }
+    }
+
+    const plotData=[
+        {
+            type: "scatter",
+            x: data['date'],
+            y: ydata,
+            mode: 'markers'
+        }
+    ]
+
+    return [plotData, layout]
+}
+//////////////////////////////////////////////////////////////////
+
+//various plotting functions that use the generic_plot directly,
+// or with minimal changes
+
+function eq_frequency_index_tc(data){
+    return generic_plot(data,"Frequency Index",'FI')
+}
+
+function eq_frequency_index_rec(data){
+    //exactly the same as frequency index tc, but from a different datasource.
+    return eq_frequency_index_tc(data)
+}
+
+function eq_magnitude(data){
+    return generic_plot(data, "Magnitude", 'Magnitude')
+}
+
+function eq_depth(data){
+    return generic_plot(data,"Depth (km)", 'Depth_km')
+}
+
+function eq_distance(data){
+    return generic_plot(data, "Distance (km)", 'Distance')
+
+}
+
+function tc_event_count(data){
+    return generic_plot(data,"TC Event Count", 'Count')
+}
+
+function aqms_distances(data){
+    return generic_plot(data,"Distance (km)", 'distance')
+}
+
+
+function aqms_magnitude(data){
+    return generic_plot(data, "Magnitude", 'mag')
+}
+
+function aqms_depth(data){
+    return generic_plot(data,"Depth (km)", "depthKm")
+}
+
+function aqms_event_count(data){
+    return generic_plot(data,"Events/week", "Count")
+}
+
+function so2_detection_count(data){
+    return generic_plot(data,"Detections","count")
+}
+
+function so2_rate(data){
+    return generic_plot(data,"EM Rate","rate")
+}
+
+///////////////////////////////////////////////////////////////////////
+// More advanced plotting functions that don't lend themselves
+// to using the generic plotting function due to extensive differences
+// or different plot types
+///////////////////////////////////////////////////////////////////////
+function rs_detections(data){
+    const max_count=data['max_count'];
+    delete data['max_count'];
+    const layout={
+        height:100,
+        margin:{t:5,b:20},
+        yaxis:{
+            linecolor:'black',
+            title:{
+                text: "#"
+            },
+            zeroline:false,
+            range:[0,max_count+1]
+        },
+        xaxis:{
+            linecolor:'black',
+        }
+    }
+
+    //calculate image width
+    const dateFrom=new Date($('#dateFrom').val());
+    const dateTo=new Date($('#dateTo').val());
+    const total_ms=dateTo-dateFrom;
+    const img_width=total_ms/75;
+    const img_height=max_count/2;
+
+    const images=[]
+    for(const icon in data){
+        let iconUrl=`static/img/rs_icons/${icon}`;
+        for(let det of data[icon]){
+            let imgX,imgY;
+            [imgX,imgY]=det;
+            let imgDict={
+                source:iconUrl,
+                xref:"x",
+                yref:"y",
+                x:imgX,
+                y:imgY,
+                sizex:img_width,
+                sizey:img_height,
+                xanchor:'center',
+                yanchor:'middle'
+            }
+            images.push(imgDict)
+        }
+    }
+
+    layout['images']=images
+    return [[],layout]
+
+}
+function eq_location_depth(data){
+    // This is a spatial plot, so totally different plotting function.
+    isSpatial=true;
+    const lat=data['Latitude'];
+    const lon=data['Longitude'];
+    const depth=data['Depth_km'];
+    const location=$('#volcano option:selected').data('loc');
+
+    const plotData=[{
+        type:'scattermapbox',
+        mode:'markers',
+        lon:lon,
+        lat:lat,
+        marker:{
+            reversescale: true,
+            color:depth,
+            colorbar:{
+                thickness:10,
+                titleside:'right',
+                ticks:'outside',
+                ticklen:3,
+                ticksuffix:'km',
+                tickcolor:'rgb(204,204,220)',
+                tickfont:{
+                    color:'rgb(204,204,220)',
+                }
+            }
+        }
+    }];
+
+    const layout={
+        dragmode:"zoom",
+        margin:{t:5,b:5},
+        mapbox:{
+            style:"white-bg",
+            layers:[
+                {
+                    sourcetype:'raster',
+                    source:["https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}"],
+                    below:"traces"
+                }
+            ],
+            center:{
+                lat:location[0],
+                lon:location[1],
+            },
+            zoom:location[2]
+
+        },
+        height:600,
+    }
+
+    return [plotData,layout];
+}
+
 function plot_color_code(data){
     const layout={
         height:60,
@@ -80,14 +332,12 @@ function plot_radiative_power(data){
             title:{
                 text:'Radiative Power<br>Mean (MW)'
             },
-//            showgrid:false,
             linecolor: 'black',
             tickformat:'~e',
             dtick:1
         },
         xaxis:{
             showticklabels:false,
-//            showgrid:false,
             linecolor: 'black',
         }
     }
@@ -234,204 +484,4 @@ function plot_diffusion(data){
     plotData.push(plag)
 
     return [plotData, layout]
-}
-
-function eq_frequency_index_tc(data){
-    const layout={
-        height:200,
-        margin:{t:5,b:20},
-        yaxis:{
-            //showgrid:false,
-            linecolor:'black',
-            title:{
-                text:'Frequency Index'
-            },
-            zeroline:false,
-
-        },
-        xaxis:{
-            //showgrid:false,
-            linecolor:'black',
-        }
-    }
-
-    const plotData=[
-        {
-            type:"scatter",
-            x:data['date'],
-            y:data['FI'],
-            mode:'markers'
-        }
-    ]
-
-    return [plotData, layout]
-}
-
-function eq_frequency_index_rec(data){
-    return eq_frequency_index_tc(data)
-}
-
-function eq_magnitude(data){
-    const layout={
-        height:200,
-        margin:{t:5,b:20},
-        yaxis:{
-            //showgrid:false,
-            linecolor:'black',
-            title:{
-                text:'Magnitude'
-            },
-            zeroline:false,
-
-        },
-        xaxis:{
-            //showgrid:false,
-            linecolor:'black',
-        }
-    }
-
-    const plotData=[
-        {
-            type:"scatter",
-            x:data['date'],
-            y:data['Magnitude'],
-            mode:'markers'
-        }
-    ]
-
-    return [plotData, layout]
-}
-
-function eq_depth(data){
-    let layout, plotData;
-    [plotData, layout]=eq_magnitude(data);
-    layout['yaxis']['title']['text']="Depth (km)"
-    plotData[0]['y']=data['Depth_km']
-
-    return [plotData, layout];
-}
-
-function eq_distance(data){
-    let layout, plotData;
-    [plotData, layout]=eq_magnitude(data);
-    layout['yaxis']['title']['text']="Distance (km)"
-    plotData[0]['y']=data['Distance']
-
-    return [plotData, layout];
-}
-
-function tc_event_count(data){
-    const layout={
-        height:200,
-        margin:{t:5,b:20},
-        yaxis:{
-            title:{
-                text:'TC Event Count'
-            },
-            zeroline:false,
-        }
-    }
-
-    const plotData=[
-        {
-            type:"scatter",
-            x:data['date'],
-            y:data['Count'],
-            mode:'markers'
-        }
-    ]
-
-    return [plotData, layout]
-}
-
-
-function eq_location_depth(data){
-    isSpatial=true;
-    const lat=data['Latitude'];
-    const lon=data['Longitude'];
-    const depth=data['Depth_km'];
-    const location=$('#volcano option:selected').data('loc');
-
-    const plotData=[{
-        type:'scattermapbox',
-        mode:'markers',
-        lon:lon,
-        lat:lat,
-        marker:{
-            reversescale: true,
-            color:depth,
-            colorbar:{
-                thickness:10,
-                titleside:'right',
-                ticks:'outside',
-                ticklen:3,
-                ticksuffix:'km',
-                tickcolor:'rgb(204,204,220)',
-                tickfont:{
-                    color:'rgb(204,204,220)',
-                }
-            }
-        }
-    }];
-
-    const layout={
-        dragmode:"zoom",
-        margin:{t:5,b:5},
-        mapbox:{
-            style:"white-bg",
-            layers:[
-                {
-                    sourcetype:'raster',
-                    source:["https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}"],
-                    below:"traces"
-                }
-            ],
-            center:{
-                lat:location[0],
-                lon:location[1],
-            },
-            zoom:location[2]
-
-        },
-        height:600,
-    }
-
-    return [plotData,layout];
-}
-
-
-function aqms_distances(data){
-    let layout, plotData;
-    [plotData, layout]=eq_magnitude(data);
-    layout['yaxis']['title']['text']="Distance (km)"
-    plotData[0]['y']=data['distance']
-
-    return [plotData, layout];
-}
-
-
-function aqms_magnitude(data){
-    let layout, plotData;
-    [plotData, layout]=eq_magnitude(data);
-    plotData[0]['y']=data['mag']
-
-    return [plotData, layout];
-}
-
-function aqms_depth(data){
-    let layout, plotData;
-    [plotData, layout]=eq_magnitude(data);
-    layout['yaxis']['title']['text']="Depth (km)"
-    plotData[0]['y']=data['depthKM']
-
-    return [plotData, layout];
-}
-
-function aqms_event_count(data){
-    let layout, plotData;
-    [plotData, layout]=eq_magnitude(data);
-    layout['yaxis']['title']['text']="Events/week"
-    plotData[0]['y']=data['Count']
-
-    return [plotData, layout];
 }

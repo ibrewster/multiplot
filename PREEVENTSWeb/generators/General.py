@@ -44,7 +44,7 @@ def plot_color_code(volcano, start = None, end = None):
     """
 
     start_entry = None
-    with utils.MYSQlCursor('hans2') as cursor:
+    with utils.MYSQLCursor('hans2') as cursor:
         cursor.execute(SQL, args)
         change_dates = cursor.fetchall()
 
@@ -87,7 +87,7 @@ WHERE volcano=%s
 ORDER BY ReleaseDate;
         """
         args = (volcano, )
-        with utils.MYSQlCursor('geodiva') as cursor:
+        with utils.MYSQLCursor('geodiva') as cursor:
             cursor.execute(SQL, args)
             geodiva_changes = cursor.fetchall()
         geodiva_changes = pandas.DataFrame(geodiva_changes, columns = ["date", "Code"])

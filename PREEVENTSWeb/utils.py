@@ -24,11 +24,12 @@ VOLCANOES = {
     'Shishaldin': [54.7554, -163.9711, 11],
     'Veniaminof': [56.1979, -159.3931, 10],
 }
+VOLC_IDS = {}
 
 DATA_DIR = os.path.join(app.static_folder, 'data')
 
 
-class MYSQlCursor():
+class MYSQLCursor():
     def __init__(self, DB, user = config.GDDB_USER, password = config.GDDB_PASS):
         self._conn = None
         self._db = DB
@@ -36,7 +37,7 @@ class MYSQlCursor():
         self._pass = password
         self._server = config.GDDB_HOST
 
-    def __enter__(self):
+    def __enter__(self) -> pymysql.cursors.Cursor:
         self._conn = pymysql.connect(user = self._user, password = self._pass,
                                      database = self._db, host = self._server)
         return self._conn.cursor()
@@ -140,3 +141,17 @@ def haversine_np(lon1, lat1, lon2, lat2):
     c = 2 * np.arcsin(np.sqrt(a))
     km = 6367 * c
     return km
+
+
+def get_volc_ids():
+    # Default is Geodiva
+    volcs = tuple(VOLCANOES.keys())
+    #Default is Geodiva
+    with MYSQLCursor(DB = 'geodiva') as cursor:
+        cursor.execute(
+            "SELECT volcano_id, volcano_name FROM volcano WHERE volcano_name IN %s",
+            (volcs, )
+        )
+        volc_ids = {volc_name: volc_id for volc_id, volc_name in cursor}
+
+    VOLC_IDS.update(volc_ids)

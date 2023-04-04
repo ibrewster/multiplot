@@ -1,5 +1,5 @@
 $(document).ready(function(){
-    $(document).on('change','.plotSelect', genPlot);
+    $(document).on('change','.plotSelect', plotTypeChanged);
     $(document).on('click','div.removePlot',removePlotDiv);
     $(document).on('click','div.download',downloadPlotData);
 
@@ -70,6 +70,7 @@ function sizeAndPrint(){
         Plotly.relayout(this,{'width':WIDTH});
         Plotly.Plots.resize(this);
     });
+    
     calcPageBreaks();
 
     //slight delay here so things can figure themselves out
@@ -215,6 +216,22 @@ function setLayoutDefaults(layout,showLabels){
     return layout;
 }
 
+function plotTypeChanged(){
+    const plotType=this.value;
+
+    //add any custom components needed
+    const custFunc=CUSTOM_SELECTORS[plotType];
+    //remove any existing custom selectors
+    $(this).siblings('.customSelector').remove();
+    if(typeof(custFunc)!=="undefined"){
+        const selector=$('<div class="customSelector">')
+        selector.append(custFunc());
+        $(this).after(selector);
+    }
+
+    genPlot.call(this);
+}
+
 let isSpatial=false;
 function genPlot(){
     const plotDiv=$(this).parent().siblings('div.plotContent');
@@ -226,16 +243,26 @@ function genPlot(){
     const showXLabels=plotContainer.is(':last-child');
 
     const plotType=this.value;
+
     const volcano=$('#volcano').val()
     const dateFrom=$('#dateFrom').val()
     const dateTo=$('#dateTo').val()
 
-    $.getJSON('getPlot',{
+    const args={
         'plotType':plotType,
         'volcano':volcano,
         'dateFrom':dateFrom,
         'dateTo':dateTo
-    }).done(function(data){
+    }
+
+    //see if there are any custom args for this plot
+    const addArgs=$(this).siblings('.customSelector').find('form.addArgs');
+    if(addArgs.length>0){
+        const queryString=addArgs.serialize();
+        args['addArgs']=queryString;
+    }
+
+    $.getJSON('getPlot',args).done(function(data){
         let plotData,layout;
         const plotFunc=plotFuncs[plotType];
 
