@@ -22,7 +22,7 @@ function addRSTypeSelector(){
                 </div>
             </form>
             <div class="rsTypesFooter">
-                <button type="button" class="close" onclick=closeRSTypeSelector>Close</button>
+                <button type="button" class="close" onclick="closeRSTypeSelector(this)">Close</button>
             </div>
         </div>
     `
@@ -32,8 +32,10 @@ function addRSTypeSelector(){
     return wrapper;
 }
 
-function closeRSTypeSelector(){
-    $(this).closest('.rsTypeSelector').hide();
+function closeRSTypeSelector(button){
+    $(button).closest('.rsTypeSelector').hide();
+    const select=$(button).closest('.typeSelectWrapper').find('.plotSelect');
+    genPlot.call(select.get(0));
 }
 
 function showRSTypeSelector(){
@@ -169,7 +171,6 @@ function rs_detections(data){
     const dateTo=new Date($('#dateTo').val());
     const total_ms=dateTo-dateFrom;
     const img_width=total_ms/75;
-    const img_height=max_count/2;
 
     const images=[]
     for(const icon in data){
@@ -184,7 +185,7 @@ function rs_detections(data){
                 x:imgX,
                 y:imgY,
                 sizex:img_width,
-                sizey:img_height,
+                sizey:max_count,
                 xanchor:'center',
                 yanchor:'middle'
             }

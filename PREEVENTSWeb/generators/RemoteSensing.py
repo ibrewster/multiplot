@@ -78,7 +78,7 @@ def rs_detections(volcano, start, end) -> pandas.DataFrame:
     for rstype in types:
         selectedTypes += rs_types[rstype]
 
-    data = data[data['keyword_id'].isin(selectedTypes)]
+    data = data.loc[data['keyword_id'].isin(selectedTypes)]
 
     if data.size <= 0:
         return {}
