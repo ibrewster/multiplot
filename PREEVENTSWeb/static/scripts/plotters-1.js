@@ -148,18 +148,21 @@ function so2_rate(data){
 // or different plot types
 ///////////////////////////////////////////////////////////////////////
 function rs_detections(data){
-    const max_count=data['max_count'];
+    const max_count=data['max_count'] || 0;
     delete data['max_count'];
     const layout={
         height:100,
         margin:{t:5,b:20},
         yaxis:{
             linecolor:'black',
+            tick0:0,
+            tickformat:",d",
+            nticks:3,
             title:{
-                text: "#"
+                text: "#/day"
             },
             zeroline:false,
-            range:[0,max_count+1]
+            range:[0,max_count+1],
         },
         xaxis:{
             linecolor:'black',
@@ -334,7 +337,8 @@ function plot_radiative_power(data){
                 text:'Radiative Power<br>Mean (MW)'
             },
             linecolor: 'black',
-            tickformat:'~e',
+            exponentformat:"power",
+            showexponent: 'all',
             dtick:1
         },
         xaxis:{
