@@ -16,9 +16,12 @@ function addRSTypeSelector(){
             <div class=rsTypeHeader>Select detection types to show</div>
             <form class="addArgs">
                 <div class=rsTypes>
-                    <input type="checkbox" name="detectTypes" checked value="Ash"> Ash
-                    <input type="checkbox" name="detectTypes" checked value="so2"> SO <sub>2</sub>
-                    <input type="checkbox" name="detectTypes" checked value="surfaceTemp"> Elevated Temps
+                    <input type="checkbox" id="rsAshType" name="detectTypes" checked value="Ash">
+                    <label for="rsAshType">Ash</label>
+                    <input type="checkbox" id="rsSO2Type" name="detectTypes" checked value="so2">
+                    <label for="rsSO2Type">SO <sub>2</sub></label>
+                    <input type="checkbox" id="rsTempType" name="detectTypes" checked value="surfaceTemp"> 
+                    <label for="rsTempType">Elevated Temps</label>
                 </div>
             </form>
             <div class="rsTypesFooter">
