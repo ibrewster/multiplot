@@ -17,7 +17,7 @@ from .. import utils, config
 from ..utils import generator
 
 
-def get_so2_data(volcano: str, start: datetime | None, end: datetime | None) -> pandas.DataFrame:
+def get_so2_data(volcano: str, start, end) -> pandas.DataFrame:
     volc_id = utils.VOLC_IDS[volcano]
     args = [volc_id]
 
