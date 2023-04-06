@@ -71,14 +71,35 @@ div.placeholder{
 div.rsTypeSelector{
     position:fixed;
     left:50%;
-    top:40%;
-    width:250px;
-    margin-left:-125px;
-    padding:10px;
+    top:25%;
+    width:300px;
+    margin-left:-150px;
+    padding-top:10px;
+    padding-bottom:10px;
     background-color:rgb(34,37,43);
     color:rgba(204,204,220,0.65);
     border:3px outset;
     box-shadow: 3px 3px 3px rgba(0,0,0,.25);
+}
+
+div.rsTypeHeader{
+    font-weight:bold;
+    text-align:center;
+    border-bottom:2px inset;
+    padding-bottom:10px;
+    margin-bottom:10px;
+}
+
+div.rsTypes{
+    padding-left:10px;
+    padding-right:10px;
+}
+
+div.rsTypesFooter{
+    text-align: right;
+    padding-right: 10px;
+    border-top:1px solid;
+    padding-top:10px;
 }
 
 @media print{
