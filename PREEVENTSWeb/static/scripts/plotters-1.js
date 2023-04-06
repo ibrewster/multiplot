@@ -8,7 +8,7 @@ CUSTOM_SELECTORS={
 ////////////////////////////////
 function addRSTypeSelector(){
     const selButton=$('<button>');
-    selButton.text("Types...");
+    selButton.text("Select Types...");
     selButton.click(showRSTypeSelector);
 
     const selectorHTML=`
@@ -148,6 +148,14 @@ function so2_rate(data){
 // or different plot types
 ///////////////////////////////////////////////////////////////////////
 function rs_detections(data){
+    const typeSymbols={
+        4:["triangle-up","lightblue","Ash"],
+        9:['circle',"lightblue","SO<sub>2</sub>"],
+        35:['hexagon','#ED1C24',"Temp - Saturated"],
+        40:['hexagon','#F7931E',"temp - Moderate"],
+        45:['hexagon','#FFFF03', "Temp - Barely"]
+    }
+
     const max_count=data['max_count'] || 0;
     delete data['max_count'];
     const layout={
@@ -166,40 +174,43 @@ function rs_detections(data){
         },
         xaxis:{
             linecolor:'black',
-        }
-    }
-
-    //calculate image width
-    const dateFrom=new Date($('#dateFrom').val());
-    const dateTo=new Date($('#dateTo').val());
-    const total_ms=dateTo-dateFrom;
-    const img_width=total_ms/75;
-
-    const images=[]
-    for(const icon in data){
-        let iconUrl=`static/img/rs_icons/${icon}`;
-        for(let det of data[icon]){
-            let imgX,imgY;
-            [imgX,imgY]=det;
-            let imgDict={
-                source:iconUrl,
-                xref:"x",
-                yref:"y",
-                x:imgX,
-                y:imgY,
-                sizex:img_width,
-                sizey:max_count,
-                xanchor:'center',
-                yanchor:'middle'
+        },
+        legend:{
+            orientation:"h",
+            y:1,
+            font:{
+                color:'rgb(204,204,220)'
             }
-            images.push(imgDict)
         }
     }
 
-    layout['images']=images
-    return [[],layout]
+    const plotData=[]
+    for(const type in data){
+        let symbol,color,title,x,y;
+        
+        [symbol,color,title]=typeSymbols[type];
+        [x,y]=data[type];
 
+        let dataItem={
+            type:"scatter",
+            name:title,
+            x:x,
+            y:y,
+            mode:'markers',
+            marker:{
+                symbol:symbol,
+                color:color,
+                size:12
+            }
+        }
+
+        plotData.push(dataItem);
+    }
+
+    return [plotData,layout]
 }
+
+
 function eq_location_depth(data){
     // This is a spatial plot, so totally different plotting function.
     isSpatial=true;

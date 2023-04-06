@@ -11,6 +11,7 @@ from urllib.parse import parse_qs
 
 import flask
 import pandas
+import numpy
 
 from .. import utils, config
 from ..utils import generator
@@ -24,7 +25,7 @@ def get_so2_data(volcano: str, start: datetime | None, end: datetime | None) -> 
 SELECT DISTINCT
     date,
     ((mass_prelim*1000)/plume_age)*24 as rate,
-    keyword.keyword_id,
+    keyword.keyword_id as type,
     icon
 FROM report
 LEFT JOIN report_volcano AS rv ON report.report_id=rv.report_id
@@ -78,7 +79,7 @@ def rs_detections(volcano, start, end) -> pandas.DataFrame:
     for rstype in types:
         selectedTypes += rs_types[rstype]
 
-    data = data.loc[data['keyword_id'].isin(selectedTypes)]
+    data = data.loc[data['type'].isin(selectedTypes)]
 
     if data.size <= 0:
         return {}
@@ -87,9 +88,9 @@ def rs_detections(volcano, start, end) -> pandas.DataFrame:
     # so just set it to 1 everywhere
     data.loc[:, 'rate'] = 1
 
-    type_grouper = pandas.Grouper('icon')
+    type_grouper = pandas.Grouper('type')
     day_grouper = pandas.Grouper(level = 0, freq = 'D')
-    counts = data.loc[:, ['rate', 'icon']].groupby(
+    counts = data.loc[:, ['rate', 'type']].groupby(
         [type_grouper, day_grouper]
     ).count().reset_index(
         drop = False
@@ -99,12 +100,16 @@ def rs_detections(volcano, start, end) -> pandas.DataFrame:
     counts['date'] = counts['date'].apply(lambda x: x.isoformat())
     counts = counts[counts['count'] > 0]
 
-    found_types = counts['icon'].unique().tolist()
+    found_types = counts['type'].unique().tolist()
     max_count = int(counts['count'].max())
-    result = {x: counts[counts['icon'] == x].loc[:, ['date', 'count']].to_dict(orient = 'split')['data']
-              for x in found_types}
+
+    result = {
+        str(x): counts.query('type==@x')[['date', 'count']].to_numpy().T.tolist()
+        for x in found_types
+    }
 
     result['max_count'] = max_count
+    
     return result
 
 
@@ -113,7 +118,7 @@ def so2_rate(volcano, start, end) -> pandas.DataFrame:
     data = get_so2_data(volcano, start, end)
 
     # only SO2 detections for the rate plot
-    data = data[data['keyword_id'] == 9]
+    data = data[data['type'] == 9]
     data.dropna(inplace = True)
     if data.size <= 0:
         return {}
