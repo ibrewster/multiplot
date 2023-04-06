@@ -113,7 +113,7 @@ def rs_detections(volcano, start, end) -> pandas.DataFrame:
     return result
 
 
-@generator("SO2 Rate")
+@generator("SO2 Emission Rate")
 def so2_rate(volcano, start, end) -> pandas.DataFrame:
     data = get_so2_data(volcano, start, end)
 
