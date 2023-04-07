@@ -133,7 +133,10 @@ function aqms_magnitude(data){
 }
 
 function aqms_depth(data){
-    return generic_plot(data,"Depth (km)", "depthKm")
+    let plotData,layout;
+    [plotData,layout]=generic_plot(data,"Depth (km)", "depthKm")
+    layout['yaxis']['autorange']="reversed"
+    return [plotData,layout];
 }
 
 function aqms_event_count(data){
