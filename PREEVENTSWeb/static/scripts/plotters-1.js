@@ -152,10 +152,10 @@ function so2_rate(data){
 ///////////////////////////////////////////////////////////////////////
 function rs_detections(data){
     const typeSymbols={
-        4:["triangle-up","lightblue","Ash"],
-        9:['circle',"lightblue","SO<sub>2</sub>"],
+        4:["triangle-up","gray","Ash"],
+        9:['circle',"purple","SO<sub>2</sub>"],
         35:['hexagon','#ED1C24',"Temp - Saturated"],
-        40:['hexagon','#F7931E',"temp - Moderate"],
+        40:['hexagon','#F7931E',"Temp - Moderate"],
         45:['hexagon','#FFFF03', "Temp - Barely"]
     }
 
