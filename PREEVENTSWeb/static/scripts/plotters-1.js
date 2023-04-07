@@ -159,40 +159,28 @@ function rs_detections(data){
         45:['hexagon','#FFFF03', "Temp - Barely"]
     }
 
-    const max_count=data['max_count'] || 0;
-    delete data['max_count'];
-    const layout={
-        height:100,
-        margin:{t:5,b:20},
-        yaxis:{
-            linecolor:'black',
-            tick0:0,
-            tickformat:",d",
-            nticks:3,
-            title:{
-                text: "#/day"
-            },
-            zeroline:false,
-            range:[0,max_count+1],
-        },
-        xaxis:{
-            linecolor:'black',
-        },
-        legend:{
-            orientation:"h",
-            y:1,
-            font:{
-                color:'rgb(204,204,220)'
-            }
-        }
-    }
-
     const plotData=[]
+    let y_idx=0;
+    let temp_y=null;
     for(const type in data){
-        let symbol,color,title,x,y;
+        let my_y;
+        if([35,40,45].includes(Number(type))){
+            if(temp_y===null){
+                y_idx+=1;
+                temp_y=y_idx;
+            }
+            my_y=temp_y;
+        }
+        else{
+            y_idx+=1;
+            my_y=y_idx;
+        }
+
+        let symbol,color,title;
         
         [symbol,color,title]=typeSymbols[type];
-        [x,y]=data[type];
+        const x=data[type];
+        const y=new Array(x.length).fill(my_y);
 
         let dataItem={
             type:"scatter",
@@ -208,6 +196,33 @@ function rs_detections(data){
         }
 
         plotData.push(dataItem);
+    }
+
+    let height=25*y_idx+35
+
+    const layout={
+        height:height,
+        margin:{t:5,b:40},
+        yaxis:{
+            showgrid:false,
+            linecolor:"black",
+            nticks:0,
+            zeroline:false,
+            range:[0,y_idx+1],
+            showticklabels:false
+        },
+        xaxis:{
+            showgrid:false,
+            linecolor:'black',
+        },
+        legend:{
+            orientation:"h",
+            y:1,
+            yanchor:'bottom',
+            font:{
+                color:'rgb(204,204,220)'
+            }
+        }
     }
 
     return [plotData,layout]

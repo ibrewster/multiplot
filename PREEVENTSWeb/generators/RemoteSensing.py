@@ -6,12 +6,10 @@ Data generation functions for the Remote Sensing discipline.
 """
 CATEGORY = "Remote Sensing"
 
-from datetime import datetime
 from urllib.parse import parse_qs
 
 import flask
 import pandas
-import numpy
 
 from .. import utils, config
 from ..utils import generator
@@ -88,27 +86,14 @@ def rs_detections(volcano, start, end) -> pandas.DataFrame:
     # so just set it to 1 everywhere
     data.loc[:, 'rate'] = 1
 
-    type_grouper = pandas.Grouper('type')
-    day_grouper = pandas.Grouper(level = 0, freq = 'D')
-    counts = data.loc[:, ['rate', 'type']].groupby(
-        [type_grouper, day_grouper]
-    ).count().reset_index(
-        drop = False
-    ).rename(
-        columns = {'rate': 'count'}
-    )
-    counts['date'] = counts['date'].apply(lambda x: x.isoformat())
-    counts = counts[counts['count'] > 0]
-
-    found_types = counts['type'].unique().tolist()
-    max_count = int(counts['count'].max())
+    data['date'] = data['date'].apply(lambda x: x.isoformat())
+    found_types = data['type'].unique().tolist()
+    grouped_data = data.groupby('type')
 
     result = {
-        str(x): counts.query('type==@x')[['date', 'count']].to_numpy().T.tolist()
+        str(x): grouped_data.get_group(x)['date'].tolist()
         for x in found_types
     }
-
-    result['max_count'] = max_count
     
     return result
 
