@@ -108,7 +108,10 @@ function eq_magnitude(data){
 }
 
 function eq_depth(data){
-    return generic_plot(data,"Depth (km)", 'Depth_km')
+    let plotData,layout;
+    [plotData,layout]=generic_plot(data,"Depth (km)", 'Depth_km')
+    layout['yaxis']['autorange']="reversed"
+    return [plotData,layout];
 }
 
 function eq_distance(data){
