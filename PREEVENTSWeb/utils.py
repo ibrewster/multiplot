@@ -143,15 +143,20 @@ def haversine_np(lon1, lat1, lon2, lat2):
     return km
 
 
-def get_volc_ids():
+def get_volcs():
     # Default is Geodiva
     volcs = tuple(VOLCANOES.keys())
     #Default is Geodiva
     with MYSQLCursor(DB = 'geodiva') as cursor:
         cursor.execute(
-            "SELECT volcano_id, volcano_name FROM volcano WHERE volcano_name IN %s",
+            "SELECT volcano_id, volcano_name,latitude,longitude FROM volcano WHERE volcano_name in %s OR (observatory='avo' AND monitored=true)",
             (volcs, )
         )
-        volc_ids = {volc_name: volc_id for volc_id, volc_name in cursor}
-
-    VOLC_IDS.update(volc_ids)
+        
+        for volc in cursor:
+            (volc_id, volc_name,
+             latitude, longitude) = volc
+            
+            VOLC_IDS[volc_name] = volc_id
+            if volc_name not in VOLCANOES:
+                VOLCANOES[volc_name] = [latitude, longitude, 10]
