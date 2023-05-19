@@ -72,8 +72,8 @@ div.rsTypeSelector{
     position:fixed;
     left:50%;
     top:25%;
-    width:300px;
-    margin-left:-150px;
+    width:320px;
+    margin-left:-160px;
     padding-top:10px;
     padding-bottom:10px;
     background-color:rgb(34,37,43);
@@ -107,29 +107,29 @@ div.rsTypesFooter{
     @page {
         size:letter portrait;
     }
-    
+
     .plotSelect{
         display:none;
     }
-    
+
     .removePlot{
         display:none;
     }
-    
+
     #header{
         display:none;
     }
-    
+
     #addPlot{
         display:none;
     }
-    
-    .pagebreak { 
-        page-break-before: always; 
+
+    .pagebreak {
+        page-break-before: always;
     }
 
     .download {
         display:none;
     }
-    
+
 }

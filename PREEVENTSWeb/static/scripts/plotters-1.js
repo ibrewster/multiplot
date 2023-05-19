@@ -1,6 +1,7 @@
 //---------Custom plot selectors--------//
 CUSTOM_SELECTORS={
     'Remote Sensing|Detections':addRSTypeSelector,
+    'Thermal|Radiative Power':addRadPowerTypeSelector
 }
 
 /////////////////////////////////
@@ -20,7 +21,7 @@ function addRSTypeSelector(){
                     <label for="rsAshType">Ash</label>
                     <input type="checkbox" id="rsSO2Type" name="detectTypes" checked value="so2">
                     <label for="rsSO2Type">SO <sub>2</sub></label>
-                    <input type="checkbox" id="rsTempType" name="detectTypes" checked value="surfaceTemp"> 
+                    <input type="checkbox" id="rsTempType" name="detectTypes" checked value="surfaceTemp">
                     <label for="rsTempType">Elevated Temps</label>
                 </div>
             </form>
@@ -44,6 +45,36 @@ function closeRSTypeSelector(button){
 function showRSTypeSelector(){
     $(this).closest('div').find('.rsTypeSelector').show();
 }
+
+function addRadPowerTypeSelector(){
+    const selButton=$('<button>');
+    selButton.text("Select Types...");
+    selButton.click(showRSTypeSelector);
+
+    const selectorHTML=`
+        <div class="rsTypeSelector" style="display:none">
+            <div class=rsTypeHeader>Select Data Types to Show</div>
+            <form class="addArgs">
+                <div class=rsTypes>
+                    <input type="checkbox" id="rsVIIRSType" name="dataTypes" checked value="VIIRS">
+                    <label for="rsVIIRSType">VIIRS</label>
+                    <input type="checkbox" id="rsAQUAType" name="dataTypes" checked value="AQUA">
+                    <label for="rsSO2Type">MODIS-Aqua</label>
+                    <input type="checkbox" id="rsTerraType" name="dataTypes" checked value="TERRA">
+                    <label for="rsTempType">MODIS-Terra</label>
+                </div>
+            </form>
+            <div class="rsTypesFooter">
+                <button type="button" class="close" onclick="closeRSTypeSelector(this)">Close</button>
+            </div>
+        </div>
+    `
+    const wrapper=$('<div class="rsTypeSelectorWrapper">');
+    wrapper.append(selButton);
+    wrapper.append(selectorHTML);
+    return wrapper;
+}
+
 ////////////////////////////////
 
 //---------PLOTTING FUNCTIONS-----------//
@@ -183,7 +214,7 @@ function rs_detections(data){
         }
 
         let symbol,color,title;
-        
+
         [symbol,color,title]=typeSymbols[type];
         const x=data[type];
         const y=new Array(x.length).fill(my_y);
@@ -335,24 +366,39 @@ function plot_color_code(data){
     return [plotData, layout]
 }
 
-
-function plot_radiative_power(data){
-    const plotData=[]
-    const viirs_data=data['viirs']
-    const viirs={
+function gen_radiative_data_def(data, name, color){
+    const data_def={
         type:'scatter',
-        x:viirs_data['date'],
-        y:viirs_data['simple_radiance'],
-        name:'VIIRS',
-        fill: 'tonexty',
+        x:data['date'],
+        y:data['hyst_radiance'],
+        name: name,
+        fill: 'tozeroy',
+        fillcolor:color+'33',
         mode:'lines',
         line:{
-            color:'#F00',
+            color: color,
             width:1
         }
     }
 
-    plotData.push(viirs)
+    return data_def
+}
+
+function plot_radiative_power(data){
+    const plotData=[]
+
+    const viirs_data=data['viirs']
+    const aqua_data=data['aqua']
+    const terra_data=data['terra']
+
+    if(typeof(viirs_data)!=='undefined')
+        plotData.push(gen_radiative_data_def(viirs_data,'VIIRS','#FF0000'))
+
+    if(typeof(aqua_data)!=='undefined')
+        plotData.push(gen_radiative_data_def(aqua_data,'MODIS-Aqua','#079BF5'))
+
+    if(typeof(terra_data)!=='undefined')
+        plotData.push(gen_radiative_data_def(terra_data,'MODIS-Terra','#00FF00'))
 
     const layout={
         height:205,
