@@ -240,6 +240,7 @@ function rs_detections(data){
 
     const layout={
         height:height,
+        showlegend:true,
         margin:{t:5,b:40},
         yaxis:{
             showgrid:false,
