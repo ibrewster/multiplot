@@ -129,17 +129,39 @@ def plot_radiative_power(volcano, start = None, end = None):
         terra_radiance = process_radiative_power(terra_data)
         ret_data['terra'] = terra_radiance.to_dict(orient = 'list')
 
+    if not ret_data:
+        return flask.abort(400, 'No valid datasets requested')
+
     return ret_data
 
 
 @generator("Detection Percent")
 def plot_image_detect_percent(volcano, start = None, end = None):
-    viirs_data = load_viirs_data(volcano, start, end)
-    viirs_data = process_percent_data(viirs_data)
+    ret_data = {}
+    query_string = flask.request.args.get('addArgs', '')
+    # Default to everything if nothing provided
+    requested = parse_qs(query_string).get('dataTypes', ['VIIRS', 'AQUA', 'TERRA'])
 
-    ret_data = {
-        'viirs': viirs_data.to_dict(orient = 'list'),
-    }
+    if not requested:
+        return flask.abort(400, 'No datasets requested')
+
+    if 'VIIRS' in requested:
+        viirs_data = load_viirs_data(volcano, start, end)
+        viirs_data = process_percent_data(viirs_data)
+        ret_data['viirs'] = viirs_data.to_dict(orient = 'list')
+
+    if 'AQUA' in requested:
+        aqua_data = load_modis_data('Aqua', volcano, start, end)
+        aqua_data = process_percent_data(aqua_data)
+        ret_data['aqua'] = aqua_data.to_dict(orient = 'list')
+
+    if 'TERRA' in requested:
+        terra_data = load_modis_data('Terra', volcano, start, end)
+        terra_data = process_percent_data(terra_data)
+        ret_data['terra'] = terra_data.to_dict(orient = 'list')
+
+    if not ret_data:
+        return flask.abort(400, 'No valid datasets requested')
 
     return ret_data
 

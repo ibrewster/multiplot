@@ -1,7 +1,8 @@
 //---------Custom plot selectors--------//
 CUSTOM_SELECTORS={
     'Remote Sensing|Detections':addRSTypeSelector,
-    'Thermal|Radiative Power':addRadPowerTypeSelector
+    'Thermal|Radiative Power':addThermalTypeSelector,
+    'Thermal|Detection Percent':addThermalTypeSelector
 }
 
 /////////////////////////////////
@@ -46,7 +47,7 @@ function showRSTypeSelector(){
     $(this).closest('div').find('.rsTypeSelector').show();
 }
 
-function addRadPowerTypeSelector(){
+function addThermalTypeSelector(){
     const selButton=$('<button>');
     selButton.text("Select Types...");
     selButton.click(showRSTypeSelector);
@@ -431,6 +432,25 @@ function plot_radiative_power(data){
     return [plotData,layout]
 }
 
+
+function gen_detect_percent_data_def(data, name, color){
+    const data_def={
+        type:'scatter',
+        x:data['date'],
+        y:data['percent'],
+        name: name,
+        fill: 'tozeroy',
+        fillcolor:color+'33',
+        mode:'lines',
+        line:{
+            color: color,
+            width:1
+        }
+    }
+
+    return data_def
+}
+
 function plot_image_detect_percent(data){
     const layout={
         height:205,
@@ -458,21 +478,20 @@ function plot_image_detect_percent(data){
     }
 
     const plotData=[]
-    const viirs_data=data['viirs']
-    const viirs={
-        type:'scatter',
-        x:viirs_data['date'],
-        y:viirs_data['percent'],
-        name:'VIIRS',
-        mode:'lines',
-        fill: 'tonexty',
-        line:{
-            color:'#F00',
-            width:1
-        }
-    }
 
-    plotData.push(viirs)
+    const viirs_data=data['viirs']
+    const aqua_data=data['aqua']
+    const terra_data=data['terra']
+
+    if(typeof(viirs_data)!=='undefined')
+        plotData.push(gen_detect_percent_data_def(viirs_data,'VIIRS','#FF0000'))
+
+    if(typeof(aqua_data)!=='undefined')
+        plotData.push(gen_detect_percent_data_def(aqua_data,'MODIS-Aqua','#079BF5'))
+
+    if(typeof(terra_data)!=='undefined')
+        plotData.push(gen_detect_percent_data_def(terra_data,'MODIS-Terra','#00FF00'))
+
 
     return [plotData, layout]
 }
