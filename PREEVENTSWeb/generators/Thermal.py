@@ -8,6 +8,7 @@ CATEGORY = "Thermal"
 
 import os
 
+from datetime import timedelta
 from urllib.parse import parse_qs
 
 import flask
@@ -37,10 +38,15 @@ def load_viirs_data(volc, start, end):
     return load_data(viirs_csv_path, start, end)
 
 
-def load_modis_data(sat, volc, start, end):
-    modis_csv_filename = f"{FILE_LOOKUP[volc]}_{sat}.csv"
-    modis_csv_path = os.path.join(utils.DATA_DIR, 'MODIS 2000-2021', modis_csv_filename)
-    return load_data(modis_csv_path, start, end)
+def load_modis_data(volc, start, end):
+    files = {}
+    for sat in ['Aqua', 'Terra']:
+        modis_csv_filename = f"{FILE_LOOKUP[volc]}_{sat}.csv"
+        modis_csv_path = os.path.join(utils.DATA_DIR, 'MODIS 2000-2021', modis_csv_filename)
+        files[sat] = load_data(modis_csv_path, start, end)
+
+    modis_data = files['Aqua'].merge(files['Terra'], how = 'outer')
+    return modis_data
 
 
 def load_data(csv_path, start, end):
@@ -50,6 +56,7 @@ def load_data(csv_path, start, end):
                                                      0}).astype(int)
 
     data.set_index('image_time', drop = False, inplace = True)
+    data.index.rename('date', inplace = True)
 
     # Probably overly complicated, but does a single filtering operation if both start and end
     # are specified.
@@ -67,15 +74,15 @@ def load_data(csv_path, start, end):
 
 
 def process_radiative_power(data):
-    month_grouper = pandas.Grouper(key = 'image_time', freq = 'M')
+    month_grouper = pandas.Grouper(key = 'image_time', freq = 'MS')
 
     radiance = data.groupby(month_grouper).mean(numeric_only = True)['hyst_radiance']
     radiance /= 1000000 # Convert to MW
 
     # Replace NaN values with zero and convert to a dataframe so we can add the date column
-    radiance = radiance.fillna(1).to_frame()
+    radiance = radiance.fillna(0).to_frame()
 
-    radiance['date'] = radiance.index
+    radiance['date'] = radiance.index + timedelta(days = 15)
     radiance.sort_values('date', inplace = True)
 
     # Convert the date column to an ISO string
@@ -84,7 +91,7 @@ def process_radiative_power(data):
 
 
 def process_percent_data(data):
-    month_grouper = pandas.Grouper(key = 'image_time', freq = 'M')
+    month_grouper = pandas.Grouper(key = 'image_time', freq = 'MS')
 
     percent = data.groupby(month_grouper).mean(numeric_only = True)['unet_class']
     percent *= 100
@@ -95,6 +102,7 @@ def process_percent_data(data):
         'unet_class': 'percent',
     })
 
+    final['date'] += timedelta(days = 15)
     final.sort_values('date', inplace = True)
 
     final['date'] = final['date'].apply(lambda x: pandas.to_datetime(x).isoformat())
@@ -109,7 +117,7 @@ def plot_radiative_power(volcano, start = None, end = None):
     ret_data = {}
     query_string = flask.request.args.get('addArgs', '')
     # Default to everything if nothing provided
-    requested = parse_qs(query_string).get('dataTypes', ['VIIRS', 'AQUA', 'TERRA'])
+    requested = parse_qs(query_string).get('dataTypes', ['VIIRS', 'MODIS'])
 
     if not requested:
         return flask.abort(400, 'No datasets requested')
@@ -119,15 +127,10 @@ def plot_radiative_power(volcano, start = None, end = None):
         viirs_radiance = process_radiative_power(viirs_data)
         ret_data['viirs'] = viirs_radiance.to_dict(orient = 'list')
 
-    if 'AQUA' in requested:
-        aqua_data = load_modis_data("Aqua", volcano, start, end)
-        aqua_radiance = process_radiative_power(aqua_data)
-        ret_data['aqua'] = aqua_radiance.to_dict(orient = 'list')
-
-    if 'TERRA' in requested:
-        terra_data = load_modis_data("Terra", volcano, start, end)
-        terra_radiance = process_radiative_power(terra_data)
-        ret_data['terra'] = terra_radiance.to_dict(orient = 'list')
+    if 'MODIS' in requested:
+        modis_data = load_modis_data(volcano, start, end)
+        modis_radiance = process_radiative_power(modis_data)
+        ret_data['modis'] = modis_radiance.to_dict(orient = 'list')
 
     if not ret_data:
         return flask.abort(400, 'No valid datasets requested')
@@ -140,7 +143,7 @@ def plot_image_detect_percent(volcano, start = None, end = None):
     ret_data = {}
     query_string = flask.request.args.get('addArgs', '')
     # Default to everything if nothing provided
-    requested = parse_qs(query_string).get('dataTypes', ['VIIRS', 'AQUA', 'TERRA'])
+    requested = parse_qs(query_string).get('dataTypes', ['VIIRS', 'MODIS'])
 
     if not requested:
         return flask.abort(400, 'No datasets requested')
@@ -150,15 +153,10 @@ def plot_image_detect_percent(volcano, start = None, end = None):
         viirs_data = process_percent_data(viirs_data)
         ret_data['viirs'] = viirs_data.to_dict(orient = 'list')
 
-    if 'AQUA' in requested:
-        aqua_data = load_modis_data('Aqua', volcano, start, end)
-        aqua_data = process_percent_data(aqua_data)
-        ret_data['aqua'] = aqua_data.to_dict(orient = 'list')
-
-    if 'TERRA' in requested:
-        terra_data = load_modis_data('Terra', volcano, start, end)
-        terra_data = process_percent_data(terra_data)
-        ret_data['terra'] = terra_data.to_dict(orient = 'list')
+    if 'MODIS' in requested:
+        modis_data = load_modis_data(volcano, start, end)
+        modis_data = process_percent_data(modis_data)
+        ret_data['modis'] = modis_data.to_dict(orient = 'list')
 
     if not ret_data:
         return flask.abort(400, 'No valid datasets requested')

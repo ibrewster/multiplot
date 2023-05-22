@@ -57,12 +57,10 @@ function addThermalTypeSelector(){
             <div class=rsTypeHeader>Select Data Types to Show</div>
             <form class="addArgs">
                 <div class=rsTypes>
-                    <input type="checkbox" id="rsVIIRSType" name="dataTypes" checked value="VIIRS">
+                    <input type="checkbox" id="rsVIIRSType" name="dataTypes" value="VIIRS" checked>
                     <label for="rsVIIRSType">VIIRS</label>
-                    <input type="checkbox" id="rsAQUAType" name="dataTypes" checked value="AQUA">
-                    <label for="rsSO2Type">MODIS-Aqua</label>
-                    <input type="checkbox" id="rsTerraType" name="dataTypes" checked value="TERRA">
-                    <label for="rsTempType">MODIS-Terra</label>
+                    <input type="checkbox" id="rsAQUAType" name="dataTypes" value="MODIS" checked>
+                    <label for="rsSO2Type">MODIS</label>
                 </div>
             </form>
             <div class="rsTypesFooter">
@@ -390,17 +388,13 @@ function plot_radiative_power(data){
     const plotData=[]
 
     const viirs_data=data['viirs']
-    const aqua_data=data['aqua']
-    const terra_data=data['terra']
+    const modis_data=data['modis']
 
     if(typeof(viirs_data)!=='undefined')
         plotData.push(gen_radiative_data_def(viirs_data,'VIIRS','#FF0000'))
 
-    if(typeof(aqua_data)!=='undefined')
-        plotData.push(gen_radiative_data_def(aqua_data,'MODIS-Aqua','#079BF5'))
-
-    if(typeof(terra_data)!=='undefined')
-        plotData.push(gen_radiative_data_def(terra_data,'MODIS-Terra','#00FF00'))
+    if(typeof(modis_data)!=='undefined')
+        plotData.push(gen_radiative_data_def(modis_data,'MODIS','#079BF5'))
 
     const layout={
         height:205,
@@ -414,7 +408,6 @@ function plot_radiative_power(data){
         },
         margin:{t:5,b:20},
         yaxis:{
-            type:'log',
             autorange:true,
             title:{
                 text:'Radiative Power<br>Mean (MW)'
@@ -422,7 +415,6 @@ function plot_radiative_power(data){
             linecolor: 'black',
             exponentformat:"power",
             showexponent: 'all',
-            dtick:1
         },
         xaxis:{
             showticklabels:false,
@@ -481,17 +473,13 @@ function plot_image_detect_percent(data){
     const plotData=[]
 
     const viirs_data=data['viirs']
-    const aqua_data=data['aqua']
-    const terra_data=data['terra']
+    const modis_data=data['modis']
 
     if(typeof(viirs_data)!=='undefined')
         plotData.push(gen_detect_percent_data_def(viirs_data,'VIIRS','#FF0000'))
 
-    if(typeof(aqua_data)!=='undefined')
-        plotData.push(gen_detect_percent_data_def(aqua_data,'MODIS-Aqua','#079BF5'))
-
-    if(typeof(terra_data)!=='undefined')
-        plotData.push(gen_detect_percent_data_def(terra_data,'MODIS-Terra','#00FF00'))
+    if(typeof(modis_data)!=='undefined')
+        plotData.push(gen_detect_percent_data_def(modis_data,'MODIS','#079BF5'))
 
 
     return [plotData, layout]
