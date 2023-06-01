@@ -167,7 +167,7 @@ function aqms_magnitude(data){
 
 function aqms_depth(data){
     let plotData,layout;
-    [plotData,layout]=generic_plot.call(this, data, "Depth (km)", "depthKm")
+    [plotData,layout]=generic_plot.call(this, data, "Depth (km)", "depthKM")
     layout['yaxis']['autorange']="reversed"
     return [plotData,layout];
 }
