@@ -1,4 +1,17 @@
+let theme='dark'
+
 $(document).ready(function(){
+    if(localStorage.theme){
+        theme=localStorage.getItem('theme');
+    }
+
+    if(theme==='dark'){
+        $('body').addClass('dark');
+    }
+    else{
+        $('body').removeClass('dark');
+    }
+
     $(document).on('change','.plotSelect', plotTypeChanged);
     $(document).on('click','div.removePlot',removePlotDiv);
     $(document).on('click','div.download',downloadPlotData);
@@ -33,55 +46,54 @@ $(document).ready(function(){
 
 });
 
-function downloadPlotData(){
-    const plot=$(this).closest('.plot').find('.js-plotly-plot').get(0);
-    const type=$(this).siblings('.plotSelect').find('option:selected').val();
-
-    let category,label;
-    [category,label] = type.split('|');
-
-    // not using these at the moment, as the data downloaded 
-    // may not be limited to the displayed date range.
-    const dateFrom=$('#dateFrom').val();
-    const dateTo=$('#dateTo').val();
-
-    const x=plot.data[0].x;
-    const y=plot.data[0].y;
-
-    let csvContent="data:text/csv;charset=utf-8,"
-    for(let i=0;i<x.length;i++){
-        csvContent+=`${x[i]},${y[i]}\r\n`
+function setTheme(colorScheme){
+    if(colorScheme!=='dark' && colorScheme!=='light'){
+        console.error('Invalid theme specified');
+        return;
     }
 
-    const encodedUri=encodeURI(csvContent);
-    const volc=$('.volcWrapper:visible').data('volc');
-    const file_name=`${category}_${label}_${x[0]}_${x[x.length-1]}.csv`
+    theme=colorScheme;
+    localStorage.setItem('theme',theme);
+    if(theme==='dark'){
+        $('body').addClass('dark');
+    }
+    else{
+        $('body').removeClass('dark');
+    }
 
-    $('#downloadLink')
-    .attr('download',file_name)
-    .attr('href',encodedUri)
-    .get(0)
-    .click()
+    console.log('Calling refresh from setTheme');
+    refreshPlots();
 }
 
 function sizeAndPrint(){
     const WIDTH=768; //~8 inches
-    $('.plotContent').each(function(){
-        Plotly.relayout(this,{'width':WIDTH});
-        Plotly.Plots.resize(this);
-    });
-    
-    calcPageBreaks();
+    const lastStyle=theme;
+    setTheme('light');
 
-    //slight delay here so things can figure themselves out
     setTimeout(function(){
-        window.print();
-
         $('.plotContent').each(function(){
-           Plotly.relayout(this,{'width':null});
-           Plotly.Plots.resize(this);
+            Plotly.relayout(this,{'width':WIDTH});
+            Plotly.Plots.resize(this);
         });
-    },50)
+        
+        calcPageBreaks();
+    
+        //slight delay here so things can figure themselves out
+        setTimeout(function(){
+            window.print();
+    
+            setTimeout(function(){
+                console.log('Relayout back to original size')
+                $('.plotContent').each(function(){
+                   Plotly.relayout(this,{'width':null});
+                   Plotly.Plots.resize(this);
+                });
+        
+                setTheme(lastStyle);
+            },500) //let the print dialog open and block execution
+        },500) // let the size relayout display
+    },500) //let the theme change display
+  
 }
 
 const PAGE_HEIGHT=984;
@@ -163,7 +175,22 @@ function clearDateAxis(setLast){
     }
 }
 
+COLORS={
+    dark:{
+        background:'rgba(0,0,0,0)',
+        text:'rgb(204,204,220)',
+        gridcolor:'#373A3F'
+    },
+    light:{
+        background:'rgba(0,0,0,0)',
+        text:'black',
+        gridcolor:'#373A3F'
+    }
+}
+
 function setLayoutDefaults(layout,showLabels){
+    const themeColors=COLORS[theme];
+
     const dateFrom=$('#dateFrom').val();
     const dateTo=$('#dateTo').val();
     const range=[dateFrom,dateTo];
@@ -176,10 +203,10 @@ function setLayoutDefaults(layout,showLabels){
         layout['xaxis']['type']='date';
         layout['xaxis']['autorange']=false;
         layout['xaxis']['showticklabels']=showLabels;
-        layout['xaxis']['gridcolor']='#373A3F';
+        layout['xaxis']['gridcolor']=themeColors['gridcolor'];
         layout['xaxis']['tickfont']={
             'size':14,
-            'color':'rgb(204,204,220)'
+            'color':themeColors['text']
         }
     }
     else{
@@ -188,17 +215,17 @@ function setLayoutDefaults(layout,showLabels){
             type:'date',
             autorange:false,
             showticklabels:showLabels,
-            gridcolor:'#373A3F',
+            gridcolor:themeColors['gridcolor'],
             tickfont:{
                 'size':14,
-                'color':'rgb(204,204,220)'
+                'color':themeColors['text']
             }
         }
     }
 
     //top-level layout stuff
-    layout['paper_bgcolor']='rgba(0,0,0,0)'
-    layout['plot_bgcolor']='rgba(0,0,0,0)'
+    layout['paper_bgcolor']=themeColors['background']
+    layout['plot_bgcolor']=themeColors['background']
 
     if('margin' in layout){
         layout['margin']['l']=left_margin;
@@ -209,8 +236,8 @@ function setLayoutDefaults(layout,showLabels){
     }
 
     if('yaxis' in layout){
-        layout['yaxis']['color']='rgb(204,204,220)'
-        layout['yaxis']['gridcolor']='#373A3F'
+        layout['yaxis']['color']=themeColors['text']
+        layout['yaxis']['gridcolor']=themeColors['gridcolor']
     }
 
     return layout;
@@ -229,19 +256,12 @@ function plotTypeChanged(){
         $(this).after(selector);
     }
 
+    //clear data from plot div
+    $(this).parent().siblings('div.plotContent').removeData();
     genPlot.call(this);
 }
 
-let isSpatial=false;
-function genPlot(){
-    const plotDiv=$(this).parent().siblings('div.plotContent');
-    const plotContainer=$(this).closest('div.plot');
-
-    plotDiv.find('.placeholder').remove();
-
-    const plotElement=plotDiv.get(0);
-    const showXLabels=plotContainer.is(':last-child');
-
+function getPlotArgs(){
     const plotType=this.value;
 
     const volcano=$('#volcano').val()
@@ -262,12 +282,29 @@ function genPlot(){
         args['addArgs']=queryString;
     }
 
+    return args
+}
+
+let isSpatial=false;
+function genPlot(){
+    const plotDiv=$(this).parent().siblings('div.plotContent');
+    const plotContainer=$(this).closest('div.plot');
+
+    plotDiv.find('.placeholder').remove();
+
+    const plotElement=plotDiv.get(0);
+    const showXLabels=plotContainer.is(':last-child');
+
+    const args=getPlotArgs.call(this);
+
     $.getJSON('getPlot',args).done(function(data){
+        const plotType=args['plotType']
+
         let plotData,layout;
         const plotFunc=plotFuncs[plotType];
 
         isSpatial=false;
-        [plotData,layout]=window[plotFunc](data);
+        [plotData,layout]=window[plotFunc].call(plotElement,data);
 
         if(isSpatial){
             plotDiv.addClass('spatial');

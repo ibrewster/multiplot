@@ -92,6 +92,9 @@ function generic_plot(data,ylabel,ydata){
         ydata=data[ydata]
     }
 
+    $(this).data('yValues',ydata);
+    $(this).data('xValues',data['date'])
+
     const layout={
         height:200,
         margin:{t:5,b:20},
@@ -125,60 +128,60 @@ function generic_plot(data,ylabel,ydata){
 // or with minimal changes
 
 function eq_frequency_index_tc(data){
-    return generic_plot(data,"Frequency Index",'FI')
+    return generic_plot.call(this, data,"Frequency Index",'FI')
 }
 
 function eq_frequency_index_rec(data){
     //exactly the same as frequency index tc, but from a different datasource.
-    return eq_frequency_index_tc(data)
+    return eq_frequency_index_tc.call(this,data)
 }
 
 function eq_magnitude(data){
-    return generic_plot(data, "Magnitude", 'Magnitude')
+    return generic_plot.call(this, data, "Magnitude", 'Magnitude')
 }
 
 function eq_depth(data){
     let plotData,layout;
-    [plotData,layout]=generic_plot(data,"Depth (km)", 'Depth_km')
+    [plotData,layout]=generic_plot.call(this, data,"Depth (km)", 'Depth_km')
     layout['yaxis']['autorange']="reversed"
     return [plotData,layout];
 }
 
 function eq_distance(data){
-    return generic_plot(data, "Distance (km)", 'Distance')
+    return generic_plot.call(this, data, "Distance (km)", 'Distance')
 
 }
 
 function tc_event_count(data){
-    return generic_plot(data,"TC Event Count", 'Count')
+    return generic_plot.call(this, data,"TC Event Count", 'Count')
 }
 
 function aqms_distances(data){
-    return generic_plot(data,"Distance (km)", 'distance')
+    return generic_plot.call(this, data,"Distance (km)", 'distance')
 }
 
 
 function aqms_magnitude(data){
-    return generic_plot(data, "Magnitude", 'mag')
+    return generic_plot.call(this, data, "Magnitude", 'mag')
 }
 
 function aqms_depth(data){
     let plotData,layout;
-    [plotData,layout]=generic_plot(data,"Depth (km)", "depthKm")
+    [plotData,layout]=generic_plot.call(this, data, "Depth (km)", "depthKm")
     layout['yaxis']['autorange']="reversed"
     return [plotData,layout];
 }
 
 function aqms_event_count(data){
-    return generic_plot(data,"Events/week", "Count")
+    return generic_plot.call(this, data, "Events/week", "Count")
 }
 
 function so2_detection_count(data){
-    return generic_plot(data,"Detections","count")
+    return generic_plot.call(this, data, "Detections","count")
 }
 
 function so2_rate(data){
-    return generic_plot(data,"EM Rate","rate")
+    return generic_plot.call(this, data,"EM Rate","rate")
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -198,6 +201,7 @@ function rs_detections(data){
     const plotData=[]
     let y_idx=0;
     let temp_y=null;
+    let xVals={}
     for(const type in data){
         let my_y;
         if([35,40,45].includes(Number(type))){
@@ -216,6 +220,9 @@ function rs_detections(data){
 
         [symbol,color,title]=typeSymbols[type];
         const x=data[type];
+
+        xVals[title]=x;
+
         const y=new Array(x.length).fill(my_y);
 
         let dataItem={
@@ -233,6 +240,9 @@ function rs_detections(data){
 
         plotData.push(dataItem);
     }
+
+    $(this).data('plotVals',xVals);
+    $(this).data('exporter',exportRSDetections);
 
     let height=25*y_idx+35
 
@@ -273,6 +283,12 @@ function eq_location_depth(data){
     const lon=data['Longitude'];
     const depth=data['Depth_km'];
     const location=$('#volcano option:selected').data('loc');
+
+    $(this).data('exporter',exportLocationDepth);
+    $(this).data('lats',lat);
+    $(this).data('lons',lon);
+    $(this).data('depth',depth);
+
 
     const plotData=[{
         type:'scattermapbox',
@@ -341,11 +357,22 @@ function plot_color_code(data){
     }
 
     const plotData=[]
+    const start=[],end=[],color=[];
+    $(this).data('exporter',exportColorCode);
+
+
+    // the last record in this dataset is a "dummy" record, provided to prevent 
+    // off-by-one errors when running this loop, and "fill" the last color
+    // code to the end date
     for(let i=1;i<data.length;i++){
         let record=data[i];
         let prev=data[i-1];
         let x=[prev['date'], record['date']];
         let y=[1,1];
+
+        start.push(x[0]);
+        end.push(x[1]);
+        color.push(prev['color']);
 
         let dataEntry={
             type:'scatter',
@@ -362,6 +389,10 @@ function plot_color_code(data){
 
         plotData.push(dataEntry)
     }
+
+    $(this).data('start',start);
+    $(this).data('end',end);
+    $(this).data('color',color);
 
     return [plotData, layout]
 }
@@ -390,11 +421,20 @@ function plot_radiative_power(data){
     const viirs_data=data['viirs']
     const modis_data=data['modis']
 
-    if(typeof(viirs_data)!=='undefined')
+    $(this).data('exporter',exportThermalData);
+    
+    const exportData={};
+    if(typeof(viirs_data)!=='undefined'){
         plotData.push(gen_radiative_data_def(viirs_data,'VIIRS','#FF0000'))
+        exportData['VIIRS']=[viirs_data['date'],viirs_data['hyst_radiance']];
+    }
 
-    if(typeof(modis_data)!=='undefined')
-        plotData.push(gen_radiative_data_def(modis_data,'MODIS','#079BF5'))
+    if(typeof(modis_data)!=='undefined'){
+        plotData.push(gen_radiative_data_def(modis_data,'MODIS','#079BF5'));
+        exportData['MODIS']=[modis_data['date'],modis_data['hyst_radiance']];
+    }
+
+    $(this).data('exportData',exportData);
 
     const layout={
         height:205,
@@ -475,12 +515,21 @@ function plot_image_detect_percent(data){
     const viirs_data=data['viirs']
     const modis_data=data['modis']
 
-    if(typeof(viirs_data)!=='undefined')
+    $(this).data('exporter',exportThermalData);
+    const exportData={};
+
+    if(typeof(viirs_data)!=='undefined'){
         plotData.push(gen_detect_percent_data_def(viirs_data,'VIIRS','#FF0000'))
+        exportData['VIIRS']=[viirs_data['date'],viirs_data['percent']];
 
-    if(typeof(modis_data)!=='undefined')
-        plotData.push(gen_detect_percent_data_def(modis_data,'MODIS','#079BF5'))
+    }
 
+    if(typeof(modis_data)!=='undefined'){
+        plotData.push(gen_detect_percent_data_def(modis_data,'MODIS','#079BF5'));
+        exportData['MODIS']=[modis_data['date'],modis_data['hyst_radiance']];
+    }
+
+    $(this).data('exportData',exportData);
 
     return [plotData, layout]
 }
@@ -517,10 +566,13 @@ function plot_diffusion(data){
     const lineData=data['lines']
 
     // draw the error lines
+    const errorData={}
     for(let i=0;i<lineData.length;i++){
         let entryData=lineData[i];
         let x=[entryData['date neg'], entryData['date pos']]
         let y=[entryData['index'], entryData['index']]
+
+        errorData[entryData['index']]=[x[0],x[1]];
         let entry={
             type:"scatter",
             x:x,
@@ -536,6 +588,8 @@ function plot_diffusion(data){
         plotData.push(entry)
     }
 
+    $(this).data('exporter',exportDiffusionData);
+    $(this).data('errorData',errorData);
 
     const cpx={
         type:"scatter",
@@ -554,6 +608,8 @@ function plot_diffusion(data){
             }
         }
     }
+
+    $(this).data('cpx',[data['cpx']['date'], data['cpx']['index']])
 
     plotData.push(cpx)
 
@@ -574,6 +630,8 @@ function plot_diffusion(data){
             }
         }
     }
+
+    $(this).data('plag',[data['plag']['date'], data['plag']['index']])
 
     plotData.push(plag)
 

@@ -1,16 +1,20 @@
-html,body{
+html.dark,body.dark{
     background-color: #111217;
     color:rgb(204,204,220);
 }
 
-select{
+select {
+    font-size:1em;
+    border-color:black;
+}
+
+body.dark select{
     background-color:#181C1E;
     color:rgba(204,204,220,0.65);
-    font-size:1em;
     border-color:#232629;
 }
 
-select:hover{
+body.dark select:hover{
     color:rgba(204,204,220,0.984);
 }
 
@@ -26,9 +30,6 @@ select:hover{
 }
 
 input {
-    background-color: rgb(17,18,23);
-    color:rgb(204,204,220);
-    border: 1px solid rgba(204,204,220,0.15);
     padding:8px;
     padding-top:0px;
     padding-bottom:0px;
@@ -36,23 +37,33 @@ input {
     line-height:1.571429em;
 }
 
-input:hover{
+body.dark input {
+    background-color: rgb(17,18,23);
+    color:rgb(204,204,220);
+    border: 1px solid rgba(204,204,220,0.15);
+}
+
+body.dark input:hover{
     border: 1px solid #484950;
 }
 
-button{
+button {
     height:32px;
     padding-right:8px;
     border-radius:2px;
     line-height:30px;
     font-weight:500;
+    border:1px solid black;
+    background-color: whitesmoke;
+}
+
+body.dark button{
     border:1px solid rgba(204,204,220,0.07);
     color:rgba(204,204,220,0.65);
     background-color:rgb(34,37,43);
-
 }
 
-button:hover{
+body.dark button:hover{
     color: rgb(204,204,220);
 }
 
@@ -63,8 +74,11 @@ div.typeSelectWrapper{
     padding-top:8px;
 }
 
-div.plot{
+div.plot {
     grid-template-columns: minmax(300px,1fr) auto;
+}
+
+body.dark div.plot{
     background-color: #181C1E;
     border:1px solid #272B2F;
 }
@@ -77,6 +91,6 @@ div.placeholder{
     text-align:center;
 }
 
-.download path{
+body.dark .download path{
     fill:whitesmoke;
 }

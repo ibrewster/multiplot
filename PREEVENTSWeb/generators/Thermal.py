@@ -70,9 +70,8 @@ def load_data(csv_path, start, end):
 
     return data
 
+
 ############ Processors ####################
-
-
 def process_radiative_power(data):
     month_grouper = pandas.Grouper(key = 'image_time', freq = 'MS')
 
@@ -123,14 +122,20 @@ def plot_radiative_power(volcano, start = None, end = None):
         return flask.abort(400, 'No datasets requested')
 
     if 'VIIRS' in requested:
-        viirs_data = load_viirs_data(volcano, start, end)
-        viirs_radiance = process_radiative_power(viirs_data)
-        ret_data['viirs'] = viirs_radiance.to_dict(orient = 'list')
+        try:
+            viirs_data = load_viirs_data(volcano, start, end)
+            viirs_radiance = process_radiative_power(viirs_data)
+            ret_data['viirs'] = viirs_radiance.to_dict(orient = 'list')
+        except FileNotFoundError:
+            pass
 
     if 'MODIS' in requested:
-        modis_data = load_modis_data(volcano, start, end)
-        modis_radiance = process_radiative_power(modis_data)
-        ret_data['modis'] = modis_radiance.to_dict(orient = 'list')
+        try:
+            modis_data = load_modis_data(volcano, start, end)
+            modis_radiance = process_radiative_power(modis_data)
+            ret_data['modis'] = modis_radiance.to_dict(orient = 'list')
+        except FileNotFoundError:
+            pass
 
     if not ret_data:
         return flask.abort(400, 'No valid datasets requested')
@@ -149,14 +154,20 @@ def plot_image_detect_percent(volcano, start = None, end = None):
         return flask.abort(400, 'No datasets requested')
 
     if 'VIIRS' in requested:
-        viirs_data = load_viirs_data(volcano, start, end)
-        viirs_data = process_percent_data(viirs_data)
-        ret_data['viirs'] = viirs_data.to_dict(orient = 'list')
+        try:
+            viirs_data = load_viirs_data(volcano, start, end)
+            viirs_data = process_percent_data(viirs_data)
+            ret_data['viirs'] = viirs_data.to_dict(orient = 'list')
+        except FileNotFoundError:
+            pass
 
     if 'MODIS' in requested:
-        modis_data = load_modis_data(volcano, start, end)
-        modis_data = process_percent_data(modis_data)
-        ret_data['modis'] = modis_data.to_dict(orient = 'list')
+        try:
+            modis_data = load_modis_data(volcano, start, end)
+            modis_data = process_percent_data(modis_data)
+            ret_data['modis'] = modis_data.to_dict(orient = 'list')
+        except FileNotFoundError:
+            pass
 
     if not ret_data:
         return flask.abort(400, 'No valid datasets requested')
