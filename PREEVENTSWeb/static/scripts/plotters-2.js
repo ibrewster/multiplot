@@ -526,7 +526,7 @@ function plot_image_detect_percent(data){
 
     if(typeof(modis_data)!=='undefined'){
         plotData.push(gen_detect_percent_data_def(modis_data,'MODIS','#079BF5'));
-        exportData['MODIS']=[modis_data['date'],modis_data['hyst_radiance']];
+        exportData['MODIS']=[modis_data['date'],modis_data['percent']];
     }
 
     $(this).data('exportData',exportData);
