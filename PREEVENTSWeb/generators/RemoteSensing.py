@@ -24,7 +24,8 @@ SELECT DISTINCT
     date,
     ((mass_prelim*1000)/plume_age)*24 as rate,
     keyword.keyword_id as type,
-    icon
+    icon,
+    mass_prelim as mass
 FROM report
 LEFT JOIN report_volcano AS rv ON report.report_id=rv.report_id
 LEFT JOIN report_volcano_keyword AS rvk ON rv.report_volcano_id=rvk.report_volcano_id
@@ -94,7 +95,7 @@ def rs_detections(volcano, start, end) -> pandas.DataFrame:
         str(x): grouped_data.get_group(x)['date'].tolist()
         for x in found_types
     }
-    
+
     return result
 
 
@@ -110,3 +111,10 @@ def so2_rate(volcano, start, end) -> pandas.DataFrame:
 
     data['date'] = data['date'].apply(lambda x: x.isoformat())
     return data.to_dict(orient = "list")
+
+
+@generator("SO2 Mass")
+def so2_mass(volcano, start, end) -> pandas.DataFrame:
+    # No calculations needed, so just use the same function here.
+    return so2_rate(volcano, start, end)
+

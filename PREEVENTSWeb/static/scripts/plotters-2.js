@@ -184,6 +184,10 @@ function so2_rate(data){
     return generic_plot.call(this, data,"EM Rate","rate")
 }
 
+function so2_mass(data){
+    return generic_plot.call(this, data,"SO<sub>2</sub> Mass (kt)","mass")
+}
+
 ///////////////////////////////////////////////////////////////////////
 // More advanced plotting functions that don't lend themselves
 // to using the generic plotting function due to extensive differences
@@ -361,7 +365,7 @@ function plot_color_code(data){
     $(this).data('exporter',exportColorCode);
 
 
-    // the last record in this dataset is a "dummy" record, provided to prevent 
+    // the last record in this dataset is a "dummy" record, provided to prevent
     // off-by-one errors when running this loop, and "fill" the last color
     // code to the end date
     for(let i=1;i<data.length;i++){
@@ -422,7 +426,7 @@ function plot_radiative_power(data){
     const modis_data=data['modis']
 
     $(this).data('exporter',exportThermalData);
-    
+
     const exportData={};
     if(typeof(viirs_data)!=='undefined'){
         plotData.push(gen_radiative_data_def(viirs_data,'VIIRS','#FF0000'))

@@ -1,34 +1,3 @@
-// function downloadPlotData(){
-//     const plot=$(this).closest('.plot').find('.js-plotly-plot').get(0);
-//     const type=$(this).siblings('.plotSelect').find('option:selected').val();
-
-//     let category,label;
-//     [category,label] = type.split('|');
-
-//     // not using these at the moment, as the data downloaded 
-//     // may not be limited to the displayed date range.
-//     const dateFrom=$('#dateFrom').val();
-//     const dateTo=$('#dateTo').val();
-
-//     const x=plot.data[0].x;
-//     const y=plot.data[0].y;
-
-//     let csvContent="data:text/csv;charset=utf-8,"
-//     for(let i=0;i<x.length;i++){
-//         csvContent+=`${x[i]},${y[i]}\r\n`
-//     }
-
-//     const encodedUri=encodeURI(csvContent);
-//     const volc=$('.volcWrapper:visible').data('volc');
-//     const file_name=`${category}_${label}_${x[0]}_${x[x.length-1]}.csv`
-
-//     $('#downloadLink')
-//     .attr('download',file_name)
-//     .attr('href',encodedUri)
-//     .get(0)
-//     .click()
-// }
-
 function downloadPlotData(){
     const plotDiv=$(this).closest('div.plot').find('div.plotContent');
     const type=$(this).siblings('.plotSelect').find('option:selected').val();
