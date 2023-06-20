@@ -1,0 +1,16 @@
+[Unit]
+Description = Multidisciplinary graphing tool
+After = network.target
+
+[Service]
+ExecStart = /apps/multiplot/env/bin/gunicorn -c /apps/multiplot/OtherFiles/gunicorn.conf.py
+WorkingDirectory=/apps/multiplot
+User=nginx
+Group=nginx
+RuntimeDirectory = multiplot
+RuntimeDirectoryMode = 777
+Restart=on-failure
+RestartSec=15s
+
+[Install]
+WantedBy = multi-user.target
