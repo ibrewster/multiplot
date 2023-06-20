@@ -135,11 +135,13 @@ function createPlotDiv(type){
     const typeSelect=$('<ul class="plotSelectMenu" style="display:none">')
 
     let curCat=null;
+    let curCatTitle=''
     for(const plot of plotTypes){
         let opt;
         if(typeof(plot)=='string' && plot.startsWith('-')){
             opt=$('<li class="plot-cat-group">')
-            let title=$('<div>').html(plot.replaceAll('---',''))
+            curCatTitle=plot.replaceAll('---','')
+            let title=$('<div>').html(curCatTitle)
             opt.append(title)
             curCat=$('<ul>')
             opt.append(curCat)
@@ -151,9 +153,11 @@ function createPlotDiv(type){
             opt=$('<li>');
             opt.append($('<div>').html(label))
             opt.data('tag',tag)
+            opt.data('category',curCatTitle)
+            opt.data('label',label)
             if(typeof(type)!='undefined' && type==tag){
                 typeDisplay.data('plotType',tag)
-                typeDisplay.text(label)
+                typeDisplay.html(`${curCatTitle} - ${label}`)
             }
             curCat.append(opt)
         }
@@ -193,7 +197,9 @@ function plotSelectSelected(event, ui){
 
     hideMenu();
     const selectButton=item.closest('.typeSelectWrapper').find('.plotSelect')
-    selectButton.text(item.children('div').text())
+    const label=item.data('label')
+    const cat=item.data('category')
+    selectButton.html(`${cat} - ${label}`)
     selectButton.data('plotType',plotType);
     plotTypeChanged.call(selectButton.get(0))
 }
