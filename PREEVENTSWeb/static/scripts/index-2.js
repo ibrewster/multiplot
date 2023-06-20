@@ -13,6 +13,7 @@ $(document).ready(function(){
     }
 
     $(document).on('change','.plotSelect', plotTypeChanged);
+    $(document).on('click','.plotSelect',selectPlotType);
     $(document).on('click','div.removePlot',removePlotDiv);
     $(document).on('click','div.download',downloadPlotData);
 
@@ -44,7 +45,14 @@ $(document).ready(function(){
     // Create one plot by default, the color code plot
     createPlotDiv('General|Color Code')
 
+    $('#menuGuard').click(hideMenu)
+
 });
+
+function hideMenu(){
+    $('.plotSelectMenu:visible').hide()
+    $('#menuGuard').hide();
+}
 
 function setTheme(colorScheme){
     if(colorScheme!=='dark' && colorScheme!=='light'){
@@ -75,25 +83,25 @@ function sizeAndPrint(){
             Plotly.relayout(this,{'width':WIDTH});
             Plotly.Plots.resize(this);
         });
-        
+
         calcPageBreaks();
-    
+
         //slight delay here so things can figure themselves out
         setTimeout(function(){
             window.print();
-    
+
             setTimeout(function(){
                 console.log('Relayout back to original size')
                 $('.plotContent').each(function(){
                    Plotly.relayout(this,{'width':null});
                    Plotly.Plots.resize(this);
                 });
-        
+
                 setTheme(lastStyle);
             },500) //let the print dialog open and block execution
         },500) // let the size relayout display
     },500) //let the theme change display
-  
+
 }
 
 const PAGE_HEIGHT=984;
@@ -121,41 +129,74 @@ function calcPageBreaks(){
 function createPlotDiv(type){
     const dest=$('#plots')
     const div=$('<div class="plot">')
-    const typeSelect=$('<select class="plotSelect">')
-    typeSelect.append('<option value="">Select...</option>')
 
+    const typeDisplay=$('<div class="plotSelect">')
+    typeDisplay.text('Select...')
+
+    const typeSelect=$('<ul class="plotSelectMenu" style="display:none">')
+
+    let curCat=null;
     for(const plot of plotTypes){
         let opt;
         if(typeof(plot)=='string' && plot.startsWith('-')){
-            opt=`<optgroup label="${plot}"></optgroup`
+            opt=$('<li class="plot-cat-group">')
+            let title=$('<div>').html(plot.replaceAll('---',''))
+            opt.append(title)
+            curCat=$('<ul>')
+            opt.append(curCat)
+            typeSelect.append(opt)
         }
         else{
             let tag,label;
             [tag,label]=plot
-            opt=$('<option>');
-            opt.text(label)
-            opt.val(tag)
+            opt=$('<li>');
+            opt.append($('<div>').html(label))
+            opt.data('tag',tag)
             if(typeof(type)!='undefined' && type==tag){
-                opt.attr('selected',true)
+                typeDisplay.data('plotType',tag)
+                typeDisplay.text(label)
             }
+            curCat.append(opt)
         }
-        typeSelect.append(opt)
     }
     const selectDiv=$('<div class="typeSelectWrapper">')
+    selectDiv.append(typeDisplay)
     selectDiv.append(typeSelect)
+    typeSelect.menu({
+        focus:plotSelectFocused,
+        select:plotSelectSelected
+    })
 
     const downloadDiv=$('<div class="download">');
     downloadDiv.html(downloadSVG());
     selectDiv.append(downloadDiv);
 
     div.append(selectDiv)
-    div.append('<div class="plotContent"><div class="placeholder"><---Select a plot type</div></div>')
+    div.append('<div class="plotContent"><div class="placeholder">Select a plot type</div></div>')
     div.append('<div class=removePlot>&times;</div>')
     dest.append(div)
 
     if(typeof(type)!=='undefined'){
-        typeSelect.change()
+        plotTypeChanged.call(typeDisplay.get(0));
     }
+}
+
+function plotSelectFocused(event, ui){
+
+}
+
+function plotSelectSelected(event, ui){
+    const item=ui.item;
+    const plotType=item.data('tag')
+    if(typeof(plotType)=='undefined'){
+        return; //not a plot type
+    }
+
+    hideMenu();
+    const selectButton=item.closest('.typeSelectWrapper').find('.plotSelect')
+    selectButton.text(item.children('div').text())
+    selectButton.data('plotType',plotType);
+    plotTypeChanged.call(selectButton.get(0))
 }
 
 function refreshPlots(){
@@ -243,8 +284,14 @@ function setLayoutDefaults(layout,showLabels){
     return layout;
 }
 
+function selectPlotType(){
+    const plotSelectMenu=$(this).parent().find('.plotSelectMenu')
+    plotSelectMenu.show();
+    $('#menuGuard').show();
+}
+
 function plotTypeChanged(){
-    const plotType=this.value;
+    const plotType=$(this).data('plotType');
 
     //add any custom components needed
     const custFunc=CUSTOM_SELECTORS[plotType];
@@ -262,7 +309,7 @@ function plotTypeChanged(){
 }
 
 function getPlotArgs(){
-    const plotType=this.value;
+    const plotType=$(this).data('plotType');
 
     const volcano=$('#volcano').val()
     const dateFrom=$('#dateFrom').val()
