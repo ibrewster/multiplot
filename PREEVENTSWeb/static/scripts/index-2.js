@@ -12,7 +12,6 @@ $(document).ready(function(){
         $('body').removeClass('dark');
     }
 
-    $(document).on('change','.plotSelect', plotTypeChanged);
     $(document).on('click','.plotSelect',selectPlotType);
     $(document).on('click','div.removePlot',removePlotDiv);
     $(document).on('click','div.download',downloadPlotData);
@@ -52,6 +51,7 @@ $(document).ready(function(){
 function hideMenu(){
     $('.plotSelectMenu:visible').hide()
     $('#menuGuard').hide();
+    $('.plotSelect').removeClass('open');
 }
 
 function setTheme(colorScheme){
@@ -69,7 +69,6 @@ function setTheme(colorScheme){
         $('body').removeClass('dark');
     }
 
-    console.log('Calling refresh from setTheme');
     refreshPlots();
 }
 
@@ -200,7 +199,7 @@ function plotSelectSelected(event, ui){
 }
 
 function refreshPlots(){
-    $('select.plotSelect').each(function(){
+    $('div.plotSelect').each(function(){
         genPlot.call(this);
     });
 }
@@ -288,6 +287,7 @@ function selectPlotType(){
     const plotSelectMenu=$(this).parent().find('.plotSelectMenu')
     plotSelectMenu.show();
     $('#menuGuard').show();
+    $(this).addClass('open');
 }
 
 function plotTypeChanged(){
@@ -345,6 +345,7 @@ function genPlot(){
     const args=getPlotArgs.call(this);
 
     $.getJSON('getPlot',args).done(function(data){
+        Plotly.purge(plotElement)
         const plotType=args['plotType']
 
         let plotData,layout;

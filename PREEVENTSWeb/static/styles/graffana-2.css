@@ -84,7 +84,7 @@ body.dark .plotSelect{
     color: rgb(204,204,220);
 }
 
-body.dark .plotSelect:hover{
+body.dark .plotSelect:hover, body.dark .plotSelect.open{
     background-color:#ccccdc29;
 }
 
