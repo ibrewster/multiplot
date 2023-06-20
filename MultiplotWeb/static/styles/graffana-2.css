@@ -48,6 +48,10 @@ input {
     line-height:1.571429em;
 }
 
+body.dark div.sort{
+    background-image:url('../img/reorder-white.svg');
+}
+
 body.dark input {
     background-color: rgb(17,18,23);
     color:rgb(204,204,220);

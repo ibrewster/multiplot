@@ -46,6 +46,11 @@ $(document).ready(function(){
 
     $('#menuGuard').click(hideMenu)
 
+    $('#plots').sortable({
+        handle:'div.sort',
+        update:refreshPlots
+    })
+
 });
 
 function hideMenu(){
@@ -176,7 +181,10 @@ function createPlotDiv(type){
 
     div.append(selectDiv)
     div.append('<div class="plotContent"><div class="placeholder">Select a plot type</div></div>')
-    div.append('<div class=removePlot>&times;</div>')
+    const rightDiv=$('<div class="right">')
+    rightDiv.append('<div class=sort>')
+    rightDiv.append('<div class=removePlot>&times;</div>')
+    div.append(rightDiv)
     dest.append(div)
 
     if(typeof(type)!=='undefined'){

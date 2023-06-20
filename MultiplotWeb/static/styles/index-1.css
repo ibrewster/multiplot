@@ -32,10 +32,25 @@ div.plot{
     margin-bottom:8px;
 }
 
+.right{
+    align-self:center;
+}
+
 .removePlot{
     cursor:pointer;
     font-size:150%;
     align-self:center;
+    text-align:center;
+}
+
+.sort{
+    cursor: move;
+    height:32px;
+    width: 32px;
+    background-image:url('../img/reorder.svg');
+    background-size:contain;
+    background-repeat:no-repeat;
+    background-position:center;
 }
 
 div.placeholder{
@@ -207,6 +222,10 @@ div.rsTypesFooter{
     }
 
     .download {
+        display:none;
+    }
+
+    .sort {
         display:none;
     }
 
