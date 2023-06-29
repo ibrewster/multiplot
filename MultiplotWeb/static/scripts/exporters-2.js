@@ -1,6 +1,6 @@
 function downloadPlotData(){
     const plotDiv=$(this).closest('div.plot').find('div.plotContent');
-    const type=$(this).siblings('.plotSelect').find('option:selected').val();
+    const type=$(this).siblings('.plotSelect').data('plotType');
 
     let category,label;
     [category,label] = type.split('|');
