@@ -350,16 +350,25 @@ let isSpatial=false;
 function genPlot(){
     const plotDiv=$(this).parent().siblings('div.plotContent');
     const plotContainer=$(this).closest('div.plot');
-
-    plotDiv.find('.placeholder').remove();
-
     const plotElement=plotDiv.get(0);
     const showXLabels=plotContainer.is(':last-child');
-
     const args=getPlotArgs.call(this);
+    const placeholder=plotDiv.find('.placeholder')
+    
+    if(typeof(args.plotType)=='undefined'){
+        //no plot selected. Don't do anything
+        return;
+    }
+    
+    if(placeholder.length>0){
+        placeholder.text("Fetching data. Please wait...")
+    }
 
     $.getJSON('getPlot',args).done(function(data){
         Plotly.purge(plotElement)
+        
+        placeholder.remove();
+        
         const plotType=args['plotType']
 
         let plotData,layout;

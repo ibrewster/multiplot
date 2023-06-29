@@ -3,7 +3,7 @@ import flask
 
 from dateutil.parser import parse
 
-from . import app, utils
+from . import app, utils, google
 
 
 @app.route('/')
@@ -50,3 +50,9 @@ def get_plot():
     return data
 
 
+@app.route('/getDetails')
+def get_details():
+    plot_type = flask.request.args['plotType']
+    details = google.get_data()
+    print(details)
+    return flask.jsonify(details)
