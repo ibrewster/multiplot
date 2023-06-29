@@ -66,6 +66,11 @@ def so2_rate_carn(volcano, start, end):
     em_error.drop(columns = 'is_rate', inplace = True)
     
     volc_data = pandas.merge(em_rate, em_error, on = 'year')
+    volc_data.loc[:, 'upper'] = volc_data.loc[:, 'rate'] + volc_data.loc[:, 'error']
+    volc_data.loc[:, 'lower'] = volc_data.loc[:, 'rate'] - volc_data.loc[:, 'error']
     volc_data['year'] = volc_data['year'].astype(int)
+    
+    volc_data = volc_data[volc_data['year']>=start.year]
+    volc_data = volc_data[volc_data['year']<=end.year]
     
     return volc_data.to_dict(orient = "list")

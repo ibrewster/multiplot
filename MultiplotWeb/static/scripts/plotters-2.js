@@ -641,3 +641,65 @@ function plot_diffusion(data){
 
     return [plotData, layout]
 }
+
+
+function so2_rate_carn(data){
+    const layout={
+        height:200,
+        margin:{t:5,b:20},
+        yaxis:{
+            linecolor:'black',
+            title:{
+                text:"Annual Mean<br>EM Rate (t/d)"
+            },
+            zeroline:true
+        },
+        xaxis:{
+            type:'date'
+        },
+        showlegend:false
+        
+    }
+    
+    const plotData=[
+      {
+            x: data['year'],
+            y: data['lower'],
+            line: {
+                width: 0,
+                shape: 'hv',
+    
+            },
+            mode: "lines",
+            name: "Lower Bound",
+            type: "scatter"
+        },
+        {
+            type:"scatter",
+            mode:"lines",
+            line:{ 
+                shape: 'hv',
+                color: "rgba(0,176,246,0.75)"
+            },
+            x: data['year'],
+            y: data['rate'],
+            fill:"tonexty",
+            fillcolor:"rgba(0,176,246,0.2)",
+        },
+        {
+            x: data['year'],
+            y:data['upper'],
+            fill:"tonexty",
+            fillcolor: "rgba(0,176,246,0.2)",
+            line: {
+                width:0,
+                shape: 'hv'
+            },
+            mode: "lines",
+            name: "Upper Bound",
+            type: "scatter"
+        }
+    ]
+    
+    return [plotData, layout]
+}
