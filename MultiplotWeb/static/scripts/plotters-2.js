@@ -643,6 +643,47 @@ function plot_diffusion(data){
 }
 
 
+function so2_mass_carn(data){
+    const layout={
+        height:200,
+        margin:{t:5,b:20},
+        yaxis:{
+            linecolor:'black',
+            title:{
+                text:"SO<sub>2</sub> Mass (kt)"
+            },
+            zeroline:true
+        },
+        xaxis:{
+            type:'date'
+        },
+        showlegend:false
+    }
+    
+    const plotData=[]
+    const starts=data['Start Date']
+    const stops=data['End Date']
+    const mass=data['Total SO2 Mass (kt)']
+    
+    for(let i=0;i<starts.length;i++){
+        let x=[starts[i],stops[i]]
+        let y=[mass[i],mass[i]]
+        let data={
+            x: x,
+            y: y,
+            mode:"lines+markers",
+            type:"scatter",
+            marker:{
+                color: "rgba(0,176,246,0.6)"
+            }
+        }
+        
+        plotData.push(data)
+    }
+    
+    return [plotData,layout]
+}
+
 function so2_rate_carn(data){
     const layout={
         height:200,
@@ -658,7 +699,6 @@ function so2_rate_carn(data){
             type:'date'
         },
         showlegend:false
-        
     }
     
     const plotData=[

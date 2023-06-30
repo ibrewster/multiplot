@@ -74,3 +74,29 @@ def so2_rate_carn(volcano, start, end):
     volc_data = volc_data[volc_data['year']<=end.year]
     
     return volc_data.to_dict(orient = "list")
+
+@generator("SO<sub>2</sub> Mass (Carn)")
+def so2_mass_carn(volcano, start, end):
+    data_filename = "GVP_Emission_Results.csv"
+    data_path = os.path.join(utils.DATA_DIR, data_filename)
+    data = pandas.read_csv(
+        data_path,
+        header = 1,
+        index_col = "Volcano Name",
+        parse_dates = ['Start Date', 'End Date']
+    )
+    
+    try:
+        volc_data = data.loc[volcano].reset_index()
+    except KeyError:
+        return flask.abort(404)
+    
+    # Filter by date
+    volc_data = volc_data[volc_data['End Date'] >= start]
+    volc_data = volc_data[volc_data['Start Date'] <= end]
+    
+    volc_data = volc_data[['Start Date', 'End Date', 'Total SO2 Mass (kt)']]
+    volc_data['Start Date'] = volc_data['Start Date'].apply(lambda x: x.isoformat())
+    volc_data['End Date'] = volc_data['End Date'].apply(lambda x: x.isoformat())
+    
+    return volc_data.to_dict(orient = "list")
