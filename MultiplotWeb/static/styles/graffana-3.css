@@ -70,5 +70,11 @@ body.dark{
     & .download path{
         fill:whitesmoke;
     }
+    
+    .help{
+        background-color:#181b1f;
+        color:rgb(204,204,220);
+        border: 1px solid rgba(204,204,220,0.07);
+    }
 
 }

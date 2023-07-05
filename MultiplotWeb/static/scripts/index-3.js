@@ -1,4 +1,5 @@
 let theme='dark'
+let plotDescriptions={}
 
 $(document).ready(function(){
     if(localStorage.theme){
@@ -50,6 +51,11 @@ $(document).ready(function(){
         handle:'div.sort',
         update:refreshPlots
     })
+    
+    $.getJSON('getDescriptions').
+    done(function(data){
+        plotDescriptions=data
+    })
 
 });
 
@@ -57,6 +63,7 @@ function hideMenu(){
     $('.plotSelectMenu:visible').hide()
     $('#menuGuard').hide();
     $('.plotSelect').removeClass('open');
+    $('.help').hide();
 }
 
 function setTheme(colorScheme){
@@ -135,7 +142,15 @@ function createPlotDiv(type){
     const div=$('<div class="plot">')
 
     const typeDisplay=$('<div class="plotSelect">')
-    typeDisplay.text('Select...')
+    typeDisplay.html('<div class="typeString">Select...</div>')
+
+    const helpDiv=$('<div class=help style="display:none;">')
+    helpDiv.append('<div class=category>')
+    helpDiv.append('<div class=dataset>')
+    helpDiv.append('<div class=description>')
+    
+    typeDisplay.prepend(helpDiv)
+
 
     const typeSelect=$('<ul class="plotSelectMenu" style="display:none">')
 
@@ -150,6 +165,8 @@ function createPlotDiv(type){
             opt.append(title)
             curCat=$('<ul>')
             opt.append(curCat)
+            opt.data('category',curCatTitle)
+            opt.data('label','')
             typeSelect.append(opt)
         }
         else{
@@ -162,11 +179,12 @@ function createPlotDiv(type){
             opt.data('label',label)
             if(typeof(type)!='undefined' && type==tag){
                 typeDisplay.data('plotType',tag)
-                typeDisplay.html(`${curCatTitle} - ${label}`)
+                typeDisplay.find('.typeString').html(`${curCatTitle} - ${label}`)
             }
             curCat.append(opt)
         }
     }
+    
     const selectDiv=$('<div class="typeSelectWrapper">')
     selectDiv.append(typeDisplay)
     selectDiv.append(typeSelect)
@@ -193,7 +211,31 @@ function createPlotDiv(type){
 }
 
 function plotSelectFocused(event, ui){
-
+    const item=ui.item;
+    const selectButton=item.closest('.typeSelectWrapper').find('.plotSelect')
+    const help=selectButton.find('.help')
+    
+    const label=item.data('label')
+    const cleanLabel=$('<div>').html(label).text()
+    const cat=item.data('category')
+    const cleanCat=$('<div>').html(cat).text()
+    
+    let description="No Description Provided"
+    try {
+        description = plotDescriptions[cleanCat][cleanLabel]
+    } catch (error) {
+        help.hide();
+        return;
+    }
+    
+    if(typeof(description)=='undefined' || description===null){
+        description="No Description Provided"
+    }
+    
+    help.show();
+    help.children('.category').html(cat)
+    help.children('.dataset').html(label)
+    help.children('.description').html(description)
 }
 
 function plotSelectSelected(event, ui){
@@ -207,7 +249,7 @@ function plotSelectSelected(event, ui){
     const selectButton=item.closest('.typeSelectWrapper').find('.plotSelect')
     const label=item.data('label')
     const cat=item.data('category')
-    selectButton.html(`${cat} - ${label}`)
+    selectButton.find('div.typeString').html(`${cat} - ${label}`)
     selectButton.data('plotType',plotType);
     plotTypeChanged.call(selectButton.get(0))
 }

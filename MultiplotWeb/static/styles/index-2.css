@@ -229,6 +229,28 @@ select {
     border-color:black;
 }
 
+.help{
+    position:absolute;
+    right:100%;
+    box-shadow:0 8px 24px #010409;
+    background-color:white;
+    z-index:501;
+    padding:10px;
+    margin-right:10px;
+    border:1px solid;
+    width:200px;
+    
+}
+
+.help > .category {
+    font-weight:bold;
+}
+
+.help > .dataset{
+    font-weight:bold;
+    margin-bottom:10px;
+}
+
 @media print{
     @page {
         size:letter portrait;
@@ -255,6 +277,10 @@ select {
     }
 
     .sort {
+        display:none;
+    }
+    
+    .help {
         display:none;
     }
 

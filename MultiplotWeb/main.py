@@ -1,6 +1,7 @@
 import json
 import flask
 
+from collections import defaultdict
 from dateutil.parser import parse
 
 from . import app, utils, google
@@ -53,6 +54,18 @@ def get_plot():
 @app.route('/getDetails')
 def get_details():
     plot_type = flask.request.args['plotType']
+    cat, label = plot_type.split('|')
     details = google.get_data()
-    print(details)
-    return flask.jsonify(details)
+    description = details.loc[cat, label]
+    return flask.jsonify(description)
+
+@app.route('/getDescriptions')
+def get_descriptions():
+    data = google.get_data()
+    data['Category'] = data['Category'].apply(lambda x: '' if not x else x)
+    data['Dataset'] = data['Dataset'].apply(lambda x: '' if not x else x)
+    data = data[['Category', 'Dataset', 'Description']].reset_index(drop = True)
+    return_obj = defaultdict(dict)
+    for idx, row in data.iterrows():
+        return_obj[row['Category']][row['Dataset']] = row['Description']
+    return return_obj
