@@ -684,6 +684,50 @@ function so2_mass_carn(data){
     return [plotData,layout]
 }
 
+function so2_em_rate_combined(data){
+    const carn_data=data.carn
+    const avo_data=data.avo
+    let plotData=[]
+    
+    const layout={
+        height:200,
+        margin:{t:5,b:20},
+        yaxis:{
+            linecolor:'black',
+            title:{
+                text:"EM Rate (t/d)"
+            },
+            zeroline:true
+        },
+        xaxis:{
+            type:'date'
+        },
+        showlegend:true,
+        legend:{
+            x:0,
+            y:1,
+            font:{
+                color:'rgb(204,204,220)'
+            }
+        }
+    }
+    
+    if (typeof(carn_data)!='undefined'){
+        let carn_plot, carn_layout;
+        [carn_plot, carn_layout]=so2_rate_carn(carn_data)
+        plotData=plotData.concat(carn_plot)
+    }
+    
+    if(typeof(avo_data)!='undefined'){
+        let avo_plot,avo_layout;
+        [avo_plot,avo_layout]=so2_rate(avo_data)
+        avo_plot[0]['name']='AVO'
+        plotData=plotData.concat(avo_plot)
+    }
+    
+    return [plotData,layout]
+}
+
 function so2_rate_carn(data){
     const layout={
         height:200,
@@ -712,7 +756,8 @@ function so2_rate_carn(data){
             },
             mode: "lines",
             name: "Lower Bound",
-            type: "scatter"
+            type: "scatter",
+            showlegend: false,
         },
         {
             type:"scatter",
@@ -725,6 +770,7 @@ function so2_rate_carn(data){
             y: data['rate'],
             fill:"tonexty",
             fillcolor:"rgba(0,176,246,0.2)",
+            name:'Carn'
         },
         {
             x: data['year'],
@@ -737,7 +783,8 @@ function so2_rate_carn(data){
             },
             mode: "lines",
             name: "Upper Bound",
-            type: "scatter"
+            type: "scatter",
+            showlegend: false,
         }
     ]
     

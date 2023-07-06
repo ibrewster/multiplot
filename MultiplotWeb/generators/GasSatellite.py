@@ -8,19 +8,18 @@ CATEGORY = "Gas - Satellite SO<sub>2</sub>"
 
 import os
 
-from datetime import timedelta
 from urllib.parse import parse_qs
 
 import flask
 import pandas
 
 from .RemoteSensing import get_detection_data
-from .. import utils
+from .. import utils, app
 from ..utils import generator
 
 
 
-@generator("SO<sub>2</sub> Emission Rate (AVO)")
+#@generator("SO<sub>2</sub> Emission Rate (AVO)")
 def so2_rate(volcano, start, end) -> pandas.DataFrame:
     data = get_detection_data(volcano, start, end)
 
@@ -28,7 +27,7 @@ def so2_rate(volcano, start, end) -> pandas.DataFrame:
     data = data[data['type'] == 9]
     data.dropna(inplace = True)
     if data.size <= 0:
-        return {}
+        raise FileNotFoundError
 
     data['date'] = data['date'].apply(lambda x: x.isoformat())
     return data.to_dict(orient = "list")
@@ -39,7 +38,7 @@ def so2_mass(volcano, start, end) -> pandas.DataFrame:
     # No calculations needed, so just use the same function here.
     return so2_rate(volcano, start, end)
 
-@generator("SO<sub>2</sub> Emission Rate (Carn)")
+#@generator("SO<sub>2</sub> Emission Rate (Carn)")
 def so2_rate_carn(volcano, start, end):
     data_filename = "Carn2017Alaska.csv"
     data_path = os.path.join(utils.DATA_DIR, data_filename)
@@ -47,7 +46,7 @@ def so2_rate_carn(volcano, start, end):
     try:
         volc_data = data.loc[volcano].to_frame().reset_index(drop = False)
     except KeyError:
-        return flask.abort(404)
+        raise FileNotFoundError
     
     rate_data = volc_data = volc_data[~pandas.to_numeric(volc_data['index'], errors = 'coerce').isnull()]
     rate_data.rename(columns = {'index': 'year'}, inplace = True)
@@ -74,6 +73,32 @@ def so2_rate_carn(volcano, start, end):
     volc_data = volc_data[volc_data['year']<=end.year]
     
     return volc_data.to_dict(orient = "list")
+
+@generator("SO<sub>2</sub> Emission Rate")
+def so2_em_rate_combined(volcano, start, end):
+    ret_data = {}
+    query = flask.request.args.get('addArgs', '')
+    requested = parse_qs(query).get('dataTypes', ['carn', 'avo'])
+    
+    if not requested:
+        return flask.abort(400, 'No datasets requested')
+    
+    if 'carn' in requested:
+        try:
+            carn = so2_rate_carn(volcano, start, end)
+            ret_data['carn'] = carn
+        except FileNotFoundError:
+            app.logger.error('Unable to load so2 rate (CARN) for selected options')
+        
+    if 'avo' in requested:
+        try:
+            avo = so2_rate(volcano, start, end)
+            ret_data['avo'] = avo
+        except FileNotFoundError:
+            app.logger.error("Unable to load so2 rate (AVO) for selected options")
+            
+    return ret_data
+    
 
 @generator("SO<sub>2</sub> Mass (Carn)")
 def so2_mass_carn(volcano, start, end):
