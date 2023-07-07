@@ -107,7 +107,7 @@ div.typeSelectWrapper{
     padding-top:8px;
 }
 
-div.rsTypeSelector{
+div.typeSelector{
     position:fixed;
     left:50%;
     top:25%;
@@ -122,7 +122,7 @@ div.rsTypeSelector{
     z-index:100
 }
 
-div.rsTypeHeader{
+div.typeHeader{
     font-weight:bold;
     text-align:center;
     border-bottom:2px inset;
@@ -130,12 +130,12 @@ div.rsTypeHeader{
     margin-bottom:10px;
 }
 
-div.rsTypes{
+div.selectorTypes{
     padding-left:10px;
     padding-right:10px;
 }
 
-div.rsTypesFooter{
+div.typesFooter{
     text-align: right;
     padding-right: 10px;
     border-top:1px solid;

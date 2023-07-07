@@ -348,11 +348,16 @@ function selectPlotType(){
 
 function plotTypeChanged(){
     const plotType=$(this).data('plotType');
-
-    //add any custom components needed
-    const custFunc=CUSTOM_SELECTORS[plotType];
+    
     //remove any existing custom selectors
     $(this).siblings('.customSelector').remove();
+
+    // add any custom components needed.
+    // Custom component function is named the same as the 
+    // plot function, but with _selector appended.
+    const selector=plotFuncs[plotType]+"_selector"
+    const custFunc=window[selector];
+
     if(typeof(custFunc)!=="undefined"){
         const selector=$('<div class="customSelector">')
         selector.append(custFunc());

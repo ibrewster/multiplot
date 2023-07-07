@@ -123,13 +123,13 @@ def rs_detections(volcano, start, end) -> pandas.DataFrame:
 
     rs_types = {
         'Ash': [4],
-        'so2': [9],
-        'surfaceTemp': [35, 40, 45],
+        'SO2': [9],
+        'ElevatedTemps': [35, 40, 45],
     }
 
     types_string = flask.request.args.get('addArgs')
     types_dict = parse_qs(types_string)
-    types = types_dict['detectTypes']
+    types = types_dict['types']
     selectedTypes = []
     for rstype in types:
         selectedTypes += rs_types[rstype]
@@ -200,7 +200,7 @@ def plot_radiative_power(volcano, start = None, end = None):
     ret_data = {}
     query_string = flask.request.args.get('addArgs', '')
     # Default to everything if nothing provided
-    requested = parse_qs(query_string).get('dataTypes', ['VIIRS', 'MODIS'])
+    requested = parse_qs(query_string).get('types', ['VIIRS', 'MODIS'])
 
     if not requested:
         return flask.abort(400, 'No datasets requested')
@@ -232,7 +232,7 @@ def plot_image_detect_percent(volcano, start = None, end = None):
     ret_data = {}
     query_string = flask.request.args.get('addArgs', '')
     # Default to everything if nothing provided
-    requested = parse_qs(query_string).get('dataTypes', ['VIIRS', 'MODIS'])
+    requested = parse_qs(query_string).get('types', ['VIIRS', 'MODIS'])
 
     if not requested:
         return flask.abort(400, 'No datasets requested')

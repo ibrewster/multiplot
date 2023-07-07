@@ -1,82 +1,89 @@
 //---------Custom plot selectors--------//
-CUSTOM_SELECTORS={
-    'Remote Sensing|Detections':addRSTypeSelector,
-    'Thermal|Radiative Power':addThermalTypeSelector,
-    'Thermal|Detection Percent':addThermalTypeSelector
-}
+// Selectors are tied to the plot by function name.
+// The name of the function to generate the selector "widget" will
+// be the same as the name of the plot function, with "_sselector" appended.
 
-/////////////////////////////////
-// Remote sensing detection type selector
-////////////////////////////////
-function addRSTypeSelector(){
-    const selButton=$('<button>');
-    selButton.text("Select Types...");
-    selButton.click(showRSTypeSelector);
-
-    const selectorHTML=`
-        <div class="rsTypeSelector" style="display:none">
-            <div class=rsTypeHeader>Select detection types to show</div>
-            <form class="addArgs">
-                <div class=rsTypes>
-                    <input type="checkbox" id="rsAshType" name="detectTypes" checked value="Ash">
-                    <label for="rsAshType">Ash</label>
-                    <input type="checkbox" id="rsSO2Type" name="detectTypes" checked value="so2">
-                    <label for="rsSO2Type">SO <sub>2</sub></label>
-                    <input type="checkbox" id="rsTempType" name="detectTypes" checked value="surfaceTemp">
-                    <label for="rsTempType">Elevated Temps</label>
-                </div>
-            </form>
-            <div class="rsTypesFooter">
-                <button type="button" class="close" onclick="closeRSTypeSelector(this)">Close</button>
-            </div>
-        </div>
-    `
-    const wrapper=$('<div class="rsTypeSelectorWrapper">');
-    wrapper.append(selButton);
-    wrapper.append(selectorHTML);
-    return wrapper;
-}
-
-function closeRSTypeSelector(button){
-    $(button).closest('.rsTypeSelector').hide();
+// Selector utility functions to open/close the selector windows
+function closeTypeSelector(button){
+    $(button).closest('.typeSelector').hide();
     const select=$(button).closest('.typeSelectWrapper').find('.plotSelect');
     genPlot.call(select.get(0));
 }
 
-function showRSTypeSelector(){
-    $(this).closest('div').find('.rsTypeSelector').show();
+function showTypeSelector(){
+    $(this).closest('div').find('.typeSelector').show();
 }
 
-function addThermalTypeSelector(){
-    const selButton=$('<button>');
-    selButton.text("Select Types...");
-    selButton.click(showRSTypeSelector);
+// Utility function to generate a generic type selector with various options
+function generate_type_selector(types, header, label){
+    if(typeof(label)=='undefined'){
+        label="Select Types..."
+    }
 
-    const selectorHTML=`
-        <div class="rsTypeSelector" style="display:none">
-            <div class=rsTypeHeader>Select Data Types to Show</div>
+    const selButton=$('<button>');
+    selButton.text(label);
+    selButton.click(showTypeSelector);
+
+    let selectorHTML=`
+        <div class="typeSelector" style="display:none">
+            <div class=typeHeader>${header}</div>
             <form class="addArgs">
-                <div class=rsTypes>
-                    <input type="checkbox" id="rsVIIRSType" name="dataTypes" value="VIIRS" checked>
-                    <label for="rsVIIRSType">VIIRS</label>
-                    <input type="checkbox" id="rsAQUAType" name="dataTypes" value="MODIS" checked>
-                    <label for="rsSO2Type">MODIS</label>
+                <div class=selectorTypes>
+    `
+    
+    for(let item of types){
+        //strip any HTML tags
+        let cleanItem=$('<div>').html(item).text();
+        //remove spaces
+        cleanItem=cleanItem.replace(' ','')
+        
+        selectorHTML+=`
+            <input type="checkbox" id="${cleanItem}Type" name="types" checked value="${cleanItem}">
+            <label for="${cleanItem}Type">${item}</label>
+        `
+    }
+    
+    selectorHTML+=`
                 </div>
             </form>
-            <div class="rsTypesFooter">
-                <button type="button" class="close" onclick="closeRSTypeSelector(this)">Close</button>
+            <div class="typesFooter">
+                <button type="button" class="close" onclick="closeTypeSelector(this)">Close</button>
             </div>
         </div>
     `
-    const wrapper=$('<div class="rsTypeSelectorWrapper">');
+    const wrapper=$('<div class="typeSelectorWrapper">');
     wrapper.append(selButton);
     wrapper.append(selectorHTML);
     return wrapper;
+}
+
+
+// Remote sensing detection type selector
+function rs_detections_selector(){
+    const types=['Ash','SO <sub>2</sub>','Elevated Temps']
+    selectorHTML=generate_type_selector(types,"Select detection types to show")
+    return selectorHTML
+}
+
+// Thermal detection type selector
+function plot_radiative_power_selector(){
+    const types=['VIIRS','MODIS']
+    selectorHTML=generate_type_selector(types,"Select Data Types to Show")
+    return selectorHTML
+}
+
+//SO2 emission rate Carn/AVO selector
+function so2_em_rate_combined_selector(){
+    const types=['AVO','Carn']
+    selectorHTML=generate_type_selector(types,"Select Datasets to Show","Select Datasets...")
+    return selectorHTML
 }
 
 ////////////////////////////////
 
 //---------PLOTTING FUNCTIONS-----------//
+
+// Plot functions are named the same as the python back-end data retreval functions
 
 
 ///////////////////////////////////////////////////////////////////
@@ -122,6 +129,7 @@ function generic_plot(data,ylabel,ydata){
 
     return [plotData, layout]
 }
+
 //////////////////////////////////////////////////////////////////
 
 //various plotting functions that use the generic_plot directly,

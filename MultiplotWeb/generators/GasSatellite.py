@@ -78,19 +78,19 @@ def so2_rate_carn(volcano, start, end):
 def so2_em_rate_combined(volcano, start, end):
     ret_data = {}
     query = flask.request.args.get('addArgs', '')
-    requested = parse_qs(query).get('dataTypes', ['carn', 'avo'])
+    requested = parse_qs(query).get('types', ['Carn', 'AVO'])
     
     if not requested:
         return flask.abort(400, 'No datasets requested')
     
-    if 'carn' in requested:
+    if 'Carn' in requested:
         try:
             carn = so2_rate_carn(volcano, start, end)
             ret_data['carn'] = carn
         except FileNotFoundError:
             app.logger.error('Unable to load so2 rate (CARN) for selected options')
         
-    if 'avo' in requested:
+    if 'AVO' in requested:
         try:
             avo = so2_rate(volcano, start, end)
             ret_data['avo'] = avo
