@@ -30,19 +30,19 @@ function generate_type_selector(types, header, label){
             <form class="addArgs">
                 <div class=selectorTypes>
     `
-    
+
     for(let item of types){
         //strip any HTML tags
         let cleanItem=$('<div>').html(item).text();
         //remove spaces
         cleanItem=cleanItem.replace(' ','')
-        
+
         selectorHTML+=`
             <input type="checkbox" id="${cleanItem}Type" name="types" checked value="${cleanItem}">
             <label for="${cleanItem}Type">${item}</label>
         `
     }
-    
+
     selectorHTML+=`
                 </div>
             </form>
@@ -74,6 +74,13 @@ function plot_radiative_power_selector(){
 
 //SO2 emission rate Carn/AVO selector
 function so2_em_rate_combined_selector(){
+    const types=['AVO','Carn']
+    selectorHTML=generate_type_selector(types,"Select Datasets to Show","Select Datasets...")
+    return selectorHTML
+}
+
+//SO2 mass Carn/AVO selector
+function so2_mass_combined_selector(){
     const types=['AVO','Carn']
     selectorHTML=generate_type_selector(types,"Select Datasets to Show","Select Datasets...")
     return selectorHTML
@@ -667,28 +674,87 @@ function so2_mass_carn(data){
         },
         showlegend:false
     }
-    
+
     const plotData=[]
     const starts=data['Start Date']
     const stops=data['End Date']
     const mass=data['Total SO2 Mass (kt)']
-    
+
     for(let i=0;i<starts.length;i++){
-        let x=[starts[i],stops[i]]
-        let y=[mass[i],mass[i]]
+        let x,y,mode
+        if(starts[i]==stops[i]){
+            x=[starts[i]]
+            y=[mass[i]]
+            mode='markers'
+        }
+        else {
+            x=[starts[i],stops[i]]
+            y=[mass[i],mass[i]]
+            mode='markers+lines'
+        }
+
         let data={
             x: x,
             y: y,
-            mode:"lines+markers",
+            mode:mode,
             type:"scatter",
             marker:{
                 color: "rgba(0,176,246,0.6)"
-            }
+            },
+            showlegend:false,
         }
-        
+
         plotData.push(data)
     }
-    
+    if(plotData.length>0){
+        plotData[0]['name']='Carn'
+        plotData[0]['showlegend']=true
+    }
+
+    return [plotData,layout]
+}
+
+function so2_mass_combined(data){
+    const carn_data=data.Carn
+    const avo_data=data.AVO
+    let plotData=[]
+
+    const layout={
+        height:200,
+        margin:{t:5,b:20},
+        yaxis:{
+            linecolor:'black',
+            title:{
+                text:"SO<sub>2</sub> Mass (kt)"
+            },
+            zeroline:true
+        },
+        xaxis:{
+            type:'date'
+        },
+        showlegend:true,
+        legend:{
+            x:0,
+            y:1,
+            font:{
+                color:'rgb(204,204,220)'
+            }
+        }
+    }
+
+    if (typeof(carn_data)!='undefined'){
+        let carn_plot, carn_layout;
+        [carn_plot, carn_layout]=so2_mass_carn(carn_data)
+        plotData=plotData.concat(carn_plot)
+    }
+
+    if(typeof(avo_data)!='undefined'){
+        let avo_plot,avo_layout;
+        [avo_plot,avo_layout]=so2_mass(avo_data)
+        avo_plot[0]['name']='AVO'
+        plotData=plotData.concat(avo_plot)
+    }
+
     return [plotData,layout]
 }
 
@@ -696,7 +762,7 @@ function so2_em_rate_combined(data){
     const carn_data=data.carn
     const avo_data=data.avo
     let plotData=[]
-    
+
     const layout={
         height:200,
         margin:{t:5,b:20},
@@ -719,20 +785,20 @@ function so2_em_rate_combined(data){
             }
         }
     }
-    
+
     if (typeof(carn_data)!='undefined'){
         let carn_plot, carn_layout;
         [carn_plot, carn_layout]=so2_rate_carn(carn_data)
         plotData=plotData.concat(carn_plot)
     }
-    
+
     if(typeof(avo_data)!='undefined'){
         let avo_plot,avo_layout;
         [avo_plot,avo_layout]=so2_rate(avo_data)
         avo_plot[0]['name']='AVO'
         plotData=plotData.concat(avo_plot)
     }
-    
+
     return [plotData,layout]
 }
 
@@ -752,7 +818,7 @@ function so2_rate_carn(data){
         },
         showlegend:false
     }
-    
+
     const plotData=[
       {
             x: data['year'],
@@ -760,7 +826,7 @@ function so2_rate_carn(data){
             line: {
                 width: 0,
                 shape: 'hv',
-    
+
             },
             mode: "lines",
             name: "Lower Bound",
@@ -770,7 +836,7 @@ function so2_rate_carn(data){
         {
             type:"scatter",
             mode:"lines",
-            line:{ 
+            line:{
                 shape: 'hv',
                 color: "rgba(0,176,246,0.75)"
             },
@@ -795,6 +861,6 @@ function so2_rate_carn(data){
             showlegend: false,
         }
     ]
-    
+
     return [plotData, layout]
 }
