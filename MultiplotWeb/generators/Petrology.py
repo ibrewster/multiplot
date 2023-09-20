@@ -13,11 +13,12 @@ import pandas
 from .. import utils
 from ..utils import generator
 
+
 ##############Petrology###############
 
 
 @generator("Diffusion")
-def plot_diffusion(volcano, start = None, end = None):
+def plot_diffusion(volcano, start = None, end = None):    
     data_filename = f"{volcano} Moshrefzadeh.csv"
     data_path = os.path.join(utils.DATA_DIR, 'Diffusion', data_filename)
     date_cols = [
@@ -64,9 +65,9 @@ def plot_diffusion(volcano, start = None, end = None):
 
     data.loc[:, 'index'] = data.index
 
-    data.loc[:, 'date'] = data['date'].apply(lambda x: pandas.to_datetime(x).isoformat())
-    data.loc[:, 'date neg'] = data['date neg'].apply(lambda x: pandas.to_datetime(x).isoformat())
-    data.loc[:, 'date pos'] = data['date pos'].apply(lambda x: pandas.to_datetime(x).isoformat())
+    data['date'] = data['date'].apply(lambda x: pandas.to_datetime(x).isoformat())
+    data['date neg'] = data['date neg'].apply(lambda x: pandas.to_datetime(x).isoformat())
+    data['date pos'] = data['date pos'].apply(lambda x: pandas.to_datetime(x).isoformat())
 
     lines = data.loc[:, ['date neg', 'date pos', 'index']]
 
