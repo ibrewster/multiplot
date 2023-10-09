@@ -1,21 +1,42 @@
 let theme='dark'
 let plotDescriptions={}
+let prefix=''
+let parent=''
 
-$(document).ready(function(){
+function MultiPlot(dest){
+    parent=$(dest)
+
+    const host=window.location.hostname
+    const port=window.location.port
+    const protocol=window.location.protocol
+
+    if (host!='localhost' || port!=5001){
+        //Running live. Use absolute URL's
+        //prefix=`${protocol}//apps.avo.alaska.edu/multiplot/`
+        prefix=`${protocol}//ijbrewster.avo.alaska.edu:5000/`
+    }
+
+    parent.load(prefix+'body', function(){
+        initMultiPlot();
+        parent.addClass('multiplot')
+    })
+}
+
+function initMultiPlot(){
     if(localStorage.theme){
         theme=localStorage.getItem('theme');
     }
 
     if(theme==='dark'){
-        $('body').addClass('dark');
+        parent.addClass('dark');
     }
     else{
-        $('body').removeClass('dark');
+        parent.removeClass('dark');
     }
 
-    $(document).on('click','.plotSelect',selectPlotType);
-    $(document).on('click','div.removePlot',removePlotDiv);
-    $(document).on('click','div.download',downloadPlotData);
+    parent.on('click','.plotSelect',selectPlotType);
+    parent.on('click','div.removePlot',removePlotDiv);
+    parent.on('click','div.download',downloadPlotData);
 
     //set date range to last five years
     const curDate=new Date();
@@ -51,13 +72,12 @@ $(document).ready(function(){
         handle:'div.sort',
         update:refreshPlots
     })
-    
-    $.getJSON('getDescriptions').
+
+    $.getJSON(prefix+'getDescriptions').
     done(function(data){
         plotDescriptions=data
     })
-
-});
+};
 
 function hideMenu(){
     $('.plotSelectMenu:visible').hide()
@@ -75,10 +95,10 @@ function setTheme(colorScheme){
     theme=colorScheme;
     localStorage.setItem('theme',theme);
     if(theme==='dark'){
-        $('body').addClass('dark');
+        parent.addClass('dark');
     }
     else{
-        $('body').removeClass('dark');
+        parent.removeClass('dark');
     }
 
     refreshPlots();
@@ -112,7 +132,6 @@ function sizeAndPrint(){
             },500) //let the print dialog open and block execution
         },500) // let the size relayout display
     },500) //let the theme change display
-
 }
 
 const PAGE_HEIGHT=984;
@@ -148,7 +167,7 @@ function createPlotDiv(type){
     helpDiv.append('<div class=category>')
     helpDiv.append('<div class=dataset>')
     helpDiv.append('<div class=description>')
-    
+
     typeDisplay.prepend(helpDiv)
 
 
@@ -184,7 +203,7 @@ function createPlotDiv(type){
             curCat.append(opt)
         }
     }
-    
+
     const selectDiv=$('<div class="typeSelectWrapper">')
     selectDiv.append(typeDisplay)
     selectDiv.append(typeSelect)
@@ -214,12 +233,12 @@ function plotSelectFocused(event, ui){
     const item=ui.item;
     const selectButton=item.closest('.typeSelectWrapper').find('.plotSelect')
     const help=selectButton.find('.help')
-    
+
     const label=item.data('label')
     const cleanLabel=$('<div>').html(label).text()
     const cat=item.data('category')
     const cleanCat=$('<div>').html(cat).text()
-    
+
     let description="No Description Provided"
     try {
         description = plotDescriptions[cleanCat][cleanLabel]
@@ -227,11 +246,11 @@ function plotSelectFocused(event, ui){
         help.hide();
         return;
     }
-    
+
     if(typeof(description)=='undefined' || description===null){
         description="No Description Provided"
     }
-    
+
     help.show();
     help.children('.category').html(cat)
     help.children('.dataset').html(label)
@@ -348,12 +367,12 @@ function selectPlotType(){
 
 function plotTypeChanged(){
     const plotType=$(this).data('plotType');
-    
+
     //remove any existing custom selectors
     $(this).siblings('.customSelector').remove();
 
     // add any custom components needed.
-    // Custom component function is named the same as the 
+    // Custom component function is named the same as the
     // plot function, but with _selector appended.
     const selector=plotFuncs[plotType]+"_selector"
     const custFunc=window[selector];
@@ -401,21 +420,21 @@ function genPlot(){
     const showXLabels=plotContainer.is(':last-child');
     const args=getPlotArgs.call(this);
     const placeholder=plotDiv.find('.placeholder')
-    
+
     if(typeof(args.plotType)=='undefined'){
         //no plot selected. Don't do anything
         return;
     }
-    
+
     if(placeholder.length>0){
         placeholder.text("Fetching data. Please wait...")
     }
 
-    $.getJSON('getPlot',args).done(function(data){
+    $.getJSON(prefix+'getPlot',args).done(function(data){
         Plotly.purge(plotElement)
-        
+
         placeholder.remove();
-        
+
         const plotType=args['plotType']
 
         let plotData,layout;

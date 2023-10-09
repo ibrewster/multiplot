@@ -1,45 +1,14 @@
 <head>
-    <script src="static/scripts/jquery-3.6.3.min.js" defer></script>
-    <script src="static/scripts/jquery-ui.min.js" defer></script>
-    <script src="static/scripts/plotly-2.18.2.min.js" defer></script>
+    <script src="static/scripts/jquery-3.6.3.min.js"></script>
+    <script src="static/scripts/jquery-ui.min.js"></script>
 
-    <script src="static/scripts/exporters-2.js" defer></script>
-    <script src="static/scripts/plotters-4.js" defer></script>
-    <script src="static/scripts/index-4.js" defer></script>
+    <script src="static/scripts/index-4.js"></script>
     <script type="text/javascript">
-        const plotTypes={{plotTypes| safe}}
-        const plotFuncs={{js_funcs | safe}}
+        $(document).ready(function(){
+            MultiPlot(document.getElementById('multiplot'))
+        })
     </script>
-
-    <link href="static/styles/index-3.css" rel="stylesheet">
-    <link href="static/styles/graffana-3.css" rel="stylesheet">
-
 </head>
-<body class="dark">
-    <div id="menuGuard"></div>
-    <div style="display:none">
-        <a id='downloadLink' href='' download=''></a>
-    </div>
-    <div id="header">
-        <h2>Multidisciplinary Plotting Tool</h2>
-        <div>
-            Volcano: <select id="volcano">
-                {% for volc in volcanoes %}
-                <option data-loc="{{volc[1]|safe}}">{{volc[0]}}</option>
-                {%endfor%}
-            </select>
-            Date Range:
-            <input type="date" class="rangeDate" id="dateFrom">
-            -
-            <input type="date" class="rangeDate" id="dateTo">
-        </div>
-        <div id="HeaderRight">
-            <button id="print">Print for PDF</button>
-        </div>
-    </div>
-
-    <div id=plots>
-    </div>
-
-    <button id="addPlot">Add Plot</button>
+<body>
+    <div id="multiplot"></div>
 </body>

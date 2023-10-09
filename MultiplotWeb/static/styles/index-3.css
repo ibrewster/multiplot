@@ -13,7 +13,18 @@
     grid-column-gap: 5px;
     align-items:center;
     padding-bottom:5px;
+    padding-left:5px;
 }
+
+div.multiplot{
+    padding-bottom:5px;
+    padding-top:5px;
+}
+
+#addPlot {
+    margin-left:5px;
+}
+
 
 input {
     padding:8px;
@@ -50,6 +61,8 @@ div.plot{
 
 #plots {
     margin-bottom:8px;
+    padding-left:5px;
+    padding-right:5px;
 }
 
 .right{
@@ -239,7 +252,7 @@ select {
     margin-right:10px;
     border:1px solid;
     width:200px;
-    
+
 }
 
 .help > .category {
@@ -279,7 +292,7 @@ select {
     .sort {
         display:none;
     }
-    
+
     .help {
         display:none;
     }
