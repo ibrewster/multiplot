@@ -6,9 +6,18 @@ from dateutil.parser import parse
 
 from . import app, utils, google
 
+# We need to allow cross-origin requests if we are embedding this in a different website
+@app.after_request
+def allow_cross_origin(response):
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
 
 @app.route('/')
 def index():
+    return flask.render_template('index.html')
+
+@app.route('/body')
+def body():
     args = {
         'volcanoes': sorted(utils.VOLCANOES.items(), key = lambda x: x[1][1], reverse = True),
         'js_funcs': json.dumps(utils.JS_FUNCS),
@@ -22,7 +31,7 @@ def index():
             plottypes.append((tag, item))
 
     args['plotTypes'] = json.dumps(plottypes)
-    return flask.render_template("index.html", **args)
+    return flask.render_template("body.html", **args)
 
 
 @app.route('/getPlot')
