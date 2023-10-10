@@ -1,14 +1,30 @@
 <head>
+    <!--These may be loaded from a CDN or the host server-->
     <script src="static/scripts/jquery-3.6.3.min.js"></script>
     <script src="static/scripts/jquery-ui.min.js"></script>
 
+    <!--This should be loaded from the apps server, but for testing it remains relatively linked-->
     <script src="static/scripts/index-4.js"></script>
+
+    <!-- Code to initialize the multiplot tool.
+    Place the call to MultiPlot wherever it makes the most sense.-->
     <script type="text/javascript">
         $(document).ready(function(){
             MultiPlot(document.getElementById('multiplot'))
         })
     </script>
+
+    <!--Testing/Standalone CSS so this page looks good as *just* the multiplot tool-->
+    <style type="text/css">
+        body{
+            margin:0px;
+            background-color: #111217;
+            color:rgb(204,204,220);
+        }
+    </style>
 </head>
 <body>
+    <!--Other body content here-->
     <div id="multiplot"></div>
+    <!--Other body content here-->
 </body>

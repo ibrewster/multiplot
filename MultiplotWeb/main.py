@@ -6,11 +6,6 @@ from dateutil.parser import parse
 
 from . import app, utils, google
 
-# We need to allow cross-origin requests if we are embedding this in a different website
-@app.after_request
-def allow_cross_origin(response):
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    return response
 
 @app.route('/')
 def index():

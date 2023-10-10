@@ -10,10 +10,10 @@ function MultiPlot(dest){
     const port=window.location.port
     const protocol=window.location.protocol
 
-    if (host!='localhost' || port!=5001){
+    if (host!='localhost' || port!=5000){
         //Running live. Use absolute URL's
-        //prefix=`${protocol}//apps.avo.alaska.edu/multiplot/`
-        prefix=`${protocol}//ijbrewster.avo.alaska.edu:5000/`
+        prefix=`${protocol}//apps.avo.alaska.edu/multiplot/`
+        //prefix=`${protocol}//ijbrewster.avo.alaska.edu:5000/`
     }
 
     parent.load(prefix+'body', function(){
