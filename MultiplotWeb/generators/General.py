@@ -115,7 +115,7 @@ ORDER BY ReleaseDate;
     if end is None:
         max_record['date'] = datetime.now()
     else:
-        max_record['date'] = end
+        max_record['date'] = pandas.to_datetime(end)
 
     change_dates = pandas.concat([change_dates, max_record])
 
