@@ -10,10 +10,22 @@ function MultiPlot(dest){
     const port=window.location.port
     const protocol=window.location.protocol
 
-    if (host!='localhost' || port!=5000){
+    const prod_host='apps.avo.alaska.edu'
+    const direct_host=(host=='localhost' && port==5000) || host==prod_host
+
+    if (!direct_host){
         //Running live. Use absolute URL's
-        prefix=`${protocol}//apps.avo.alaska.edu/multiplot/`
-        //prefix=`${protocol}//ijbrewster.avo.alaska.edu:5000/`
+        if(host!='localhost'){
+            prefix=`${protocol}//${prod_host}/multiplot/`
+
+        }
+        else{
+            //debugging only. localhost won't get here at all, unless I force it.
+            prefix=`${protocol}//ijbrewster.avo.alaska.edu:5000/`
+        }
+    }
+    else {
+        $('body').addClass('MultiPlotDirect')
     }
 
     parent.load(prefix+'body', function(){

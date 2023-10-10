@@ -1,6 +1,7 @@
-html.dark {
+body.MultiPlotDirect:has(div.multiplot.dark) {
     background-color: #111217;
     color:rgb(204,204,220);
+    margin:0px;
 }
 
 div.dark{
