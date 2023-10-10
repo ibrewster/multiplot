@@ -26,6 +26,20 @@ def body():
             plottypes.append((tag, item))
 
     args['plotTypes'] = json.dumps(plottypes)
+
+    server_origin = flask.request.url_root
+    request_origin = flask.request.headers.get('Origin')
+    is_cors = request_origin and request_origin != server_origin
+    if is_cors:
+
+        prefix = flask.request.base_url.replace('/body', '/')
+        app.logger.warning(f"Base URL prefix has been set to {prefix}")
+    else:
+        app.logger.warning("Running locally, not setting prefix")
+        prefix = ''
+
+    args['prefix'] = prefix
+
     return flask.render_template("body.html", **args)
 
 

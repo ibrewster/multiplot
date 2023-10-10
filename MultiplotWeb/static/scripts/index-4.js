@@ -2,6 +2,7 @@ let theme='dark'
 let plotDescriptions={}
 let prefix=''
 let parent=''
+let scriptsLoaded=false;
 
 function MultiPlot(dest){
     parent=$(dest)
@@ -17,7 +18,6 @@ function MultiPlot(dest){
         //Running live. Use absolute URL's
         if(host!='localhost'){
             prefix=`${protocol}//${prod_host}/multiplot/`
-
         }
         else{
             //debugging only. localhost won't get here at all, unless I force it.
@@ -29,9 +29,21 @@ function MultiPlot(dest){
     }
 
     parent.load(prefix+'body', function(){
-        initMultiPlot();
         parent.addClass('multiplot')
+        waitForReady();
     })
+}
+
+let cycles=0
+function waitForReady(){
+    if(!scriptsLoaded){
+        //let other things happen
+        cycles+=1
+        setTimeout(waitForReady,10);
+        return
+    }
+    console.log(`Got ready after ${cycles} waits`)
+    initMultiPlot();
 }
 
 function initMultiPlot(){
