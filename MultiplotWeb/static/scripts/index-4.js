@@ -3,6 +3,7 @@ let plotDescriptions={}
 let prefix=''
 let parent=''
 let scriptsLoaded=false;
+const myScriptTag=document.currentScript
 
 function MultiPlot(dest){
     parent=$(dest)
@@ -11,21 +12,23 @@ function MultiPlot(dest){
     const port=window.location.port
     const protocol=window.location.protocol
 
-    const prod_host='apps.avo.alaska.edu'
-    const direct_host= host==prod_host || port==5000
+    let script_host='apps.avo.alaska.edu' //set a default in case something goes wrong
+    const myURL=new URL(myScriptTag.src)
+    const myServer=myURL.hostname
+    const myPort=myURL.port
+    const serverPrefix=myURL.pathname.replace(/static\/scripts\/.+.js/,'')
 
-    if (!direct_host){
-        //Running live. Use absolute URL's
-        if(host!='localhost'){
-            prefix=`${protocol}//${prod_host}/multiplot/`
-        }
-        else{
-            //debugging only. localhost won't get here at all, unless I force it.
-            prefix=`${protocol}//ijbrewster.avo.alaska.edu:5000/`
-        }
-    }
-    else {
+    const direct_host= (myServer==host && myPort==port)
+
+    if (direct_host){
         $('body').addClass('MultiPlotDirect')
+    } else {
+        prefix=`${protocol}//${myServer}`
+        if (port!=443 && port!=80){
+            prefix+=':'+myPort;
+        }
+
+        prefix+=serverPrefix
     }
 
     parent.load(prefix+'body', function(){
@@ -34,6 +37,7 @@ function MultiPlot(dest){
     })
 }
 
+//ugly hack to make sure the rest of the scripts actually load prior to this running.
 let cycles=0
 function waitForReady(){
     if(!scriptsLoaded){
