@@ -12,7 +12,7 @@ function MultiPlot(dest){
     const protocol=window.location.protocol
 
     const prod_host='apps.avo.alaska.edu'
-    const direct_host=(host=='localhost' && port==5000) || host==prod_host
+    const direct_host= host==prod_host || port==5000
 
     if (!direct_host){
         //Running live. Use absolute URL's
