@@ -32,7 +32,7 @@ def body():
     is_cors = request_origin and request_origin != server_origin
     if is_cors:
         script_path = flask.request.headers.get('X-Forwarded-Prefix', '')
-        prefix = f'{server_origin}/{script_path}/'
+        prefix = f'{server_origin}{script_path[1:]}/'
         app.logger.warning(f"Base URL prefix has been set to {prefix}")
     else:
         app.logger.warning("Running locally, not setting prefix")
