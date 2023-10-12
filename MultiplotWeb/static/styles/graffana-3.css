@@ -1,4 +1,4 @@
-body.MultiPlotDirect:has(div.multiplot.dark) {
+body.MultiPlotDirect:has(div.multiplot-top-div.dark) {
     background-color: #111217;
     color:rgb(204,204,220);
     margin:0px;
