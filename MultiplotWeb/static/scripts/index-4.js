@@ -2,7 +2,6 @@ let theme='dark'
 let plotDescriptions={}
 let prefix=''
 let parent=''
-let scriptsLoaded=false;
 const myScriptTag=document.currentScript
 
 function multiPlot(dest){
@@ -53,16 +52,27 @@ function MultiPlot(dest){
             } 
         }
         
-        function populateDiv(){
-            //there seems to be an *occasional* race condition, which this will hopefully ameliorate.
-            setTimeout(function(){
+        // prevent race conditions by recording the scripts as we add them to the header,
+        // and then tracking when all of them have loaded.
+        const allScripts=[]
+        const completedScripts=[]
+        
+        function scriptLoaded(src){
+            console.log(`loaded ${src}`)
+            completedScripts.push(src);
+            
+            //sort the arrays so they will be the same if they have the same contents.
+            completedScripts.sort();
+            allScripts.sort();
+            
+            // there is no way to compare arrays for equality, 
+            // so convert to JSON strings. Sigh.
+            if(JSON.stringify(completedScripts)===JSON.stringify(allScripts) ){
                 parent.load(prefix+'body', function(){
                     parent.addClass('multiplot-top-div');
-                    console.log(scriptsLoaded);
                     initMultiPlot();
-                }),
-                200
-            })
+                })
+            }
         }
         
         $(parsedHtml).each(function(idx,element){
@@ -72,11 +82,13 @@ function MultiPlot(dest){
             if(element instanceof HTMLScriptElement){
                 newElement=document.createElement('script');
                 newElement.type='text/javascript';
-                if(element==lastScript){
-                    newElement.onload=populateDiv;
-                }
+
                 if(element.text!=''){ newElement.text=element.text; }
-                else{ newElement.src=element.src; }
+                else{
+                    allScripts.push(element.src)
+                    newElement.onload = function(){scriptLoaded(element.src)};
+                    newElement.src=element.src; 
+                }
             }
             
             document.getElementsByTagName('head')[0].appendChild(newElement);
@@ -149,19 +161,6 @@ function setVolcano(volc){
     }
     
     volcSelect.change();
-}
-
-//ugly hack to make sure the rest of the scripts actually load prior to this running.
-let cycles=0
-function waitForReady(){
-    if(!scriptsLoaded){
-        //let other things happen
-        cycles+=1
-        setTimeout(waitForReady,10);
-        return
-    }
-    console.log(`Got ready after ${cycles} waits`)
-    initMultiPlot();
 }
 
 function initMultiPlot(){

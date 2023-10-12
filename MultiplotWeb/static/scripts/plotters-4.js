@@ -864,6 +864,3 @@ function so2_rate_carn(data){
 
     return [plotData, layout]
 }
-
-
-scriptsLoaded=true;
