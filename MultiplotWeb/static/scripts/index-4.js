@@ -5,6 +5,10 @@ let parent=''
 let scriptsLoaded=false;
 const myScriptTag=document.currentScript
 
+function multiPlot(dest){
+    return new MultiPlot(dest)
+}
+
 function MultiPlot(dest){
     parent=$(dest)
 
@@ -32,9 +36,33 @@ function MultiPlot(dest){
     }
 
     parent.load(prefix+'body', function(){
-        parent.addClass('multiplot')
+        parent.addClass('multiplot-top-div')
         waitForReady();
     })
+}
+
+MultiPlot.prototype.setVolcano=setVolcano;
+MultiPlot.prototype.addPlot=createPlotDiv;
+MultiPlot.prototype.getPlotsDiv=function(){
+    return $('.multiplot-top-div')
+}
+
+function setVolcano(volc){
+    const volcSelect=$('#volcano')
+    const prevVal=volcSelect.val()
+    
+    //try to change the value
+    volcSelect.val(volc)
+    
+    //see if it changed. If we get a different result than provided, then the provided
+    //value is invalid
+    if(volcSelect.val() != volc){
+        volcSelect.val(prevVal);
+        console.error(`Unable to set volcano to ${volc}: Invalid option`);
+        return;
+    }
+    
+    volcSelect.change();
 }
 
 //ugly hack to make sure the rest of the scripts actually load prior to this running.

@@ -9,8 +9,10 @@
     Place the call to MultiPlot wherever it makes the most sense.
     -->
     <script type="text/javascript">
+        let plot=null;
+
         $(document).ready(function(){
-            MultiPlot(document.getElementById('multiplot'))
+            plot=new MultiPlot(document.getElementById('multiplot'))
         })
     </script>
 
