@@ -100,7 +100,7 @@ function MultiPlot(dest){
 MultiPlot.prototype.setVolcano=setVolcano;
 MultiPlot.prototype.addPlot=createPlotDiv;
 MultiPlot.prototype.getPlotsDiv=function(){
-    return $('.multiplot-top-div')
+    return $('.multiplot-top-div').eq(0);
 }
 MultiPlot.prototype.setDateRange=setDateRange;
 MultiPlot.prototype.setStartDate=setStartDate;
