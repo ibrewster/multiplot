@@ -11,22 +11,8 @@ from . import app, utils, google
 def index():
     return flask.render_template('index.html')
 
-@app.route('/body')
-def body():
-    args = {
-        'volcanoes': sorted(utils.VOLCANOES.items(), key = lambda x: x[1][1], reverse = True),
-        'js_funcs': json.dumps(utils.JS_FUNCS),
-    }
 
-    plottypes = []
-    for cat, types in sorted(utils.GEN_CATEGORIES.items(), key = lambda x: x[0]):
-        plottypes.append(f"---{cat}---")
-        for item in sorted(types):
-            tag = "|".join((cat, item))
-            plottypes.append((tag, item))
-
-    args['plotTypes'] = json.dumps(plottypes)
-
+def getPrefix():
     server_origin = flask.request.url_root
     request_origin = flask.request.headers.get('Origin')
     is_cors = request_origin and request_origin != server_origin
@@ -37,8 +23,36 @@ def body():
     else:
         app.logger.warning("Running locally, not setting prefix")
         prefix = ''
+    
+    return prefix
 
-    args['prefix'] = prefix
+
+@app.route('/headers')
+def headers():
+    args = {
+        'prefix': getPrefix(),
+        'js_funcs': json.dumps(utils.JS_FUNCS)
+    }
+    
+    plottypes = []
+    for cat, types in sorted(utils.GEN_CATEGORIES.items(), key = lambda x: x[0]):
+        plottypes.append(f"---{cat}---")
+        for item in sorted(types):
+            tag = "|".join((cat, item))
+            plottypes.append((tag, item))
+
+    args['plotTypes'] = json.dumps(plottypes)
+    
+    return flask.render_template('headers.html', **args)
+
+
+@app.route('/body')
+def body():
+    args = {
+        'volcanoes': sorted(utils.VOLCANOES.items(), key = lambda x: x[1][1], reverse = True),
+    }
+
+    args['prefix'] = getPrefix()
 
     return flask.render_template("body.html", **args)
 

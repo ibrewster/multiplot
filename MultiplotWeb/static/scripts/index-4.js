@@ -34,10 +34,54 @@ function MultiPlot(dest){
 
         prefix+=serverPrefix
     }
-
-    parent.load(prefix+'body', function(){
-        parent.addClass('multiplot-top-div')
-        waitForReady();
+    
+    // get the header scripts
+    $.get(prefix+'headers')
+    .fail(function(){
+        console.log('Unable to fetch MultiPlot headers');
+    })
+    .done(function(headers){
+        //append the scripts and stylesheets to the header
+        const parsedHtml=$.parseHTML(headers,null,true);
+        let lastScript;
+        //find the last element that is a script tag
+        for(let i=parsedHtml.length-1; i>=0;i--){
+            if(parsedHtml[i] instanceof HTMLScriptElement){
+                lastScript=parsedHtml[i];
+                //parsedHtml.splice(i,1);
+                break;
+            } 
+        }
+        
+        function populateDiv(){
+            //there seems to be an *occasional* race condition, which this will hopefully ameliorate.
+            setTimeout(function(){
+                parent.load(prefix+'body', function(){
+                    parent.addClass('multiplot-top-div');
+                    console.log(scriptsLoaded);
+                    initMultiPlot();
+                }),
+                200
+            })
+        }
+        
+        $(parsedHtml).each(function(idx,element){
+            //creating a new element the same as the old one seems to 
+            //be the only way to get the onLoad to work, for some reason.
+            let newElement=element;
+            if(element instanceof HTMLScriptElement){
+                newElement=document.createElement('script');
+                newElement.type='text/javascript';
+                if(element==lastScript){
+                    newElement.onload=populateDiv;
+                }
+                if(element.text!=''){ newElement.text=element.text; }
+                else{ newElement.src=element.src; }
+            }
+            
+            document.getElementsByTagName('head')[0].appendChild(newElement);
+        });
+       
     })
 }
 
@@ -46,6 +90,48 @@ MultiPlot.prototype.addPlot=createPlotDiv;
 MultiPlot.prototype.getPlotsDiv=function(){
     return $('.multiplot-top-div')
 }
+MultiPlot.prototype.setDateRange=setDateRange;
+MultiPlot.prototype.setStartDate=setStartDate;
+MultiPlot.prototype.setEndDate=setEndDate;
+
+
+function setEndDate(date){
+    const dateFrom=$('#dateFrom').val();
+    setDateRange(dateFrom,date);
+}
+
+function setStartDate(date){
+    const dateTo=$('#dateTo').val();
+    setDateRange(date,dateTo);
+}
+
+function setDateRange(dateFrom,dateTo){
+    if(typeof(dateFrom)=='string'){
+        dateFrom=new Date(dateFrom);
+    }
+    
+    if(typeof(dateTo)=='string'){
+        dateTo=new Date(dateTo);
+    }
+    
+    if(isNaN(dateFrom)){
+        console.log('Invalid Date From');
+        return;
+    }
+    
+    if(isNaN(dateTo)){
+        console.log('Invalid Date To');
+        return;
+    }
+    
+    //ok, we have two valid date objects. Convert them to nicely formatted strings.
+    const from=`${dateFrom.getUTCFullYear()}-${dateFrom.getUTCMonth()+1}-${dateFrom.getUTCDate()}`;
+    const to=`${dateTo.getUTCFullYear()}-${dateTo.getUTCMonth()+1}-${dateTo.getUTCDate()}`;
+    
+    $('#dateFrom').val(from);
+    $('#dateTo').val(to).change();    
+}
+
 
 function setVolcano(volc){
     const volcSelect=$('#volcano')
