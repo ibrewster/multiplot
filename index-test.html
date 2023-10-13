@@ -1,24 +1,26 @@
-<head>
-    <!--This may be loaded from a CDN or the host server-->
-    <script src="https://apps.avo.alaska.edu/multiplot/static/scripts/jquery-3.6.3.min.js"></script>
-
-    <script src="http://localhost:5000/static/scripts/index-4.js"></script>
-
-    <!--
-    Code to initialize the multiplot tool.
-    Place the call to MultiPlot wherever it makes the most sense.
-    -->
-    <script type="text/javascript">
-        let plot=null;
-
-        $(document).ready(function(){
-            plot=new MultiPlot(document.getElementById('multiplot'))
-        })
-    </script>
-
-</head>
-<body>
-    <!--Other body content here-->
-    <div id="multiplot"></div>
-    <!--Other body content here-->
-</body>
+<html>
+    <head>
+        <!--This may be loaded from a CDN or the host server-->
+        <script src="http://localhost:5000/static/scripts/jquery-3.6.3.min.js"></script>
+    
+        <script src="http://localhost:5000/static/scripts/index-4.js"></script>
+    
+        <!--
+        Code to initialize the multiplot tool.
+        Place the call to MultiPlot wherever it makes the most sense.
+        -->
+        <script type="text/javascript">
+            let plot=null;
+    
+            $(document).ready(function(){
+                plot=new MultiPlot(document.getElementById('multiplot'))
+            })
+        </script>
+    
+    </head>
+    <body>
+        <!--Other body content here-->
+        <div id="multiplot"></div>
+        <!--Other body content here-->
+    </body>
+</html>

@@ -11,6 +11,7 @@ function multiPlot(dest){
 function MultiPlot(dest){
     parent=$(dest)
 
+    // We could skip all this if we just wanted to assume we are loading remote.
     const host=window.location.hostname
     const port=window.location.port
     const protocol=window.location.protocol
@@ -24,6 +25,7 @@ function MultiPlot(dest){
     const direct_host= (myServer==host && myPort==port)
 
     if (direct_host){
+        //this allows us to tweak the display using CSS if we are not loading from a remote server
         $('body').addClass('MultiPlotDirect')
     } else {
         prefix=`${protocol}//${myServer}`
@@ -36,38 +38,24 @@ function MultiPlot(dest){
     
     // get the header scripts
     $.get(prefix+'headers')
-    .fail(function(){
+    .fail(() => {
         console.log('Unable to fetch MultiPlot headers');
     })
-    .done(function(headers){
+    .done((headers) => {
         //append the scripts and stylesheets to the header
-        const parsedHtml=$.parseHTML(headers,null,true);
-        let lastScript;
-        //find the last element that is a script tag
-        for(let i=parsedHtml.length-1; i>=0;i--){
-            if(parsedHtml[i] instanceof HTMLScriptElement){
-                lastScript=parsedHtml[i];
-                //parsedHtml.splice(i,1);
-                break;
-            } 
-        }
         
-        // prevent race conditions by recording the scripts as we add them to the header,
-        // and then tracking when all of them have loaded.
-        const allScripts=[]
-        const completedScripts=[]
+        const parsedHtml=$.parseHTML(headers,null,true);
+
+        // we have to track the loading of the scripts so we don't try to execute before
+        // all scripts have loaded.
+        const neededScripts=new Set();
         
         function scriptLoaded(src){
-            console.log(`loaded ${src}`)
-            completedScripts.push(src);
+            neededScripts.delete(src);
             
-            //sort the arrays so they will be the same if they have the same contents.
-            completedScripts.sort();
-            allScripts.sort();
-            
-            // there is no way to compare arrays for equality, 
-            // so convert to JSON strings. Sigh.
-            if(JSON.stringify(completedScripts)===JSON.stringify(allScripts) ){
+            if(neededScripts.size===0){
+                // once all scripts are loaded, go ahead load the body div
+                //followed by plot initilization
                 parent.load(prefix+'body', function(){
                     parent.addClass('multiplot-top-div');
                     initMultiPlot();
@@ -75,46 +63,65 @@ function MultiPlot(dest){
             }
         }
         
-        $(parsedHtml).each(function(idx,element){
-            //creating a new element the same as the old one seems to 
-            //be the only way to get the onLoad to work, for some reason.
-            let newElement=element;
-            if(element instanceof HTMLScriptElement){
-                newElement=document.createElement('script');
-                newElement.type='text/javascript';
+        parsedHtml.forEach( (element) => {
+            let newElement=element; //default, for css/link/etc tags
 
+            if(element instanceof HTMLScriptElement){
+                // If we have a script, creating a new element the same as the old one seems to 
+                // be the only way to get them to load, for some reason. CSS links just work...
+                newElement=document.createElement('script');
+                newElement.async=false;
+                
+                //if the script has text, set it on the new script. 
+                //Otherwise, add the onload handler and set the src attribute.
                 if(element.text!=''){ newElement.text=element.text; }
                 else{
-                    allScripts.push(element.src)
-                    newElement.onload = function(){scriptLoaded(element.src)};
+                    neededScripts.add(element.src)
+                    newElement.onload = () => {scriptLoaded(element.src)};
                     newElement.src=element.src; 
                 }
             }
             
-            document.getElementsByTagName('head')[0].appendChild(newElement);
+            document.head.appendChild(newElement);
         });
        
     })
 }
 
-MultiPlot.prototype.setVolcano=setVolcano;
+MultiPlot.prototype.setVolcano = (volc) => {
+    const volcSelect=$('#volcano')
+    const prevVal=volcSelect.val()
+    
+    //try to change the value
+    volcSelect.val(volc)
+    
+    //see if it changed. If we get a different result than provided, then the provided
+    //value is invalid
+    if(volcSelect.val() != volc){
+        volcSelect.val(prevVal);
+        console.error(`Unable to set volcano to ${volc}: Invalid option`);
+        return;
+    }
+    
+    volcSelect.change();
+}
+
 MultiPlot.prototype.addPlot=createPlotDiv;
-MultiPlot.prototype.getPlotsDiv=function(){
+
+MultiPlot.prototype.getPlotsDiv=() => {
     return $('.multiplot-top-div')[0];
 }
+
 MultiPlot.prototype.setDateRange=setDateRange;
-MultiPlot.prototype.setStartDate=setStartDate;
-MultiPlot.prototype.setEndDate=setEndDate;
 
-
-function setEndDate(date){
-    const dateFrom=$('#dateFrom').val();
-    setDateRange(dateFrom,date);
-}
-
-function setStartDate(date){
+MultiPlot.prototype.setStartDate=(date) => {
     const dateTo=$('#dateTo').val();
     setDateRange(date,dateTo);
+}
+
+MultiPlot.prototype.setEndDate= (date) => {
+    const dateFrom=$('#dateFrom').val();
+    setDateRange(dateFrom,date);
 }
 
 function setDateRange(dateFrom,dateTo){
@@ -155,24 +162,6 @@ function formatUTCDateString(date){
     if(dateDay<10){ dateDay = "0" + dateDay;}
     
     return `${dateYear}-${dateMonth}-${dateDay}`
-}
-
-function setVolcano(volc){
-    const volcSelect=$('#volcano')
-    const prevVal=volcSelect.val()
-    
-    //try to change the value
-    volcSelect.val(volc)
-    
-    //see if it changed. If we get a different result than provided, then the provided
-    //value is invalid
-    if(volcSelect.val() != volc){
-        volcSelect.val(prevVal);
-        console.error(`Unable to set volcano to ${volc}: Invalid option`);
-        return;
-    }
-    
-    volcSelect.change();
 }
 
 function initMultiPlot(){
