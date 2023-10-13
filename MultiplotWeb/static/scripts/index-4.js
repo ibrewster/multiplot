@@ -137,13 +137,25 @@ function setDateRange(dateFrom,dateTo){
     }
     
     //ok, we have two valid date objects. Convert them to nicely formatted strings.
-    const from=`${dateFrom.getUTCFullYear()}-${dateFrom.getUTCMonth()+1}-${dateFrom.getUTCDate()}`;
-    const to=`${dateTo.getUTCFullYear()}-${dateTo.getUTCMonth()+1}-${dateTo.getUTCDate()}`;
+    const from=formatUTCDateString(dateFrom);
+    const to=formatUTCDateString(dateTo);
     
     $('#dateFrom').val(from);
-    $('#dateTo').val(to).change();    
+    $('#dateTo').val(to);
+    
+    refreshPlots();
 }
 
+function formatUTCDateString(date){
+    let dateYear=date.getUTCFullYear();
+    let dateMonth=date.getUTCMonth()+1;
+    let dateDay=date.getUTCDate();
+    
+    if(dateMonth<10){ dateMonth = "0" + dateMonth; }
+    if(dateDay<10){ dateDay = "0" + dateDay;}
+    
+    return `${dateYear}-${dateMonth}-${dateDay}`
+}
 
 function setVolcano(volc){
     const volcSelect=$('#volcano')
