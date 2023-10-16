@@ -498,6 +498,10 @@ function setLayoutDefaults(layout,showLabels){
         layout['yaxis']['gridcolor']=themeColors['gridcolor']
     }
 
+    if('legend' in layout && 'font' in layout['legend']){
+        layout['legend']['font']['color']=themeColors['text']
+    }
+
     return layout;
 }
 
