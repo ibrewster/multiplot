@@ -16,17 +16,18 @@ function MultiPlot(dest){
     const port=window.location.port
     const protocol=window.location.protocol
 
-    let script_host='apps.avo.alaska.edu' //set a default in case something goes wrong
     const myURL=new URL(myScriptTag.src)
     const myServer=myURL.hostname
     const myPort=myURL.port
     const serverPrefix=myURL.pathname.replace(/static\/scripts\/.+.js/,'')
 
+    // we don't technically need the direct host stuff, but it allows us to do different things
+    // when not embedding in another webpage.
     const direct_host= (myServer==host && myPort==port)
 
     if (direct_host){
         //this allows us to tweak the display using CSS if we are not loading from a remote server
-        $('body').addClass('MultiPlotDirect')
+        $(dest).addClass('multiplot-direct')
     } else {
         prefix=`${protocol}//${myServer}`
         if (port!=443 && port!=80){
@@ -35,7 +36,7 @@ function MultiPlot(dest){
 
         prefix+=serverPrefix
     }
-    
+
     // get the header scripts
     $.get(prefix+'headers')
     .fail(() => {
@@ -43,16 +44,16 @@ function MultiPlot(dest){
     })
     .done((headers) => {
         //append the scripts and stylesheets to the header
-        
+
         const parsedHtml=$.parseHTML(headers,null,true);
 
         // we have to track the loading of the scripts so we don't try to execute before
         // all scripts have loaded.
         const neededScripts=new Set();
-        
+
         function scriptLoaded(src){
             neededScripts.delete(src);
-            
+
             if(neededScripts.size===0){
                 // once all scripts are loaded, go ahead load the body div
                 //followed by plot initilization
@@ -62,39 +63,39 @@ function MultiPlot(dest){
                 })
             }
         }
-        
+
         parsedHtml.forEach( (element) => {
             let newElement=element; //default, for css/link/etc tags
 
             if(element instanceof HTMLScriptElement){
-                // If we have a script, creating a new element the same as the old one seems to 
+                // If we have a script, creating a new element the same as the old one seems to
                 // be the only way to get them to load, for some reason. CSS links just work...
                 newElement=document.createElement('script');
                 newElement.async=false;
-                
-                //if the script has text, set it on the new script. 
+
+                //if the script has text, set it on the new script.
                 //Otherwise, add the onload handler and set the src attribute.
                 if(element.text!=''){ newElement.text=element.text; }
                 else{
                     neededScripts.add(element.src)
                     newElement.onload = () => {scriptLoaded(element.src)};
-                    newElement.src=element.src; 
+                    newElement.src=element.src;
                 }
             }
-            
+
             document.head.appendChild(newElement);
         });
-       
+
     })
 }
 
 MultiPlot.prototype.setVolcano = (volc) => {
-    const volcSelect=$('#volcano')
+    const volcSelect=$('#multiplot-volcano')
     const prevVal=volcSelect.val()
-    
+
     //try to change the value
     volcSelect.val(volc)
-    
+
     //see if it changed. If we get a different result than provided, then the provided
     //value is invalid
     if(volcSelect.val() != volc){
@@ -102,7 +103,7 @@ MultiPlot.prototype.setVolcano = (volc) => {
         console.error(`Unable to set volcano to ${volc}: Invalid option`);
         return;
     }
-    
+
     volcSelect.change();
 }
 
@@ -115,12 +116,12 @@ MultiPlot.prototype.getPlotsDiv=() => {
 MultiPlot.prototype.setDateRange=setDateRange;
 
 MultiPlot.prototype.setStartDate=(date) => {
-    const dateTo=$('#dateTo').val();
+    const dateTo=$('#multiplot-dateTo').val();
     setDateRange(date,dateTo);
 }
 
 MultiPlot.prototype.setEndDate= (date) => {
-    const dateFrom=$('#dateFrom').val();
+    const dateFrom=$('#multiplot-dateFrom').val();
     setDateRange(dateFrom,date);
 }
 
@@ -128,28 +129,28 @@ function setDateRange(dateFrom,dateTo){
     if(typeof(dateFrom)=='string'){
         dateFrom=new Date(dateFrom);
     }
-    
+
     if(typeof(dateTo)=='string'){
         dateTo=new Date(dateTo);
     }
-    
+
     if(isNaN(dateFrom)){
         console.log('Invalid Date From');
         return;
     }
-    
+
     if(isNaN(dateTo)){
         console.log('Invalid Date To');
         return;
     }
-    
+
     //ok, we have two valid date objects. Convert them to nicely formatted strings.
     const from=formatUTCDateString(dateFrom);
     const to=formatUTCDateString(dateTo);
-    
-    $('#dateFrom').val(from);
-    $('#dateTo').val(to);
-    
+
+    $('#multiplot-dateFrom').val(from);
+    $('#multiplot-dateTo').val(to);
+
     refreshPlots();
 }
 
@@ -157,10 +158,10 @@ function formatUTCDateString(date){
     let dateYear=date.getUTCFullYear();
     let dateMonth=date.getUTCMonth()+1;
     let dateDay=date.getUTCDate();
-    
+
     if(dateMonth<10){ dateMonth = "0" + dateMonth; }
     if(dateDay<10){ dateDay = "0" + dateDay;}
-    
+
     return `${dateYear}-${dateMonth}-${dateDay}`
 }
 
@@ -170,15 +171,15 @@ function initMultiPlot(){
     }
 
     if(theme==='dark'){
-        parent.addClass('dark');
+        parent.addClass('multiplot-dark');
     }
     else{
-        parent.removeClass('dark');
+        parent.removeClass('multiplot-dark');
     }
 
-    parent.on('click','.plotSelect',selectPlotType);
-    parent.on('click','div.removePlot',removePlotDiv);
-    parent.on('click','div.download',downloadPlotData);
+    parent.on('click','.multiplot-plotSelect',selectPlotType);
+    parent.on('click','div.multiplot-removePlot',removePlotDiv);
+    parent.on('click','div.multiplot-download',downloadPlotData);
 
     //set date range to last five years
     const curDate=new Date();
@@ -196,22 +197,22 @@ function initMultiPlot(){
     const dateTo=`${curYear}-${curMonth}-${curDay}`
     const dateFrom=`${curYear-10}-${curMonth}-${curDay}`
 
-    $('#dateFrom').val(dateFrom);
-    $('#dateTo').val(dateTo);
+    $('#multiplot-dateFrom').val(dateFrom);
+    $('#multiplot-dateTo').val(dateTo);
 
-    $('#addPlot').click(function(){createPlotDiv()});
-    $('.rangeDate').blur(refreshPlots);
-    $('#volcano').change(refreshPlots);
+    $('#multiplot-addPlot').click(function(){createPlotDiv()});
+    $('.multiplot-rangeDate').blur(refreshPlots);
+    $('#multiplot-volcano').change(refreshPlots);
 
-    $('#print').click(sizeAndPrint);
+    $('#multiplot-print').click(sizeAndPrint);
 
     // Create one plot by default, the color code plot
     createPlotDiv('General|Color Code')
 
-    $('#menuGuard').click(hideMenu)
+    $('#multiplot-menuGuard').click(hideMenu)
 
-    $('#plots').sortable({
-        handle:'div.sort',
+    $('#multiplot-plots').sortable({
+        handle:'div.multiplot-sort',
         update:refreshPlots
     })
 
@@ -222,10 +223,10 @@ function initMultiPlot(){
 };
 
 function hideMenu(){
-    $('.plotSelectMenu:visible').hide()
-    $('#menuGuard').hide();
-    $('.plotSelect').removeClass('open');
-    $('.help').hide();
+    $('.multiplot-plotSelectMenu:visible').hide()
+    $('#multiplot-menuGuard').hide();
+    $('.multiplot-plotSelect').removeClass('multiplot-open');
+    $('.multiplot-help').hide();
 }
 
 function setTheme(colorScheme){
@@ -237,10 +238,10 @@ function setTheme(colorScheme){
     theme=colorScheme;
     localStorage.setItem('theme',theme);
     if(theme==='dark'){
-        parent.addClass('dark');
+        parent.addClass('multiplot-dark');
     }
     else{
-        parent.removeClass('dark');
+        parent.removeClass('multiplot-dark');
     }
 
     refreshPlots();
@@ -252,7 +253,7 @@ function sizeAndPrint(){
     setTheme('light');
 
     setTimeout(function(){
-        $('.plotContent').each(function(){
+        $('.multiplot-plotContent').each(function(){
             Plotly.relayout(this,{'width':WIDTH});
             Plotly.Plots.resize(this);
         });
@@ -265,7 +266,7 @@ function sizeAndPrint(){
 
             setTimeout(function(){
                 console.log('Relayout back to original size')
-                $('.plotContent').each(function(){
+                $('.multiplot-plotContent').each(function(){
                    Plotly.relayout(this,{'width':null});
                    Plotly.Plots.resize(this);
                 });
@@ -280,47 +281,47 @@ const PAGE_HEIGHT=984;
 
 function calcPageBreaks(){
     let lastPage=0;
-    const plotsTop=$('#plots').offset().top
-    $('div.plot').each(function(){
+    const plotsTop=$('#multiplot-plots').offset().top
+    $('div.multiplot-plot').each(function(){
         const plotContainer=$(this);
         const plotHeight=$(this).height();
         // Find the "print" height of the top of this div.
         const plotTop=plotContainer.offset().top-plotsTop;
         const plotBottom=plotTop+plotHeight;
         if(plotBottom>lastPage+PAGE_HEIGHT){
-            plotContainer.addClass('pagebreak');
+            plotContainer.addClass('multiplot-pagebreak');
             lastPage+=PAGE_HEIGHT;
         }
         else{
-            plotContainer.removeClass('pagebreak');
+            plotContainer.removeClass('multiplot-pagebreak');
         }
 
     });
 }
 
 function createPlotDiv(type){
-    const dest=$('#plots')
-    const div=$('<div class="plot">')
+    const dest=$('#multiplot-plots')
+    const div=$('<div class="multiplot-plot">')
 
-    const typeDisplay=$('<div class="plotSelect">')
-    typeDisplay.html('<div class="typeString">Select...</div>')
+    const typeDisplay=$('<div class="multiplot-plotSelect">')
+    typeDisplay.html('<div class="multiplot-typeString">Select...</div>')
 
-    const helpDiv=$('<div class=help style="display:none;">')
-    helpDiv.append('<div class=category>')
-    helpDiv.append('<div class=dataset>')
-    helpDiv.append('<div class=description>')
+    const helpDiv=$('<div class="multiplot-help" style="display:none;">')
+    helpDiv.append('<div class="multiplot-category">')
+    helpDiv.append('<div class="multiplot-dataset">')
+    helpDiv.append('<div class="multiplot-description">')
 
     typeDisplay.prepend(helpDiv)
 
 
-    const typeSelect=$('<ul class="plotSelectMenu" style="display:none">')
+    const typeSelect=$('<ul class="multiplot-plotSelectMenu" style="display:none">')
 
     let curCat=null;
     let curCatTitle=''
     for(const plot of plotTypes){
         let opt;
         if(typeof(plot)=='string' && plot.startsWith('-')){
-            opt=$('<li class="plot-cat-group">')
+            opt=$('<li class="multiplot-plot-cat-group">')
             curCatTitle=plot.replaceAll('---','')
             let title=$('<div>').html(curCatTitle)
             opt.append(title)
@@ -340,13 +341,13 @@ function createPlotDiv(type){
             opt.data('label',label)
             if(typeof(type)!='undefined' && type==tag){
                 typeDisplay.data('plotType',tag)
-                typeDisplay.find('.typeString').html(`${curCatTitle} - ${label}`)
+                typeDisplay.find('.multiplot-typeString').html(`${curCatTitle} - ${label}`)
             }
             curCat.append(opt)
         }
     }
 
-    const selectDiv=$('<div class="typeSelectWrapper">')
+    const selectDiv=$('<div class="multiplot-typeSelectWrapper">')
     selectDiv.append(typeDisplay)
     selectDiv.append(typeSelect)
     typeSelect.menu({
@@ -354,15 +355,15 @@ function createPlotDiv(type){
         select:plotSelectSelected
     })
 
-    const downloadDiv=$('<div class="download">');
+    const downloadDiv=$('<div class="multiplot-download">');
     downloadDiv.html(downloadSVG());
     selectDiv.append(downloadDiv);
 
     div.append(selectDiv)
-    div.append('<div class="plotContent"><div class="placeholder">Select a plot type</div></div>')
-    const rightDiv=$('<div class="right">')
-    rightDiv.append('<div class=sort>')
-    rightDiv.append('<div class=removePlot>&times;</div>')
+    div.append('<div class="multiplot-plotContent"><div class="multiplot-placeholder">Select a plot type</div></div>')
+    const rightDiv=$('<div class="multiplot-right">')
+    rightDiv.append('<div class="multiplot-sort">')
+    rightDiv.append('<div class=multiplot-removePlot>&times;</div>')
     div.append(rightDiv)
     dest.append(div)
 
@@ -373,8 +374,8 @@ function createPlotDiv(type){
 
 function plotSelectFocused(event, ui){
     const item=ui.item;
-    const selectButton=item.closest('.typeSelectWrapper').find('.plotSelect')
-    const help=selectButton.find('.help')
+    const selectButton=item.closest('.multiplot-typeSelectWrapper').find('.multiplot-plotSelect')
+    const help=selectButton.find('.multiplot-help')
 
     const label=item.data('label')
     const cleanLabel=$('<div>').html(label).text()
@@ -394,9 +395,9 @@ function plotSelectFocused(event, ui){
     }
 
     help.show();
-    help.children('.category').html(cat)
-    help.children('.dataset').html(label)
-    help.children('.description').html(description)
+    help.children('.multiplot-category').html(cat)
+    help.children('.multiplot-dataset').html(label)
+    help.children('.multiplot-description').html(description)
 }
 
 function plotSelectSelected(event, ui){
@@ -407,27 +408,27 @@ function plotSelectSelected(event, ui){
     }
 
     hideMenu();
-    const selectButton=item.closest('.typeSelectWrapper').find('.plotSelect')
+    const selectButton=item.closest('.multiplot-typeSelectWrapper').find('.multiplot-plotSelect')
     const label=item.data('label')
     const cat=item.data('category')
-    selectButton.find('div.typeString').html(`${cat} - ${label}`)
+    selectButton.find('div.multiplot-typeString').html(`${cat} - ${label}`)
     selectButton.data('plotType',plotType);
     plotTypeChanged.call(selectButton.get(0))
 }
 
 function refreshPlots(){
-    $('div.plotSelect').each(function(){
+    $('div.multiplot-plotSelect').each(function(){
         genPlot.call(this);
     });
 }
 
 function clearDateAxis(setLast){
-    $('.js-plotly-plot:not(.spatial)').each(function(){
+    $('.js-plotly-plot:not(multiplot-spatial)').each(function(){
         Plotly.relayout(this,{'xaxis.showticklabels':false})
     });
 
     if(setLast===true){
-        const lastPlot=$('.js-plotly-plot:not(.spatial):last').get(0)
+        const lastPlot=$('.js-plotly-plot:not(multiplot-spatial):last').get(0)
         Plotly.relayout(lastPlot,{'xaxis.showticklabels':true})
     }
 }
@@ -448,8 +449,8 @@ COLORS={
 function setLayoutDefaults(layout,showLabels){
     const themeColors=COLORS[theme];
 
-    const dateFrom=$('#dateFrom').val();
-    const dateTo=$('#dateTo').val();
+    const dateFrom=$('#multiplot-dateFrom').val();
+    const dateTo=$('#multiplot-dateTo').val();
     const range=[dateFrom,dateTo];
     const left_margin=90;
     const right_margin=10;
@@ -501,17 +502,17 @@ function setLayoutDefaults(layout,showLabels){
 }
 
 function selectPlotType(){
-    const plotSelectMenu=$(this).parent().find('.plotSelectMenu')
+    const plotSelectMenu=$(this).parent().find('.multiplot-plotSelectMenu')
     plotSelectMenu.show();
-    $('#menuGuard').show();
-    $(this).addClass('open');
+    $('#multiplot-menuGuard').show();
+    $(this).addClass('multiplot-open');
 }
 
 function plotTypeChanged(){
     const plotType=$(this).data('plotType');
 
     //remove any existing custom selectors
-    $(this).siblings('.customSelector').remove();
+    $(this).siblings('.multiplot-customSelector').remove();
 
     // add any custom components needed.
     // Custom component function is named the same as the
@@ -520,22 +521,22 @@ function plotTypeChanged(){
     const custFunc=window[selector];
 
     if(typeof(custFunc)!=="undefined"){
-        const selector=$('<div class="customSelector">')
+        const selector=$('<div class="multiplot-customSelector">')
         selector.append(custFunc());
         $(this).after(selector);
     }
 
     //clear data from plot div
-    $(this).parent().siblings('div.plotContent').removeData();
+    $(this).parent().siblings('div.multiplot-plotContent').removeData();
     genPlot.call(this);
 }
 
 function getPlotArgs(){
     const plotType=$(this).data('plotType');
 
-    const volcano=$('#volcano').val()
-    const dateFrom=$('#dateFrom').val()
-    const dateTo=$('#dateTo').val()
+    const volcano=$('#multiplot-volcano').val()
+    const dateFrom=$('#multiplot-dateFrom').val()
+    const dateTo=$('#multiplot-dateTo').val()
 
     const args={
         'plotType':plotType,
@@ -545,7 +546,7 @@ function getPlotArgs(){
     }
 
     //see if there are any custom args for this plot
-    const addArgs=$(this).siblings('.customSelector').find('form.addArgs');
+    const addArgs=$(this).siblings('.multiplot-customSelector').find('form.multiplot-addArgs');
     if(addArgs.length>0){
         const queryString=addArgs.serialize();
         args['addArgs']=queryString;
@@ -556,12 +557,12 @@ function getPlotArgs(){
 
 let isSpatial=false;
 function genPlot(){
-    const plotDiv=$(this).parent().siblings('div.plotContent');
-    const plotContainer=$(this).closest('div.plot');
+    const plotDiv=$(this).parent().siblings('div.multiplot-plotContent');
+    const plotContainer=$(this).closest('div.multiplot-plot');
     const plotElement=plotDiv.get(0);
     const showXLabels=plotContainer.is(':last-child');
     const args=getPlotArgs.call(this);
-    const placeholder=plotDiv.find('.placeholder')
+    const placeholder=plotDiv.find('.multiplot-placeholder')
 
     if(typeof(args.plotType)=='undefined'){
         //no plot selected. Don't do anything
@@ -586,10 +587,10 @@ function genPlot(){
         [plotData,layout]=window[plotFunc].call(plotElement,data);
 
         if(isSpatial){
-            plotDiv.addClass('spatial');
+            plotDiv.addClass('multiplot-spatial');
         }
         else{
-            plotDiv.removeClass('spatial');
+            plotDiv.removeClass('multiplot-spatial');
         }
 
         config={'responsive':true}
@@ -606,7 +607,7 @@ function genPlot(){
         if(e.status==404){
             Plotly.purge(plotDiv);
             $(plotDiv).empty();
-            const errorPlaceholder=$('<div class="placeholder error">')
+            const errorPlaceholder=$('<div class="multiplot-placeholder error">')
             errorPlaceholder.html(`Unable to show plot for selected volcano/plot type.
             <br>No data found for this selection`);
             $(plotDiv).append(errorPlaceholder)
@@ -625,13 +626,13 @@ function plotRangeChanged(eventdata){
     }
     const dateFrom=eventdata['xaxis.range[0]'].slice(0,10)
     const dateTo=eventdata['xaxis.range[1]'].slice(0,10)
-    $('#dateFrom').val(dateFrom);
-    $('#dateTo').val(dateTo);
+    $('#multiplot-dateFrom').val(dateFrom);
+    $('#multiplot-dateTo').val(dateTo);
     refreshPlots();
 }
 
 function removePlotDiv(){
-    $(this).closest('div.plot').remove();
+    $(this).closest('div.multiplot-plot').remove();
     clearDateAxis(true);
 }
 

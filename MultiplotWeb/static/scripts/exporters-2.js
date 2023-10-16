@@ -16,8 +16,8 @@ function downloadPlotData(){
 }
 
 function generateCSV(category, label, headers, columns){
-    const dateFrom=$('#dateFrom').val()
-    const dateTo=$('#dateTo').val()
+    const dateFrom=$('#multiplot-dateFrom').val()
+    const dateTo=$('#multiplot-dateTo').val()
 
     let csvContent="data:text/csv;charset=utf-8,"
 
@@ -40,7 +40,7 @@ function generateCSV(category, label, headers, columns){
     const encodedUri=encodeURI(csvContent);
     const file_name=`${category}_${label}_${dateFrom}_${dateTo}.csv`
 
-    $('#downloadLink')
+    $('#multiplot-downloadLink')
     .attr('download',file_name)
     .attr('href',encodedUri)
     .get(0)

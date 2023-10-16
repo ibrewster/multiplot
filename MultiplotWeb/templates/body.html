@@ -1,28 +1,28 @@
-<div id="menuGuard"></div>
+<div id="multiplot-menuGuard"></div>
 <div style="display:none">
-    <a id='downloadLink' href='' download=''></a>
+    <a id='multiplot-downloadLink' href='' download=''></a>
 </div>
 
-<div id="header">
+<div id="multiplot-header">
     <h2>Multidisciplinary Plotting Tool</h2>
     <div>
-        Volcano: <select id="volcano">
+        Volcano: <select id="multiplot-volcano">
             {% for volc in volcanoes %}
             <option data-loc="{{volc[1]|safe}}">{{volc[0]}}</option>
             {%endfor%}
         </select>
         Date Range:
-        <input type="date" class="rangeDate" id="dateFrom">
+        <input type="date" class="multiplot-rangeDate" id="multiplot-dateFrom">
         -
-        <input type="date" class="rangeDate" id="dateTo">
+        <input type="date" class="multiplot-rangeDate" id="multiplot-dateTo">
     </div>
-    <div id="HeaderRight">
-        <button id="print">Print for PDF</button>
+    <div id="multiplot-HeaderRight">
+        <button id="multiplot-print">Print for PDF</button>
     </div>
 </div>
 
-<div id=plots>
+<div id="multiplot-plots">
 </div>
 
-<button id="addPlot">Add Plot</button>
+<button id="multiplot-addPlot">Add Plot</button>
 

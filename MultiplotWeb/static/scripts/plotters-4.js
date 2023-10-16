@@ -5,13 +5,13 @@
 
 // Selector utility functions to open/close the selector windows
 function closeTypeSelector(button){
-    $(button).closest('.typeSelector').hide();
-    const select=$(button).closest('.typeSelectWrapper').find('.plotSelect');
+    $(button).closest('.multiplot-typeSelector').hide();
+    const select=$(button).closest('.multiplot-typeSelectWrapper').find('.multiplot-plotSelect');
     genPlot.call(select.get(0));
 }
 
 function showTypeSelector(){
-    $(this).closest('div').find('.typeSelector').show();
+    $(this).closest('div').find('.multiplot-typeSelector').show();
 }
 
 // Utility function to generate a generic type selector with various options
@@ -25,10 +25,10 @@ function generate_type_selector(types, header, label){
     selButton.click(showTypeSelector);
 
     let selectorHTML=`
-        <div class="typeSelector" style="display:none">
-            <div class=typeHeader>${header}</div>
-            <form class="addArgs">
-                <div class=selectorTypes>
+        <div class="multiplot-typeSelector" style="display:none">
+            <div class="multiplot-typeHeader">${header}</div>
+            <form class="multiplot-addArgs">
+                <div class="multiplot-selectorTypes">
     `
 
     for(let item of types){
@@ -46,12 +46,12 @@ function generate_type_selector(types, header, label){
     selectorHTML+=`
                 </div>
             </form>
-            <div class="typesFooter">
-                <button type="button" class="close" onclick="closeTypeSelector(this)">Close</button>
+            <div class="multiplot-typesFooter">
+                <button type="button" class="multiplot-close" onclick="closeTypeSelector(this)">Close</button>
             </div>
         </div>
     `
-    const wrapper=$('<div class="typeSelectorWrapper">');
+    const wrapper=$('<div class="multiplot-typeSelectorWrapper">');
     wrapper.append(selButton);
     wrapper.append(selectorHTML);
     return wrapper;
@@ -301,7 +301,7 @@ function eq_location_depth(data){
     const lat=data['Latitude'];
     const lon=data['Longitude'];
     const depth=data['Depth_km'];
-    const location=$('#volcano option:selected').data('loc');
+    const location=$('#multiplot-volcano option:selected').data('loc');
 
     $(this).data('exporter',exportLocationDepth);
     $(this).data('lats',lat);

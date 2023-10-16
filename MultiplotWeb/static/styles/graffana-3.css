@@ -1,10 +1,10 @@
-body.MultiPlotDirect:has(div.multiplot-top-div.dark) {
+body:has(div.multiplot-top-div.multiplot-direct.multiplot-dark) {
     background-color: #111217;
     color:rgb(204,204,220);
     margin:0px;
 }
 
-div.dark{
+div.multiplot-dark{
     background-color: #111217;
     color:rgb(204,204,220);
 
@@ -29,7 +29,7 @@ div.dark{
         color: #fff;
     }
 
-    & div.sort{
+    & div.multiplot-sort{
         background-image:url('../img/reorder-white.svg');
     }
 
@@ -53,26 +53,26 @@ div.dark{
         color: rgb(204,204,220);
     }
 
-    .plotSelect{
+    .multiplot-plotSelect{
         border: none;
         background-color:transparent;
         color: rgb(204,204,220);
     }
 
-    .plotSelect:hover, .plotSelect.open{
+    .multiplot-plotSelect:hover, .multiplot-plotSelect.multiplot-open{
         background-color:#ccccdc29;
     }
 
-    & div.plot{
+    & div.multiplot-plot{
         background-color: #181C1E;
         border:1px solid #272B2F;
     }
 
-    & .download path{
+    & .multiplot-download path{
         fill:whitesmoke;
     }
 
-    .help{
+    .multiplot-help{
         background-color:#181b1f;
         color:rgb(204,204,220);
         border: 1px solid rgba(204,204,220,0.07);

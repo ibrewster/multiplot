@@ -1,26 +1,39 @@
-<head>
-    <!--This may be loaded from a CDN or the host server-->
-    <script src="static/scripts/jquery-3.6.3.min.js"></script>
+<html>
+    <head>
+        <!--This may be loaded from a CDN or the host server-->
+        <script src="static/scripts/jquery-3.6.3.min.js"></script>
 
-    <!-- The main multiplot script, needs to be included on the destination page -->
-    <script src="static/scripts/index-4.js"></script>
+        <!-- The main multiplot script, needs to be included on the destination page -->
+        <script src="static/scripts/index-4.js"></script>
 
-    <!--
-    Code to initialize the multiplot tool.
-    Place the call to MultiPlot wherever it makes the most sense.
-    -->
-    <script type="text/javascript">
-        let plot=null;
+        <!--
+        Code to initialize the multiplot tool.
+        Place the call to MultiPlot wherever it makes the most sense.
+        -->
+        <script type="text/javascript">
+            let plot=null;
 
-        $(document).ready(function(){
-            plot=new MultiPlot(document.getElementById('multiplot'))
-        })
+            $(document).ready(function(){
+                plot=new MultiPlot(document.getElementById('multiplot'))
+            })
 
-    </script>
+        </script>
 
-</head>
-<body>
-    <!--Other body content here-->
-    <div id="multiplot"></div>
-    <!--Other body content here-->
-</body>
+        <!--
+
+        <style type="text/css">
+            body {
+                background-color: #111217;
+                color:rgb(204,204,220);
+                margin:0px;
+            }
+        </style>
+        -->
+
+    </head>
+    <body>
+        <!--Other body content here-->
+        <div id="multiplot"></div>
+        <!--Other body content here-->
+    </body>
+</html>

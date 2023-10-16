@@ -1,11 +1,11 @@
-#header h2{
+#multiplot-header h2{
     text-align:left;
     margin-bottom:0px;
     margin-top:5px;
     grid-column: 1 / 2;
 }
 
-#header {
+#multiplot-header {
     border-bottom:3px groove;
     margin-bottom:15px;
     display:grid;
@@ -21,12 +21,12 @@ div.multiplot-top-div{
     padding-top:5px;
 }
 
-#addPlot {
+#multiplot-addPlot {
     margin-left:5px;
 }
 
 
-input {
+.multiplot-top-div input {
     padding:8px;
     padding-top:0px;
     padding-bottom:0px;
@@ -34,7 +34,7 @@ input {
     line-height:1.571429em;
 }
 
-button {
+.multiplot-top-div button {
     height:32px;
     padding-right:8px;
     border-radius:2px;
@@ -44,12 +44,12 @@ button {
     background-color: whitesmoke;
 }
 
-#HeaderRight{
+#multiplot-HeaderRight{
     text-align:right;
     padding-right:15px;
 }
 
-div.plot{
+#multiplot-plots div.multiplot-plot{
     display:grid;
     grid-template-columns: minmax(300px,1fr) auto;
     padding-left:10px;
@@ -59,24 +59,24 @@ div.plot{
     align-items:end;
 }
 
-#plots {
+#multiplot-plots {
     margin-bottom:8px;
     padding-left:5px;
     padding-right:5px;
 }
 
-.right{
+.multiplot-right{
     align-self:center;
 }
 
-.removePlot{
+.multiplot-removePlot{
     cursor:pointer;
     font-size:150%;
     align-self:center;
     text-align:center;
 }
 
-.sort{
+.multiplot-sort{
     cursor: move;
     height:32px;
     width: 32px;
@@ -86,41 +86,41 @@ div.plot{
     background-position:center;
 }
 
-div.placeholder{
+div.multiplot-placeholder{
     margin-bottom:15px;
     text-align:center;
 }
 
-.placeholder.error{
+.multiplot-placeholder.error{
     text-align:center;
     font-weight:bold;
 }
 
-.download {
+.multiplot-download {
     display:inline-block;
     cursor:pointer;
     vertical-align: bottom;
     margin-left: 10px;
 }
 
-.download svg {
+.multiplot-download svg {
     height: 1.5em;
 }
 
-.customSelector {
+.multiplot-customSelector {
     display:inline-block;
     margin-left:8px;
     position:relative;
 }
 
-div.typeSelectWrapper{
+div.multiplot-typeSelectWrapper{
     grid-column:1/3;
     justify-self:center;
     padding-bottom:15px;
     padding-top:8px;
 }
 
-div.typeSelector{
+div.multiplot-typeSelector{
     position:fixed;
     left:50%;
     top:25%;
@@ -135,7 +135,7 @@ div.typeSelector{
     z-index:100
 }
 
-div.typeHeader{
+div.multiplot-typeHeader{
     font-weight:bold;
     text-align:center;
     border-bottom:2px inset;
@@ -143,19 +143,19 @@ div.typeHeader{
     margin-bottom:10px;
 }
 
-div.selectorTypes{
+div.multiplot-selectorTypes{
     padding-left:10px;
     padding-right:10px;
 }
 
-div.typesFooter{
+div.multiplot-typesFooter{
     text-align: right;
     padding-right: 10px;
     border-top:1px solid;
     padding-top:10px;
 }
 
-#menuGuard{
+#multiplot-menuGuard{
     position:fixed;
     top:0px;
     left:0xp;
@@ -165,7 +165,7 @@ div.typesFooter{
     display:none;
 }
 
-.ui-menu {
+.multiplot-top-div .ui-menu {
     list-style: none;
     border:1 px solid;
     padding:0px;
@@ -178,44 +178,44 @@ div.typesFooter{
     background-color:white;
 }
 
-.ui-menu li:hover{
+.multiplot-top-div .ui-menu li:hover{
     background-color: lightblue;
     cursor:pointer;
 }
 
-.ui-menu li{
+.multiplot-top-div .ui-menu li{
     position:relative;
     padding-top:3px;
     padding-bottom:3px;
 }
 
-.ui-menu li.plot-cat-group:after{
+.multiplot-top-div .ui-menu li.multiplot-plot-cat-group:after{
     content:'>';
     position:absolute;
     left:calc(100% - 2ch);
     top: 3px;
 }
 
-.ui-menu li div{
+.multiplot-top-div .ui-menu li div{
     padding-left:10px;
     padding-right:10px;
 }
 
-.ui-menu li.plot-cat-group div{
+.multiplot-top-div .ui-menu li.multiplot-plot-cat-group div{
     padding-right:40px;
 }
 
-.ui-menu li:not(.plot-cat-group) div{
+.multiplot-dop-div .ui-menu li:not(.multiplot-plot-cat-group) div{
     padding-right:10px;
 }
 
-.ui-menu .ui-menu{
+.multiplot-top-div .ui-menu .ui-menu{
     position:absolute;
     left:100%;
     white-space:nowrap;
 }
 
-.plotSelect{
+.multiplot-plotSelect{
     background-color:transparent;
     padding:3px 10px;
     padding-right: 40px;
@@ -226,23 +226,23 @@ div.typesFooter{
 
 }
 
-.plotSelect:hover, .plotSelect.open{
+.multiplot-plotSelect:hover, .multiplot-plotSelect.multiplot-open{
     background-color: lightgrey;
 }
 
-.plotSelect:hover:after, .plotSelect.open:after{
+.multiplot-plotSelect:hover:after, .multiplot-plotSelect.multiplot-open:after{
     content: '⌄';
     position:absolute;
     top:0px;
     left: calc(100% - 2ch);
 }
 
-select {
+.multiplot-top-div select {
     font-size:1em;
     border-color:black;
 }
 
-.help{
+.multiplot-help{
     position:absolute;
     right:100%;
     box-shadow:0 8px 24px #010409;
@@ -255,11 +255,11 @@ select {
 
 }
 
-.help > .category {
+.multiplot-help > .multiplot-category {
     font-weight:bold;
 }
 
-.help > .dataset{
+.multiplot-help > .multiplot-dataset{
     font-weight:bold;
     margin-bottom:10px;
 }
@@ -269,31 +269,35 @@ select {
         size:letter portrait;
     }
 
-    .removePlot{
+    .multiplot-removePlot{
         display:none;
     }
 
-    #header{
+    #multiplot-header{
         display:none;
     }
 
-    #addPlot{
+    #multiplot-addPlot{
         display:none;
     }
 
-    .pagebreak {
+    .multiplot-pagebreak {
         page-break-before: always;
     }
 
-    .download {
+    .multiplot-download {
         display:none;
     }
 
-    .sort {
+    .multiplot-sort {
         display:none;
     }
 
-    .help {
+    .multiplot-typeSelectWrapper{
+        display:none;
+    }
+
+    .multiplot-help {
         display:none;
     }
 
