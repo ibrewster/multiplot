@@ -78,4 +78,9 @@ div.multiplot-dark{
         border: 1px solid rgba(204,204,220,0.07);
     }
 
+    .multiplot-typeSelector{
+        background-color:rgb(34,37,43);
+        color:rgba(204,204,220,0.65);
+    }
+
 }
