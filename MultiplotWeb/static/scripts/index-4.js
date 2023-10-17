@@ -89,6 +89,8 @@ function MultiPlot(dest){
     })
 }
 
+// -------------- MultiPlot Functions ------------//
+
 MultiPlot.prototype.setVolcano = (volc) => {
     const volcSelect=$('#multiplot-volcano')
     const prevVal=volcSelect.val()
@@ -124,6 +126,12 @@ MultiPlot.prototype.setEndDate= (date) => {
     const dateFrom=$('#multiplot-dateFrom').val();
     setDateRange(dateFrom,date);
 }
+
+MultiPlot.prototype.getPlots = () => {
+    return $('.multiplot-plotContent').toArray();
+}
+
+// ---------- END MultiPlot Functions------------------/
 
 function setDateRange(dateFrom,dateTo){
     if(typeof(dateFrom)=='string'){
@@ -219,7 +227,16 @@ function initMultiPlot(){
     $.getJSON(prefix+'getDescriptions').
     done(function(data){
         plotDescriptions=data
-    })
+    });
+
+    if(window.matchMedia) {
+        const mediaQueryList=window.matchMedia('print');
+        mediaQueryList.addListener(function(mql){
+            if(!mql.matches){
+                restoreAfterPrint();
+            }
+        });
+    }
 };
 
 function hideMenu(){
@@ -247,36 +264,43 @@ function setTheme(colorScheme){
     refreshPlots();
 }
 
+// -----printing three stage ---//
+let multiplotPrePrintStyle=theme
+
+// Stage 1: size for print page (8" wide")
 function sizeAndPrint(){
-    const WIDTH=768; //~8 inches
-    const lastStyle=theme;
+    multiplotPrePrintStylee=theme;
     setTheme('light');
 
-    setTimeout(function(){
-        $('.multiplot-plotContent').each(function(){
-            Plotly.relayout(this,{'width':WIDTH});
-            Plotly.Plots.resize(this);
-        });
+    $('.multiplot-top-div').css('width','8in');
 
-        calcPageBreaks();
-
-        //slight delay here so things can figure themselves out
-        setTimeout(function(){
-            window.print();
-
-            setTimeout(function(){
-                console.log('Relayout back to original size')
-                $('.multiplot-plotContent').each(function(){
-                   Plotly.relayout(this,{'width':null});
-                   Plotly.Plots.resize(this);
-                });
-
-                setTheme(lastStyle);
-            },500) //let the print dialog open and block execution
-        },500) // let the size relayout display
-    },500) //let the theme change display
+    Promise.all($('.multiplot-plotContent').map((idx,element)=>{
+        return Plotly.Plots.resize(element)
+    }))
+    .then(printPage);
 }
 
+// Stage 2: Print the page
+function printPage(){
+    calcPageBreaks();
+    window.print();
+}
+
+// Stage 3: Restore to original size
+function restoreAfterPrint(){
+    console.log('Relayout back to original size')
+
+    //remove the printing width, resort to the "normal" width
+    $('.multiplot-top-div').css('width','');
+
+    $('.multiplot-plotContent').each(function(){
+       Plotly.Plots.resize(this);
+    });
+
+    setTheme(multiplotPrePrintStyle);
+}
+
+// ------- Printing Complete ---------//
 const PAGE_HEIGHT=984;
 
 function calcPageBreaks(){
