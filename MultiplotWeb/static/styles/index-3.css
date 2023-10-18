@@ -298,3 +298,37 @@ div.multiplot-typesFooter{
     }
 
 }
+
+div.multiplot-print {
+    .multiplot-removePlot{
+        display:none;
+    }
+
+    #multiplot-header{
+        display:none;
+    }
+
+    #multiplot-addPlot{
+        display:none;
+    }
+
+    .multiplot-pagebreak {
+        page-break-before: always;
+    }
+
+    .multiplot-download {
+        display:none;
+    }
+
+    .multiplot-sort {
+        display:none;
+    }
+
+    .multiplot-typeSelectWrapper{
+        display:none;
+    }
+
+    .multiplot-help {
+        display:none;
+    }
+}
