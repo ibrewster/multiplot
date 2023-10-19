@@ -271,14 +271,17 @@ function hideMenu(){
     $('.multiplot-help').hide();
 }
 
-function setTheme(colorScheme){
+function setTheme(colorScheme, save){
     if(colorScheme!=='dark' && colorScheme!=='light'){
         console.error('Invalid theme specified');
         return;
     }
 
     theme=colorScheme;
-    localStorage.setItem('theme',theme);
+    
+    if(save==true || typeof(save)=='undefined')
+        localStorage.setItem('theme',theme);
+    
     if(theme==='dark'){
         parent.addClass('multiplot-dark');
     }
@@ -290,16 +293,19 @@ function setTheme(colorScheme){
 }
 
 // -----printing three stage ---//
-let multiplotPrePrintStyle=theme
-
 function createNewWindowForPrint(){
-    const myWindow=window.open('','PRINT','width=736px')
+    const myWindow=window.open('','PRINT','width=736px,height=1056px')
     
     myWindow.document.write('<html><head>');
     myWindow.document.write('<script src="https://apps.avo.alaska.edu/multiplot/static/scripts/jquery-3.6.3.min.js"></script>\n');
     myWindow.document.write(myScriptTag.outerHTML);
     
-    myWindow.document.write('</head><body>');
+    let bodyClass='';
+    if (navigator.appVersion.indexOf("Chrome/") != -1) {
+        bodyClass='class="multiplot-print-chrome"'
+    }
+    
+    myWindow.document.write(`</head><body ${bodyClass}>`);
     myWindow.document.write('<div id="multiplot-print-div" class="multiplot-print" style="width:8in"></div>');
     
     const dateFrom=$('#multiplot-dateFrom').val();
@@ -312,20 +318,21 @@ function createNewWindowForPrint(){
             prefix='${prefix}';
             plot=new MultiPlot(document.getElementById('multiplot-print-div'))
             plot.initialized.then(()=>{
+                setTheme('light',false);
                 plot.removePlot(0);
                 plot.setVolcano('${volc}');
                 plot.setDateRange('${dateFrom}','${dateTo}');
                 const plots=${plots}
-                plots.forEach(function(element){
+                const plotFutures=plots.map(function(element){
                     const type=element['plotType']
                     const addArgs=element['addArgs']
-                    plot.addPlot(type,addArgs)
+                    return plot.addPlot(type,addArgs)
                 })
-                multiplotPrePrintStyle='${theme}';
-                setTheme('light');
-                refreshPlots().then(()=>{
+                
+                Promise.all(plotFutures).then(()=>{
+                    setTheme('light',false); //not really needed, but it "kicks" the display nicely.
                     calcPageBreaks();
-                    setTimeout(window.print,500);
+                    window.print();
                 });
             });
         })
@@ -337,23 +344,11 @@ function createNewWindowForPrint(){
     
     myWindow.document.close();
     myWindow.focus();
-    myWindow.onbeforeunload=function(){setTheme(multiplotPrePrintStyle)};
 }
 
 // Stage 1: size for print page (8" wide")
 function sizeAndPrint(){
-    multiplotPrePrintStyle=theme;
     createNewWindowForPrint();
-    return;
-    
-    setTheme('light');
-
-    $('.multiplot-top-div').css('width','8in');
-
-    Promise.all($('.multiplot-plotContent').map((idx,element)=>{
-        return Plotly.Plots.resize(element)
-    }))
-    .then(printPage);
 }
 
 // Stage 2: Print the page
@@ -391,76 +386,84 @@ function calcPageBreaks(){
 }
 
 function createPlotDiv(type,addArgs){
-    const dest=$('#multiplot-plots')
-    const div=$('<div class="multiplot-plot">')
-
-    const typeDisplay=$('<div class="multiplot-plotSelect">')
-    typeDisplay.html('<div class="multiplot-typeString">Select...</div>')
-
-    const helpDiv=$('<div class="multiplot-help" style="display:none;">')
-    helpDiv.append('<div class="multiplot-category">')
-    helpDiv.append('<div class="multiplot-dataset">')
-    helpDiv.append('<div class="multiplot-description">')
-
-    typeDisplay.prepend(helpDiv)
-
-
-    const typeSelect=$('<ul class="multiplot-plotSelectMenu" style="display:none">')
-
-    let curCat=null;
-    let curCatTitle=''
-    for(const plot of plotTypes){
-        let opt;
-        if(typeof(plot)=='string' && plot.startsWith('-')){
-            opt=$('<li class="multiplot-plot-cat-group">')
-            curCatTitle=plot.replaceAll('---','')
-            let title=$('<div>').html(curCatTitle)
-            opt.append(title)
-            curCat=$('<ul>')
-            opt.append(curCat)
-            opt.data('category',curCatTitle)
-            opt.data('label','')
-            typeSelect.append(opt)
+    return new Promise((resolve) => {
+        const dest=$('#multiplot-plots')
+        const div=$('<div class="multiplot-plot">')
+    
+        const typeDisplay=$('<div class="multiplot-plotSelect">')
+        typeDisplay.html('<div class="multiplot-typeString">Select...</div>')
+    
+        const helpDiv=$('<div class="multiplot-help" style="display:none;">')
+        helpDiv.append('<div class="multiplot-category">')
+        helpDiv.append('<div class="multiplot-dataset">')
+        helpDiv.append('<div class="multiplot-description">')
+    
+        typeDisplay.prepend(helpDiv)
+    
+    
+        const typeSelect=$('<ul class="multiplot-plotSelectMenu" style="display:none">')
+    
+        let curCat=null;
+        let curCatTitle=''
+        for(const plot of plotTypes){
+            let opt;
+            if(typeof(plot)=='string' && plot.startsWith('-')){
+                opt=$('<li class="multiplot-plot-cat-group">')
+                curCatTitle=plot.replaceAll('---','')
+                let title=$('<div>').html(curCatTitle)
+                opt.append(title)
+                curCat=$('<ul>')
+                opt.append(curCat)
+                opt.data('category',curCatTitle)
+                opt.data('label','')
+                typeSelect.append(opt)
+            }
+            else{
+                let tag,label;
+                [tag,label]=plot
+                opt=$('<li>');
+                opt.append($('<div>').html(label))
+                opt.data('tag',tag)
+                opt.data('category',curCatTitle)
+                opt.data('label',label)
+                if(typeof(type)!='undefined' && type==tag){
+                    typeDisplay.data('plotType',tag)
+                    typeDisplay.find('.multiplot-typeString').html(`${curCatTitle} - ${label}`)
+                }
+                curCat.append(opt)
+            }
+        }
+    
+        const selectDiv=$('<div class="multiplot-typeSelectWrapper">')
+        selectDiv.append(typeDisplay)
+        selectDiv.append(typeSelect)
+        typeSelect.menu({
+            focus:plotSelectFocused,
+            select:plotSelectSelected
+        })
+    
+        const downloadDiv=$('<div class="multiplot-download">');
+        downloadDiv.html(downloadSVG());
+        selectDiv.append(downloadDiv);
+    
+        div.append(selectDiv)
+        div.append('<div class="multiplot-plotContent"><div class="multiplot-placeholder">Select a plot type</div></div>')
+        const rightDiv=$('<div class="multiplot-right">')
+        rightDiv.append('<div class="multiplot-sort">')
+        rightDiv.append('<div class=multiplot-removePlot>&times;</div>')
+        div.append(rightDiv)
+        dest.append(div)
+    
+        if(typeof(type)!=='undefined'){
+            plotTypeChanged.call(typeDisplay.get(0), addArgs, resolve);
         }
         else{
-            let tag,label;
-            [tag,label]=plot
-            opt=$('<li>');
-            opt.append($('<div>').html(label))
-            opt.data('tag',tag)
-            opt.data('category',curCatTitle)
-            opt.data('label',label)
-            if(typeof(type)!='undefined' && type==tag){
-                typeDisplay.data('plotType',tag)
-                typeDisplay.find('.multiplot-typeString').html(`${curCatTitle} - ${label}`)
-            }
-            curCat.append(opt)
+            //done. Resolve the promise.
+            resolve();
         }
-    }
-
-    const selectDiv=$('<div class="multiplot-typeSelectWrapper">')
-    selectDiv.append(typeDisplay)
-    selectDiv.append(typeSelect)
-    typeSelect.menu({
-        focus:plotSelectFocused,
-        select:plotSelectSelected
+    
     })
 
-    const downloadDiv=$('<div class="multiplot-download">');
-    downloadDiv.html(downloadSVG());
-    selectDiv.append(downloadDiv);
-
-    div.append(selectDiv)
-    div.append('<div class="multiplot-plotContent"><div class="multiplot-placeholder">Select a plot type</div></div>')
-    const rightDiv=$('<div class="multiplot-right">')
-    rightDiv.append('<div class="multiplot-sort">')
-    rightDiv.append('<div class=multiplot-removePlot>&times;</div>')
-    div.append(rightDiv)
-    dest.append(div)
-
-    if(typeof(type)!=='undefined'){
-        plotTypeChanged.call(typeDisplay.get(0), addArgs);
-    }
 }
 
 function plotSelectFocused(event, ui){
@@ -605,7 +608,7 @@ function selectPlotType(){
     $(this).addClass('multiplot-open');
 }
 
-function plotTypeChanged(addArgs){
+function plotTypeChanged(addArgs, resolve){
     const plotType=$(this).data('plotType');
 
     //remove any existing custom selectors
@@ -625,7 +628,12 @@ function plotTypeChanged(addArgs){
 
     //clear data from plot div
     $(this).parent().siblings('div.multiplot-plotContent').removeData();
-    genPlot.call(this);
+    console.log(resolve)
+    genPlot.call(this).then(()=>{
+        if(typeof(resolve)!='undefined'){
+            resolve();
+        }
+    })
 }
 
 function getPlotArgs(){

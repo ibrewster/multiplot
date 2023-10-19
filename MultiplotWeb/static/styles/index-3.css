@@ -264,6 +264,10 @@ div.multiplot-typesFooter{
     @page {
         size:letter portrait;
     }
+    
+    body.multiplot-print-chrome {
+        zoom: 155%;
+    }
 
     .multiplot-removePlot{
         display:none;
