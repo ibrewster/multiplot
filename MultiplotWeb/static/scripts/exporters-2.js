@@ -191,3 +191,22 @@ function exportSO2Rate(plotDiv){
 
     return [headers,[types,dates,lower,rate,upper]];
 }
+
+function exportSO2Mass(plotDiv){
+    const xData=plotDiv.data('xValues')
+    const yData=plotDiv.data('yValues')
+
+    const headers=['Type','Date From','Date To','Mass']
+    let types=[],dateFrom=[],dateTo=[],mass=[];
+    for(const [type,data] of Object.entries(yData)){
+        const [dateFromData,dateToData]=xData[type]
+        const numEntries=dateFromData.length
+        const typeArray=new Array(numEntries).fill(type)
+        types=types.concat(typeArray)
+        dateFrom=dateFrom.concat(dateFromData);
+        dateTo=dateTo.concat(dateToData);
+        mass=mass.concat(data)
+    }
+
+    return [headers,[types,dateFrom,dateTo,mass]];
+}

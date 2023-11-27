@@ -19,7 +19,7 @@ function generate_type_selector(types, selectedArgs, header, label){
     if(typeof(label)=='undefined'){
         label="Select Types..."
     }
-    
+
     if(typeof(selectedArgs)!='undefined'){
         selectedArgs=new URLSearchParams(selectedArgs).getAll('types');
     }
@@ -43,7 +43,7 @@ function generate_type_selector(types, selectedArgs, header, label){
         let cleanItem=$('<div>').html(item).text();
         //remove spaces
         cleanItem=cleanItem.replace(' ','')
-        
+
         checked= (selectedArgs.length==0 || selectedArgs.includes(cleanItem)) ? 'checked' : ''
 
         selectorHTML+=`
@@ -751,10 +751,15 @@ function so2_mass_combined(data){
         }
     }
 
+    const yValues={};
+    const xValues={};
     if (typeof(carn_data)!='undefined'){
         let carn_plot, carn_layout;
         [carn_plot, carn_layout]=so2_mass_carn(carn_data)
         plotData=plotData.concat(carn_plot)
+
+        xValues['carn']=[carn_data['Start Date'], carn_data['End Date']]
+        yValues['carn']=carn_data['Total SO2 Mass (kt)']
     }
 
     if(typeof(avo_data)!='undefined'){
@@ -762,7 +767,14 @@ function so2_mass_combined(data){
         [avo_plot,avo_layout]=so2_mass(avo_data)
         avo_plot[0]['name']='AVO'
         plotData=plotData.concat(avo_plot)
+
+        xValues['AVO']=[avo_data['date'],avo_data['date']];
+        yValues['AVO']=avo_data['mass'];
     }
+
+    $(this).data('yValues',yValues);
+    $(this).data('xValues',xValues);
+    $(this).data('exporter',exportSO2Mass);
 
     return [plotData,layout]
 }
@@ -795,8 +807,8 @@ function so2_em_rate_combined(data){
         }
     }
 
-    yValues={};
-    xValues={};
+    const yValues={};
+    const xValues={};
     if (typeof(carn_data)!='undefined'){
         let carn_plot, carn_layout;
         [carn_plot, carn_layout]=so2_rate_carn(carn_data)
