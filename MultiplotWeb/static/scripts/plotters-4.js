@@ -786,10 +786,15 @@ function so2_em_rate_combined(data){
         }
     }
 
+    yValues={};
+    xValues={};
     if (typeof(carn_data)!='undefined'){
         let carn_plot, carn_layout;
         [carn_plot, carn_layout]=so2_rate_carn(carn_data)
         plotData=plotData.concat(carn_plot)
+
+        yValues['carn']=[carn_data['lower'],carn_data['rate'],carn_data['upper']]
+        xValues['carn']=carn_data['year']
     }
 
     if(typeof(avo_data)!='undefined'){
@@ -797,7 +802,14 @@ function so2_em_rate_combined(data){
         [avo_plot,avo_layout]=so2_rate(avo_data)
         avo_plot[0]['name']='AVO'
         plotData=plotData.concat(avo_plot)
+
+        yValues['AVO']=avo_data['rate']
+        xValues['AVO']=avo_data['date']
     }
+
+    $(this).data('yValues',yValues);
+    $(this).data('xValues',xValues);
+    $(this).data('exporter',exportSO2Rate);
 
     return [plotData,layout]
 }
