@@ -264,6 +264,10 @@ div.multiplot-typesFooter{
     @page {
         size:letter portrait;
     }
+    
+    body.multiplot-print-chrome {
+        zoom: 155%;
+    }
 
     .multiplot-removePlot{
         display:none;
@@ -297,4 +301,38 @@ div.multiplot-typesFooter{
         display:none;
     }
 
+}
+
+div.multiplot-print {
+    .multiplot-removePlot{
+        display:none;
+    }
+
+    #multiplot-header{
+        display:none;
+    }
+
+    #multiplot-addPlot{
+        display:none;
+    }
+
+    .multiplot-pagebreak {
+        page-break-before: always;
+    }
+
+    .multiplot-download {
+        display:none;
+    }
+
+    .multiplot-sort {
+        display:none;
+    }
+
+    .multiplot-typeSelectWrapper{
+        display:none;
+    }
+
+    .multiplot-help {
+        display:none;
+    }
 }

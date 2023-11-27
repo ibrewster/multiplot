@@ -15,9 +15,16 @@ function showTypeSelector(){
 }
 
 // Utility function to generate a generic type selector with various options
-function generate_type_selector(types, header, label){
+function generate_type_selector(types, selectedArgs, header, label){
     if(typeof(label)=='undefined'){
         label="Select Types..."
+    }
+    
+    if(typeof(selectedArgs)!='undefined'){
+        selectedArgs=new URLSearchParams(selectedArgs).getAll('types');
+    }
+    else{
+        selectedArgs=[];
     }
 
     const selButton=$('<button>');
@@ -36,9 +43,11 @@ function generate_type_selector(types, header, label){
         let cleanItem=$('<div>').html(item).text();
         //remove spaces
         cleanItem=cleanItem.replace(' ','')
+        
+        checked= (selectedArgs.length==0 || selectedArgs.includes(cleanItem)) ? 'checked' : ''
 
         selectorHTML+=`
-            <input type="checkbox" id="${cleanItem}Type" name="types" checked value="${cleanItem}">
+            <input type="checkbox" id="${cleanItem}Type" name="types" ${checked} value="${cleanItem}">
             <label for="${cleanItem}Type">${item}</label>
         `
     }
@@ -59,30 +68,30 @@ function generate_type_selector(types, header, label){
 
 
 // Remote sensing detection type selector
-function rs_detections_selector(){
+function rs_detections_selector(addArgs){
     const types=['Ash','SO <sub>2</sub>','Elevated Temps']
-    selectorHTML=generate_type_selector(types,"Select detection types to show")
+    selectorHTML=generate_type_selector(types,addArgs,"Select detection types to show")
     return selectorHTML
 }
 
 // Thermal detection type selector
-function plot_radiative_power_selector(){
+function plot_radiative_power_selector(addArgs){
     const types=['VIIRS','MODIS']
-    selectorHTML=generate_type_selector(types,"Select Data Types to Show")
+    selectorHTML=generate_type_selector(types,addArgs,"Select Data Types to Show")
     return selectorHTML
 }
 
 //SO2 emission rate Carn/AVO selector
-function so2_em_rate_combined_selector(){
+function so2_em_rate_combined_selector(addArgs){
     const types=['AVO','Carn']
-    selectorHTML=generate_type_selector(types,"Select Datasets to Show","Select Datasets...")
+    selectorHTML=generate_type_selector(types,addArgs,"Select Datasets to Show","Select Datasets...")
     return selectorHTML
 }
 
 //SO2 mass Carn/AVO selector
-function so2_mass_combined_selector(){
+function so2_mass_combined_selector(addArgs){
     const types=['AVO','Carn']
-    selectorHTML=generate_type_selector(types,"Select Datasets to Show","Select Datasets...")
+    selectorHTML=generate_type_selector(types,addArgs,"Select Datasets to Show","Select Datasets...")
     return selectorHTML
 }
 

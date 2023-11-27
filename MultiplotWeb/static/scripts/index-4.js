@@ -8,7 +8,10 @@ function multiPlot(dest){
     return new MultiPlot(dest)
 }
 
+
+
 function MultiPlot(dest){
+    //constructor Function
     parent=$(dest)
 
     // We could skip all this if we just wanted to assume we are loading remote.
@@ -38,59 +41,60 @@ function MultiPlot(dest){
     }
 
     // get the header scripts
-    $.get(prefix+'headers')
-    .fail(() => {
-        console.log('Unable to fetch MultiPlot headers');
-    })
-    .done((headers) => {
-        //append the scripts and stylesheets to the header
-
-        const parsedHtml=$.parseHTML(headers,null,true);
-
-        // we have to track the loading of the scripts so we don't try to execute before
-        // all scripts have loaded.
-        const neededScripts=new Set();
-
-        function scriptLoaded(src){
-            neededScripts.delete(src);
-
-            if(neededScripts.size===0){
-                // once all scripts are loaded, go ahead load the body div
-                //followed by plot initilization
-                parent.load(prefix+'body', function(){
-                    parent.addClass('multiplot-top-div');
-                    initMultiPlot();
-                })
-            }
-        }
-
-        parsedHtml.forEach( (element) => {
-            let newElement=element; //default, for css/link/etc tags
-
-            if(element instanceof HTMLScriptElement){
-                // If we have a script, creating a new element the same as the old one seems to
-                // be the only way to get them to load, for some reason. CSS links just work...
-                newElement=document.createElement('script');
-                newElement.async=false;
-
-                //if the script has text, set it on the new script.
-                //Otherwise, add the onload handler and set the src attribute.
-                if(element.text!=''){ newElement.text=element.text; }
-                else{
-                    neededScripts.add(element.src)
-                    newElement.onload = () => {scriptLoaded(element.src)};
-                    newElement.src=element.src;
+    this.initialized=new Promise((resolve) => {
+        $.get(prefix+'headers')
+        .fail(() => {
+            console.log('Unable to fetch MultiPlot headers');
+        })
+        .done((headers) => {
+            //append the scripts and stylesheets to the header
+    
+            const parsedHtml=$.parseHTML(headers,null,true);
+    
+            // we have to track the loading of the scripts so we don't try to execute before
+            // all scripts have loaded.
+            const neededScripts=new Set();
+    
+            function scriptLoaded(src){
+                neededScripts.delete(src);
+    
+                if(neededScripts.size===0){
+                    // once all scripts are loaded, go ahead load the body div
+                    //followed by plot initilization
+                    parent.load(prefix+'body', function(){
+                        parent.addClass('multiplot-top-div');
+                        initMultiPlot(resolve);
+                    })
                 }
             }
-
-            document.head.appendChild(newElement);
-        });
-
+    
+            parsedHtml.forEach( (element) => {
+                let newElement=element; //default, for css/link/etc tags
+    
+                if(element instanceof HTMLScriptElement){
+                    // If we have a script, creating a new element the same as the old one seems to
+                    // be the only way to get them to load, for some reason. CSS links just work...
+                    newElement=document.createElement('script');
+                    newElement.async=false;
+    
+                    //if the script has text, set it on the new script.
+                    //Otherwise, add the onload handler and set the src attribute.
+                    if(element.text!=''){ newElement.text=element.text; }
+                    else{
+                        neededScripts.add(element.src)
+                        newElement.onload = () => {scriptLoaded(element.src)};
+                        newElement.src=element.src;
+                    }
+                }
+    
+                document.head.appendChild(newElement);
+            });
+    
+        })
     })
 }
 
-// -------------- MultiPlot Functions ------------//
-
+// -------------- MultiPlot Prototype Functions ------------//
 MultiPlot.prototype.setVolcano = (volc) => {
     const volcSelect=$('#multiplot-volcano')
     const prevVal=volcSelect.val()
@@ -100,13 +104,19 @@ MultiPlot.prototype.setVolcano = (volc) => {
 
     //see if it changed. If we get a different result than provided, then the provided
     //value is invalid
+    console.log(volcSelect.val())
+    console.log(volcSelect)
     if(volcSelect.val() != volc){
         volcSelect.val(prevVal);
         console.error(`Unable to set volcano to ${volc}: Invalid option`);
         return;
     }
 
-    volcSelect.change();
+    return refreshPlots();
+}
+
+MultiPlot.prototype.removePlot=(idx) =>{
+    removePlotDiv.call($('.multiplot-plotContent').eq(idx))
 }
 
 MultiPlot.prototype.addPlot=createPlotDiv;
@@ -115,25 +125,33 @@ MultiPlot.prototype.getPlotsDiv=() => {
     return $('.multiplot-top-div')[0];
 }
 
-MultiPlot.prototype.setDateRange=setDateRange;
-
-MultiPlot.prototype.setStartDate=(date) => {
-    const dateTo=$('#multiplot-dateTo').val();
-    setDateRange(date,dateTo);
-}
-
-MultiPlot.prototype.setEndDate= (date) => {
-    const dateFrom=$('#multiplot-dateFrom').val();
-    setDateRange(dateFrom,date);
-}
-
 MultiPlot.prototype.getPlots = () => {
     return $('.multiplot-plotContent').toArray();
 }
 
-// ---------- END MultiPlot Functions------------------/
+MultiPlot.prototype.getPlotParams=(idx)=>{
+    if(typeof(idx)=='undefined'){
+        return $('div.multiplot-plotSelect').map((idx,element)=>{
+            return getPlotArgs.call(element);
+        })
+    }
+    else{
+        return getPlotArgs.call($('div.multiplot-plotSelect').eq(idx)[0])
+    }
 
-function setDateRange(dateFrom,dateTo){
+}
+
+MultiPlot.prototype.setStartDate=function(date){
+    const dateTo=$('#multiplot-dateTo').val();
+    return this.setDateRange(date,dateTo);
+}
+
+MultiPlot.prototype.setEndDate= function(date){
+    const dateFrom=$('#multiplot-dateFrom').val();
+    return this.setDateRange(dateFrom,date);
+}
+
+MultiPlot.prototype.setDateRange = (dateFrom,dateTo) => {
     if(typeof(dateFrom)=='string'){
         dateFrom=new Date(dateFrom);
     }
@@ -159,8 +177,12 @@ function setDateRange(dateFrom,dateTo){
     $('#multiplot-dateFrom').val(from);
     $('#multiplot-dateTo').val(to);
 
-    refreshPlots();
+    return refreshPlots();
 }
+
+// ---------- END MultiPlot Functions------------------/
+
+
 
 function formatUTCDateString(date){
     let dateYear=date.getUTCFullYear();
@@ -173,7 +195,7 @@ function formatUTCDateString(date){
     return `${dateYear}-${dateMonth}-${dateDay}`
 }
 
-function initMultiPlot(){
+function initMultiPlot(resolve){
     if(localStorage.theme){
         theme=localStorage.getItem('theme');
     }
@@ -227,6 +249,9 @@ function initMultiPlot(){
     $.getJSON(prefix+'getDescriptions').
     done(function(data){
         plotDescriptions=data
+        if(typeof(resolve)!='undefined'){
+            resolve();
+        }
     });
 
     if(window.matchMedia) {
@@ -246,14 +271,17 @@ function hideMenu(){
     $('.multiplot-help').hide();
 }
 
-function setTheme(colorScheme){
+function setTheme(colorScheme, save){
     if(colorScheme!=='dark' && colorScheme!=='light'){
         console.error('Invalid theme specified');
         return;
     }
 
     theme=colorScheme;
-    localStorage.setItem('theme',theme);
+    
+    if(save==true || typeof(save)=='undefined')
+        localStorage.setItem('theme',theme);
+    
     if(theme==='dark'){
         parent.addClass('multiplot-dark');
     }
@@ -265,19 +293,62 @@ function setTheme(colorScheme){
 }
 
 // -----printing three stage ---//
-let multiplotPrePrintStyle=theme
+function createNewWindowForPrint(){
+    const myWindow=window.open('','PRINT','width=736px,height=1056px')
+    
+    myWindow.document.write('<html><head>');
+    myWindow.document.write('<script src="https://apps.avo.alaska.edu/multiplot/static/scripts/jquery-3.6.3.min.js"></script>\n');
+    myWindow.document.write(myScriptTag.outerHTML);
+    
+    let bodyClass='';
+    if (navigator.appVersion.indexOf("Chrome/") != -1) {
+        bodyClass='class="multiplot-print-chrome"'
+    }
+    
+    myWindow.document.write(`</head><body ${bodyClass}>`);
+    myWindow.document.write('<div id="multiplot-print-div" class="multiplot-print" style="width:8in"></div>');
+    
+    const dateFrom=$('#multiplot-dateFrom').val();
+    const dateTo=$('#multiplot-dateTo').val();
+    const volc=$('#multiplot-volcano').val();
+    const plots=JSON.stringify(plot.getPlotParams().toArray())
+    
+    const initScript=`<script type="text/javascript">
+        $(document).ready(function(){
+            prefix='${prefix}';
+            plot=new MultiPlot(document.getElementById('multiplot-print-div'))
+            plot.initialized.then(()=>{
+                setTheme('light',false);
+                plot.removePlot(0);
+                plot.setVolcano('${volc}');
+                plot.setDateRange('${dateFrom}','${dateTo}');
+                const plots=${plots}
+                const plotFutures=plots.map(function(element){
+                    const type=element['plotType']
+                    const addArgs=element['addArgs']
+                    return plot.addPlot(type,addArgs)
+                })
+                
+                Promise.all(plotFutures).then(()=>{
+                    setTheme('light',false); //not really needed, but it "kicks" the display nicely.
+                    calcPageBreaks();
+                    window.print();
+                });
+            });
+        })
+    </script>
+    `
+    myWindow.document.write(initScript)
+    
+    myWindow.document.write('</body></html>');
+    
+    myWindow.document.close();
+    myWindow.focus();
+}
 
 // Stage 1: size for print page (8" wide")
 function sizeAndPrint(){
-    multiplotPrePrintStylee=theme;
-    setTheme('light');
-
-    $('.multiplot-top-div').css('width','8in');
-
-    Promise.all($('.multiplot-plotContent').map((idx,element)=>{
-        return Plotly.Plots.resize(element)
-    }))
-    .then(printPage);
+    createNewWindowForPrint();
 }
 
 // Stage 2: Print the page
@@ -288,16 +359,7 @@ function printPage(){
 
 // Stage 3: Restore to original size
 function restoreAfterPrint(){
-    console.log('Relayout back to original size')
-
-    //remove the printing width, resort to the "normal" width
-    $('.multiplot-top-div').css('width','');
-
-    $('.multiplot-plotContent').each(function(){
-       Plotly.Plots.resize(this);
-    });
-
-    setTheme(multiplotPrePrintStyle);
+    //setTheme(multiplotPrePrintStyle);
 }
 
 // ------- Printing Complete ---------//
@@ -323,77 +385,85 @@ function calcPageBreaks(){
     });
 }
 
-function createPlotDiv(type){
-    const dest=$('#multiplot-plots')
-    const div=$('<div class="multiplot-plot">')
-
-    const typeDisplay=$('<div class="multiplot-plotSelect">')
-    typeDisplay.html('<div class="multiplot-typeString">Select...</div>')
-
-    const helpDiv=$('<div class="multiplot-help" style="display:none;">')
-    helpDiv.append('<div class="multiplot-category">')
-    helpDiv.append('<div class="multiplot-dataset">')
-    helpDiv.append('<div class="multiplot-description">')
-
-    typeDisplay.prepend(helpDiv)
-
-
-    const typeSelect=$('<ul class="multiplot-plotSelectMenu" style="display:none">')
-
-    let curCat=null;
-    let curCatTitle=''
-    for(const plot of plotTypes){
-        let opt;
-        if(typeof(plot)=='string' && plot.startsWith('-')){
-            opt=$('<li class="multiplot-plot-cat-group">')
-            curCatTitle=plot.replaceAll('---','')
-            let title=$('<div>').html(curCatTitle)
-            opt.append(title)
-            curCat=$('<ul>')
-            opt.append(curCat)
-            opt.data('category',curCatTitle)
-            opt.data('label','')
-            typeSelect.append(opt)
+function createPlotDiv(type,addArgs){
+    return new Promise((resolve) => {
+        const dest=$('#multiplot-plots')
+        const div=$('<div class="multiplot-plot">')
+    
+        const typeDisplay=$('<div class="multiplot-plotSelect">')
+        typeDisplay.html('<div class="multiplot-typeString">Select...</div>')
+    
+        const helpDiv=$('<div class="multiplot-help" style="display:none;">')
+        helpDiv.append('<div class="multiplot-category">')
+        helpDiv.append('<div class="multiplot-dataset">')
+        helpDiv.append('<div class="multiplot-description">')
+    
+        typeDisplay.prepend(helpDiv)
+    
+    
+        const typeSelect=$('<ul class="multiplot-plotSelectMenu" style="display:none">')
+    
+        let curCat=null;
+        let curCatTitle=''
+        for(const plot of plotTypes){
+            let opt;
+            if(typeof(plot)=='string' && plot.startsWith('-')){
+                opt=$('<li class="multiplot-plot-cat-group">')
+                curCatTitle=plot.replaceAll('---','')
+                let title=$('<div>').html(curCatTitle)
+                opt.append(title)
+                curCat=$('<ul>')
+                opt.append(curCat)
+                opt.data('category',curCatTitle)
+                opt.data('label','')
+                typeSelect.append(opt)
+            }
+            else{
+                let tag,label;
+                [tag,label]=plot
+                opt=$('<li>');
+                opt.append($('<div>').html(label))
+                opt.data('tag',tag)
+                opt.data('category',curCatTitle)
+                opt.data('label',label)
+                if(typeof(type)!='undefined' && type==tag){
+                    typeDisplay.data('plotType',tag)
+                    typeDisplay.find('.multiplot-typeString').html(`${curCatTitle} - ${label}`)
+                }
+                curCat.append(opt)
+            }
+        }
+    
+        const selectDiv=$('<div class="multiplot-typeSelectWrapper">')
+        selectDiv.append(typeDisplay)
+        selectDiv.append(typeSelect)
+        typeSelect.menu({
+            focus:plotSelectFocused,
+            select:plotSelectSelected
+        })
+    
+        const downloadDiv=$('<div class="multiplot-download">');
+        downloadDiv.html(downloadSVG());
+        selectDiv.append(downloadDiv);
+    
+        div.append(selectDiv)
+        div.append('<div class="multiplot-plotContent"><div class="multiplot-placeholder">Select a plot type</div></div>')
+        const rightDiv=$('<div class="multiplot-right">')
+        rightDiv.append('<div class="multiplot-sort">')
+        rightDiv.append('<div class=multiplot-removePlot>&times;</div>')
+        div.append(rightDiv)
+        dest.append(div)
+    
+        if(typeof(type)!=='undefined'){
+            plotTypeChanged.call(typeDisplay.get(0), addArgs, resolve);
         }
         else{
-            let tag,label;
-            [tag,label]=plot
-            opt=$('<li>');
-            opt.append($('<div>').html(label))
-            opt.data('tag',tag)
-            opt.data('category',curCatTitle)
-            opt.data('label',label)
-            if(typeof(type)!='undefined' && type==tag){
-                typeDisplay.data('plotType',tag)
-                typeDisplay.find('.multiplot-typeString').html(`${curCatTitle} - ${label}`)
-            }
-            curCat.append(opt)
+            //done. Resolve the promise.
+            resolve();
         }
-    }
-
-    const selectDiv=$('<div class="multiplot-typeSelectWrapper">')
-    selectDiv.append(typeDisplay)
-    selectDiv.append(typeSelect)
-    typeSelect.menu({
-        focus:plotSelectFocused,
-        select:plotSelectSelected
+    
     })
 
-    const downloadDiv=$('<div class="multiplot-download">');
-    downloadDiv.html(downloadSVG());
-    selectDiv.append(downloadDiv);
-
-    div.append(selectDiv)
-    div.append('<div class="multiplot-plotContent"><div class="multiplot-placeholder">Select a plot type</div></div>')
-    const rightDiv=$('<div class="multiplot-right">')
-    rightDiv.append('<div class="multiplot-sort">')
-    rightDiv.append('<div class=multiplot-removePlot>&times;</div>')
-    div.append(rightDiv)
-    dest.append(div)
-
-    if(typeof(type)!=='undefined'){
-        plotTypeChanged.call(typeDisplay.get(0));
-    }
 }
 
 function plotSelectFocused(event, ui){
@@ -441,9 +511,9 @@ function plotSelectSelected(event, ui){
 }
 
 function refreshPlots(){
-    $('div.multiplot-plotSelect').each(function(){
-        genPlot.call(this);
-    });
+    return Promise.all($('div.multiplot-plotSelect').map((idx,element)=>{
+        return genPlot.call(element);
+    }));
 }
 
 function clearDateAxis(setLast){
@@ -453,7 +523,9 @@ function clearDateAxis(setLast){
 
     if(setLast===true){
         const lastPlot=$('.js-plotly-plot:not(multiplot-spatial):last').get(0)
-        Plotly.relayout(lastPlot,{'xaxis.showticklabels':true})
+        if(typeof(lastPlot)!='undefined'){
+            Plotly.relayout(lastPlot,{'xaxis.showticklabels':true})
+        }
     }
 }
 
@@ -536,7 +608,7 @@ function selectPlotType(){
     $(this).addClass('multiplot-open');
 }
 
-function plotTypeChanged(){
+function plotTypeChanged(addArgs, resolve){
     const plotType=$(this).data('plotType');
 
     //remove any existing custom selectors
@@ -550,13 +622,18 @@ function plotTypeChanged(){
 
     if(typeof(custFunc)!=="undefined"){
         const selector=$('<div class="multiplot-customSelector">')
-        selector.append(custFunc());
+        selector.append(custFunc(addArgs));
         $(this).after(selector);
     }
 
     //clear data from plot div
     $(this).parent().siblings('div.multiplot-plotContent').removeData();
-    genPlot.call(this);
+    console.log(resolve)
+    genPlot.call(this).then(()=>{
+        if(typeof(resolve)!='undefined'){
+            resolve();
+        }
+    })
 }
 
 function getPlotArgs(){
@@ -601,51 +678,59 @@ function genPlot(){
         placeholder.text("Fetching data. Please wait...")
     }
 
-    $.getJSON(prefix+'getPlot',args).done(function(data){
-        Plotly.purge(plotElement)
-
-        placeholder.remove();
-
-        const plotType=args['plotType']
-
-        let plotData,layout;
-        const plotFunc=plotFuncs[plotType];
-
-        isSpatial=false;
-        [plotData,layout]=window[plotFunc].call(plotElement,data);
-
-        if(isSpatial){
-            plotDiv.addClass('multiplot-spatial');
-        }
-        else{
-            plotDiv.removeClass('multiplot-spatial');
-        }
-
-        config={'responsive':true}
-
-        layout=setLayoutDefaults(layout,showXLabels)
-
-        Plotly.newPlot(plotElement,plotData,layout,config);
-
-        plotElement.removeListener('plotly_relayout',plotRangeChanged)
-        plotElement.on('plotly_relayout',plotRangeChanged);
-
-
-    }).fail(function(e){
-        if(e.status==404){
-            Plotly.purge(plotDiv);
-            $(plotDiv).empty();
-            const errorPlaceholder=$('<div class="multiplot-placeholder error">')
-            errorPlaceholder.html(`Unable to show plot for selected volcano/plot type.
-            <br>No data found for this selection`);
-            $(plotDiv).append(errorPlaceholder)
-        }
-        else{
-            alert(`Error generating plot: ${e.status}, ${e.responseText}`)
-        }
-    }).always(function(){
-        clearDateAxis(true);
+    const plotGenerated=new Promise((resolve,reject)=>{
+        $.getJSON(prefix+'getPlot',args).done(function(data){
+            Plotly.purge(plotElement)
+    
+            placeholder.remove();
+    
+            const plotType=args['plotType']
+    
+            let plotData,layout;
+            const plotFunc=plotFuncs[plotType];
+    
+            isSpatial=false;
+            [plotData,layout]=window[plotFunc].call(plotElement,data);
+    
+            if(isSpatial){
+                plotDiv.addClass('multiplot-spatial');
+            }
+            else{
+                plotDiv.removeClass('multiplot-spatial');
+            }
+    
+            config={'responsive':true}
+    
+            layout=setLayoutDefaults(layout,showXLabels)
+    
+            Plotly.newPlot(plotElement,plotData,layout,config).then(()=>{resolve()});
+    
+            plotElement.removeListener('plotly_relayout',plotRangeChanged)
+            plotElement.on('plotly_relayout',plotRangeChanged);
+            
+    
+        }).fail(function(e){
+            if(e.status==404){
+                Plotly.purge(plotDiv);
+                $(plotDiv).empty();
+                const errorPlaceholder=$('<div class="multiplot-placeholder error">')
+                errorPlaceholder.html(`Unable to show plot for selected volcano/plot type.
+                <br>No data found for this selection`);
+                $(plotDiv).append(errorPlaceholder)
+                resolve();
+            }
+            else{
+                if(e.status!=0){
+                    alert(`Error generating plot: ${e.status}, ${e.responseText}`);
+                }
+                reject();
+            }
+        }).always(function(){
+            clearDateAxis(true);
+        })
     })
+    
+    return plotGenerated
 }
 
 function plotRangeChanged(eventdata){
@@ -660,6 +745,10 @@ function plotRangeChanged(eventdata){
 }
 
 function removePlotDiv(){
+    const plotlyDiv=$(this).closest('div.multiplot-plot').find('.js-plotly-plot').get(0)
+    if(typeof(plotlyDiv)!='undefined'){
+        Plotly.purge(plotlyDiv)
+    }
     $(this).closest('div.multiplot-plot').remove();
     clearDateAxis(true);
 }
