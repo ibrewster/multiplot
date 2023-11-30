@@ -142,7 +142,7 @@ div.multiplot-typeSelector{
     background-color:white;
     border:3px outset;
     box-shadow: 3px 3px 3px rgba(0,0,0,.25);
-    z-index:100
+    z-index:101;
 }
 
 div.multiplot-typeHeader{
@@ -151,6 +151,15 @@ div.multiplot-typeHeader{
     border-bottom:2px inset;
     padding-bottom:10px;
     margin-bottom:10px;
+}
+
+div.multiplot-typeSelectorGuard{
+    width:100vw;
+    height:100vh;
+    top:0px;
+    left:0px;
+    position:fixed;
+    z-index: -1;
 }
 
 div.multiplot-selectorTypes{
@@ -188,6 +197,7 @@ div.multiplot-typesFooter{
     box-shadow:0 8px 24px #010409;
     background-color:white;
     width:100%;
+    min-width:190px;
     margin-left:-10px;
     border-radius:5px;
     border-top-left-radius: 0px;

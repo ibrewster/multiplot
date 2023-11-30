@@ -33,6 +33,7 @@ function generate_type_selector(types, selectedArgs, header, label){
 
     let selectorHTML=`
         <div class="multiplot-typeSelector" style="display:none">
+            <div class="multiplot-typeSelectorGuard"></div>
             <div class="multiplot-typeHeader">${header}</div>
             <form class="multiplot-addArgs">
                 <div class="multiplot-selectorTypes">
