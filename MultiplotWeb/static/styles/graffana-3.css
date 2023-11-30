@@ -20,8 +20,9 @@ div.multiplot-dark{
 
     .ui-menu{
         border: 1px solid rgba(204,204,220,0.07);
+        border-top:none;
         color:rgb(204,204,220);
-        background-color:#181b1f;
+        background-color:#3A3E43;
     }
 
     & .ui-menu li:hover{

@@ -1,4 +1,6 @@
+import glob
 import json
+import os
 import flask
 
 from collections import defaultdict
@@ -27,6 +29,23 @@ def getPrefix():
     return prefix
 
 
+@app.route('/api')
+def api():
+    """
+    Return the main javascript page that creates the multiplot API
+    """
+    index_js_path = glob.glob(os.path.join(app.static_folder, 'scripts', 'index-*.js'))
+    if not index_js_path:
+        return flask.abort(404)
+
+
+    script_file = os.path.basename(index_js_path[0])
+    response = flask.send_from_directory(app.static_folder,
+                                     os.path.join('scripts', script_file),
+                                     mimetype='text/javascript')
+    response.headers['Cache-Control'] = 'max-age=3600, no-cache'
+    return response
+    
 @app.route('/headers')
 def headers():
     args = {

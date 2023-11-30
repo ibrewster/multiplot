@@ -1,6 +1,7 @@
 function downloadPlotData(){
-    const plotDiv=$(this).closest('div.multiplot-plot').find('div.multiplot-plotContent');
-    const type=$(this).siblings('.multiplot-plotSelect').data('plotType');
+    const parentPlot=$(this).closest('div.multiplot-plot')
+    const plotDiv=parentPlot.find('div.multiplot-plotContent');
+    const type=parentPlot.find('.multiplot-plotSelect').data('plotType');
 
     let category,label;
     [category,label] = type.split('|');

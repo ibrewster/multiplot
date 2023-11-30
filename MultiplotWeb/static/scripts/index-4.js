@@ -8,8 +8,6 @@ function multiPlot(dest){
     return new MultiPlot(dest)
 }
 
-
-
 function MultiPlot(dest){
     //constructor Function
     parent=$(dest)
@@ -436,15 +434,18 @@ function createPlotDiv(type,addArgs){
     
         const selectDiv=$('<div class="multiplot-typeSelectWrapper">')
         selectDiv.append(typeDisplay)
-        selectDiv.append(typeSelect)
+        typeDisplay.append(typeSelect);
+        //selectDiv.append(typeSelect)
         typeSelect.menu({
             focus:plotSelectFocused,
             select:plotSelectSelected
         })
     
+        const auxDiv=$('<div class="multiplot-selectRight">');
         const downloadDiv=$('<div class="multiplot-download">');
         downloadDiv.html(downloadSVG());
-        selectDiv.append(downloadDiv);
+        auxDiv.append(downloadDiv);
+        selectDiv.append(auxDiv);
     
         div.append(selectDiv)
         div.append('<div class="multiplot-plotContent"><div class="multiplot-placeholder">Select a plot type</div></div>')
@@ -500,6 +501,9 @@ function plotSelectSelected(event, ui){
     if(typeof(plotType)=='undefined'){
         return; //not a plot type
     }
+
+    //we handle this click, don't pass it on
+    event.stopPropagation();
 
     hideMenu();
     const selectButton=item.closest('.multiplot-typeSelectWrapper').find('.multiplot-plotSelect')
@@ -612,7 +616,7 @@ function plotTypeChanged(addArgs, resolve){
     const plotType=$(this).data('plotType');
 
     //remove any existing custom selectors
-    $(this).siblings('.multiplot-customSelector').remove();
+    $(this).siblings().find('.multiplot-customSelector').remove();
 
     // add any custom components needed.
     // Custom component function is named the same as the
@@ -623,7 +627,7 @@ function plotTypeChanged(addArgs, resolve){
     if(typeof(custFunc)!=="undefined"){
         const selector=$('<div class="multiplot-customSelector">')
         selector.append(custFunc(addArgs));
-        $(this).after(selector);
+        $(this).siblings('.multiplot-selectRight').prepend(selector);
     }
 
     //clear data from plot div
@@ -651,7 +655,7 @@ function getPlotArgs(){
     }
 
     //see if there are any custom args for this plot
-    const addArgs=$(this).siblings('.multiplot-customSelector').find('form.multiplot-addArgs');
+    const addArgs=$(this).siblings().find('.multiplot-customSelector').find('form.multiplot-addArgs');
     if(addArgs.length>0){
         const queryString=addArgs.serialize();
         args['addArgs']=queryString;
