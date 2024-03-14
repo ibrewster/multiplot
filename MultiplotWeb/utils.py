@@ -4,12 +4,13 @@ import os
 from functools import wraps, partial
 from collections import defaultdict
 
+import pandas
 import psycopg
 import pymysql
 
 import numpy as np
 
-from . import config, app
+from . import config, app, google, DBMetadata
 
 # TODO: better way of defining this? We need the latitude and longitude of the
 # view center - which may not be the same as the "volcano location" - as well
@@ -175,3 +176,16 @@ def get_db_labels():
             func = partial(database.plot_db_dataset, tag)
             GEN_FUNCS[tag] = func
             JS_FUNCS[tag] = database.plot_db_dataset.__name__
+            
+def get_combined_details():
+    g_details = google.get_data()
+    db_details = DBMetadata.get_db_details()
+    
+    details = pandas.concat([g_details, db_details], sort=True, copy=False)
+    # Entries from the google spreadsheet override identical entries from the database
+    # Change 'first' to 'last' to reverse this logic.
+    details = details[~details.index.duplicated(keep='first')]
+    details = details.sort_index();
+    
+    return details
+    
