@@ -6,6 +6,7 @@ cors = CORS(app)
 
 from . import main, utils
 utils.get_volcs()
+utils.get_db_labels()
 
 # imported to register functions
 from .generators import *

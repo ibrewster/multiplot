@@ -593,9 +593,11 @@ function setLayoutDefaults(layout,showLabels){
         layout['margin']={'l':left_margin,'r':right_margin}
     }
 
-    if('yaxis' in layout){
-        layout['yaxis']['color']=themeColors['text']
-        layout['yaxis']['gridcolor']=themeColors['gridcolor']
+    //modify *all* y axis
+    const yAxes=Object.keys(layout).filter(function(x){return x.startsWith('yaxis');})
+    for(const axis of yAxes){
+        layout[axis]['color']=themeColors['text']
+        layout[axis]['gridcolor']=themeColors['gridcolor']
     }
 
     if('legend' in layout && 'font' in layout['legend']){
@@ -621,12 +623,12 @@ function plotTypeChanged(addArgs, resolve){
     // add any custom components needed.
     // Custom component function is named the same as the
     // plot function, but with _selector appended.
-    const selector=plotFuncs[plotType]+"_selector"
-    const custFunc=window[selector];
+    const selectorFuncName=plotFuncs[plotType]+"_selector"
+    const custFunc=window[selectorFuncName];
 
     if(typeof(custFunc)!=="undefined"){
         const selector=$('<div class="multiplot-customSelector">')
-        selector.append(custFunc(addArgs));
+        selector.append(custFunc.call(this, addArgs));
         $(this).siblings('.multiplot-selectRight').prepend(selector);
     }
 

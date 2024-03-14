@@ -96,6 +96,13 @@ function so2_mass_combined_selector(addArgs){
     return selectorHTML
 }
 
+function plot_db_dataset_selector(addArgs){
+    const plotType=$(this).data('plotType');
+    const typeList=plotDataTypes[plotType];
+    const selectorHTML=generate_type_selector(typeList,addArgs,"Select data types to show","Select Data Types...")
+    return selectorHTML
+}
+
 ////////////////////////////////
 
 //---------PLOTTING FUNCTIONS-----------//
@@ -426,6 +433,8 @@ function plot_color_code(data){
     return [plotData, layout]
 }
 
+
+////////////////////////Radiative Power///////////////////
 function gen_radiative_data_def(data, name, color){
     const data_def={
         type:'scatter',
@@ -493,7 +502,7 @@ function plot_radiative_power(data){
 
     return [plotData,layout]
 }
-
+////////////////END Radiative Power///////////////
 
 function gen_detect_percent_data_def(data, name, color){
     const data_def={
@@ -897,4 +906,95 @@ function so2_rate_carn(data){
     ]
 
     return [plotData, layout]
+}
+
+
+function gen_db_data_def(data, name, idx){
+    const data_def={
+        type:'scatter',
+        x:data['datetime'],
+        y:data['value'],
+        name:name,
+        mode:'lines+points',
+    }
+
+    if(idx>1){
+        data_def['yaxis']=`y${idx}`
+    }
+
+    return data_def
+}
+
+function plot_db_dataset(data){
+    const labels=data['labels']
+    delete data['labels'];
+
+    const keys=Object.keys(data);
+
+    const layout={
+        height:205,
+        margin:{t:5,b:20},
+        xaxis:{
+            showticklabels:false,
+            linecolor:'black'
+        },
+        showlegend:(keys.length>1),
+        legend:{
+            x:0,
+            y:1,
+            font:{
+                color:'rgb(204,204,220)'
+            }
+        }
+    }
+
+    if(typeof(labels)=='string'){
+        layout['yaxis']={
+            autorange:true,
+            title:{
+                text:labels
+            },
+            linecolor:'black'
+        }
+    }
+
+    const plotData=[]
+
+    for(let i=0;i<keys.length;i++){
+        let name=keys[i];
+        let yIdx=1;
+
+        //different labels per type
+        console.log(labels)
+        if(typeof(labels)!='string'){
+            yIdx=i+1;
+            let label=labels[name];
+
+            let yaxis='yaxis';
+            if(i>0){
+                yaxis+=`${yIdx}`;
+            }
+            console.log(yaxis);
+    
+            layout[yaxis]={
+                autorange:true,
+                title:{
+                    text:label
+                },
+                linecolor:'black',
+                automargin:true
+            }
+
+            if(i>0){
+                layout[yaxis]['side']='right';
+            }
+        }
+
+        let rawData=data[name];
+        let dataDict=gen_db_data_def(rawData,name,yIdx);
+
+        plotData.push(dataDict);
+    }
+
+    return [plotData,layout];
 }

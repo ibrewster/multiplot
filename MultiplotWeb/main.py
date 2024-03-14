@@ -62,6 +62,20 @@ def headers():
 
     args['plotTypes'] = json.dumps(plottypes)
     
+    # Get a list of database plot type options
+    with utils.PostgreSQLCursor('multiplot') as cursor:
+        type_SQL = """
+        SELECT
+            categories.name||'|'||title,
+            types
+        FROM plotinfo
+        INNER JOIN categories ON categories.id=category
+        WHERE types IS NOT NULL"""
+        cursor.execute(type_SQL)
+        type_lookup = {x[0]: x[1] for x in cursor}
+        
+    args['plotDataTypes'] = json.dumps(type_lookup)
+    
     return flask.render_template('headers.html', **args)
 
 

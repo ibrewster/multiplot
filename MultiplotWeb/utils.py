@@ -1,7 +1,7 @@
 import inspect
 import os
 
-from functools import wraps
+from functools import wraps, partial
 from collections import defaultdict
 
 import psycopg
@@ -149,7 +149,7 @@ def get_volcs():
     #Default is Geodiva
     with MYSQLCursor(DB = 'geodiva') as cursor:
         cursor.execute(
-            "SELECT volcano_id, volcano_name,latitude,longitude FROM volcano WHERE volcano_name in %s OR observatory='avo'", # AND monitored=true)",
+            "SELECT volcano_id, volcano_name,latitude,longitude FROM volcano WHERE volcano_name in %s OR (observatory='avo' and volcano_id=volcano_parent_id)", # AND monitored=true)",
             (volcs, )
         )
 
@@ -160,3 +160,18 @@ def get_volcs():
             VOLC_IDS[volc_name] = volc_id
             if volc_name not in VOLCANOES:
                 VOLCANOES[volc_name] = [latitude, longitude, 10]
+
+def get_db_labels():
+    from .generators import database
+    with PostgreSQLCursor("multiplot") as cursor:
+        cursor.execute("SELECT title, categories.name FROM plotinfo INNER JOIN categories ON categories.id=category")
+        for title, category in cursor:
+            tag = f"{category}|{title}"
+            if not title in GEN_CATEGORIES[category]:
+                GEN_CATEGORIES[category].append(title)
+                
+            # Use the database by default, so if there is already a function 
+            # for this category and title, this database version will override it.
+            func = partial(database.plot_db_dataset, tag)
+            GEN_FUNCS[tag] = func
+            JS_FUNCS[tag] = database.plot_db_dataset.__name__
