@@ -915,12 +915,28 @@ function gen_db_data_def(data, name, idx){
         x:data['datetime'],
         y:data['value'],
         name:name,
-        mode:'lines+points',
+        mode:'lines+markers',
     }
 
     if(idx>1){
         data_def['yaxis']=`y${idx}`
     }
+
+    const err1=data['error'];
+    const err2=data['error2'];
+
+    if(typeof(err1)!='undefined'){
+        data_def['error_y']={
+            type:'data',
+            array:err1,
+            visible:true
+        }
+
+        if(typeof(err2)!='undefined'){
+            data_def['error_y']['symmetric']=false;
+            data_def['error_y']['arrayminus']=err2;
+        }
+    } 
 
     return data_def
 }
