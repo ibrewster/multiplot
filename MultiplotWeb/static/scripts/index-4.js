@@ -627,9 +627,12 @@ function plotTypeChanged(addArgs, resolve){
     const custFunc=window[selectorFuncName];
 
     if(typeof(custFunc)!=="undefined"){
-        const selector=$('<div class="multiplot-customSelector">')
-        selector.append(custFunc.call(this, addArgs));
-        $(this).siblings('.multiplot-selectRight').prepend(selector);
+        const content=custFunc.call(this, addArgs);
+        if(content!=null && typeof(content)!='undefined'){
+            const selector=$('<div class="multiplot-customSelector">')
+            selector.append(content);
+            $(this).siblings('.multiplot-selectRight').prepend(selector);
+        }
     }
 
     //clear data from plot div

@@ -1,4 +1,5 @@
 """Generic database table plotting function. Should be written to work with ANY table provided."""
+from datetime import timedelta
 from urllib.parse import parse_qs
 
 import flask
@@ -11,9 +12,9 @@ def plot_db_dataset(tag, volcano, start=None, end=None):
     category, title = tag.split("|")
     query_string = flask.request.args.get('addArgs', '')
     requested_types = parse_qs(query_string).get('types')
-    
+
     METADATA_SQL = """SELECT
-    tablename, value_column, units, types
+    tablename, value_column, units, types, plot_format
     FROM plotinfo
     WHERE title=%s
     AND category=(
@@ -22,41 +23,44 @@ def plot_db_dataset(tag, volcano, start=None, end=None):
         WHERE name=%s
     )
     """
-    
+
     COLUMN_SQL = """
     SELECT column_name
     FROM information_schema.columns
     WHERE table_schema='public'
     AND table_name=%s
     """
-    
+
     args = [utils.VOLC_IDS[volcano], ]
-    
+
     data_sql = """
         SELECT datetime, {fields}
         FROM {table}
         WHERE volcano=%s
     """
-    
+
     if start is not None:
         data_sql += " AND datetime>=%s"
         args.append(start)
     if end is not None:
+        end += timedelta(days = 365)
         data_sql += " AND datetime<=%s"
         args.append(end)
-        
+
     if requested_types:
         data_sql += " AND type=ANY(%s)"
         args.append(requested_types)
-        
+
     with utils.PostgreSQLCursor("multiplot") as cursor:
         cursor.execute(METADATA_SQL, (title, category))
-        metadata = cursor.fetchone() # better be one, and only one, otherwise 
+        metadata = cursor.fetchone() # better be one, and only one, otherwise
         # there's a bug in the code.
-        table, field, units, types = metadata
+
         if metadata is None:
             raise FileNotFoundError(f"Unable to locate config for {category} - {title}")
-        
+
+        table, field, units, types, plot_format = metadata
+
         # get table columns
         cursor.execute(COLUMN_SQL, (table, ))
         columns = [x[0] for x in cursor]
@@ -70,13 +74,13 @@ def plot_db_dataset(tag, volcano, start=None, end=None):
             result_cols.append('error2')
         if('type' in columns):
             fields.append('type')
-            result_cols.append('type')        
-        
+            result_cols.append('type')
+
         sql_fields = psycopg.sql.SQL(',').join([
             psycopg.sql.Identifier(x)
             for x in fields
         ])
-        
+
         # Compose the data request SQL statement
         data_query = psycopg.sql.SQL(data_sql).format(
             fields=sql_fields,
@@ -88,6 +92,7 @@ def plot_db_dataset(tag, volcano, start=None, end=None):
     df['datetime'] = df['datetime'].apply(lambda x: pandas.to_datetime(x).isoformat())
     result ={
         'labels': units,
+        'plotOverrides': plot_format,
     }
 
     if types is not None:
@@ -100,6 +105,6 @@ def plot_db_dataset(tag, volcano, start=None, end=None):
                     del units[record_type]
     else:
         result[title] = df.to_dict(orient='list')
-        
-    
+
+
     return result

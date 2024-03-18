@@ -99,6 +99,10 @@ function so2_mass_combined_selector(addArgs){
 function plot_db_dataset_selector(addArgs){
     const plotType=$(this).data('plotType');
     const typeList=plotDataTypes[plotType];
+    if(typeList==null || typeof(typeList)=='undefined'){
+        return null;
+    }
+    
     const selectorHTML=generate_type_selector(typeList,addArgs,"Select data types to show","Select Data Types...")
     return selectorHTML
 }
@@ -909,8 +913,8 @@ function so2_rate_carn(data){
 }
 
 
-function gen_db_data_def(data, name, idx){
-    const data_def={
+function gen_db_data_def(data, name, idx, dataOverrides, plotErr){
+    let data_def={
         type:'scatter',
         x:data['datetime'],
         y:data['value'],
@@ -925,7 +929,7 @@ function gen_db_data_def(data, name, idx){
     const err1=data['error'];
     const err2=data['error2'];
 
-    if(typeof(err1)!='undefined'){
+    if(plotErr===true && typeof(err1)!='undefined'){
         data_def['error_y']={
             type:'data',
             array:err1,
@@ -936,7 +940,11 @@ function gen_db_data_def(data, name, idx){
             data_def['error_y']['symmetric']=false;
             data_def['error_y']['arrayminus']=err2;
         }
-    } 
+    }
+
+    if(dataOverrides!=null){
+        data_def=mergeDeep(data_def,dataOverrides);
+    }
 
     return data_def
 }
@@ -944,6 +952,20 @@ function gen_db_data_def(data, name, idx){
 function plot_db_dataset(data){
     const labels=data['labels']
     delete data['labels'];
+    const plotOverrides=data['plotOverrides'];
+    delete data['plotOverrides'];
+
+    let errAsPlot=false;
+    if(plotOverrides!==null && 'errAsPlot' in plotOverrides){
+        errAsPlot=plotOverrides.errAsPlot;
+    }
+
+    let layoutOverrides=null;
+    let dataOverrides=null;
+    if(plotOverrides!==null && typeof(plotOverrides)=="object"){
+        layoutOverrides=plotOverrides.layout;
+        dataOverrides=plotOverrides.data;
+    }
 
     const keys=Object.keys(data);
 
@@ -1007,10 +1029,72 @@ function plot_db_dataset(data){
         }
 
         let rawData=data[name];
-        let dataDict=gen_db_data_def(rawData,name,yIdx);
+        let dataDict=gen_db_data_def(rawData,name,yIdx,dataOverrides, !errAsPlot);
 
-        plotData.push(dataDict);
+        if(errAsPlot){
+            //Make additional data dicts for the error plots
+            let err1=rawData['error'];
+            let err2=rawData['error2'];
+            let overrides=structuredClone(dataOverrides);
+            if(!('line' in overrides)){
+                overrides['line']={};
+            }
+            overrides['line']['width']=0;
+            overrides['showlegend']=false;
+
+            let dataLower=structuredClone(rawData);
+            let lowerErr=typeof(err2)=="undefined"?err1:err2;
+            let lowerY=rawData['value'].map(function(item,idx){return item-lowerErr[idx]});
+            dataLower['value']=lowerY;
+            let lowerData=gen_db_data_def(dataLower,"Lower Bound",yIdx,overrides);
+            plotData.push(lowerData);
+
+            dataDict['fill']="tonexty"
+            dataDict['fillcolor']="rgba(0,176,246,0.2)";
+            dataDict['line']['color']="rgba(0,176,246,0.75)"
+            plotData.push(dataDict);
+
+            let dataUpper=structuredClone(rawData);
+            let upperY=rawData['value'].map(function(item,idx){return item+err1[idx]});
+            dataUpper['value']=upperY;
+            overrides['fill']="tonexty"
+            overrides['fillcolor']="rgba(0,176,246,0.2)"
+            let upperData=gen_db_data_def(dataUpper,"Upper Bound",yIdx,overrides);
+            plotData.push(upperData);
+
+        } else{
+            plotData.push(dataDict);
+
+        }
+
+    }
+
+    if(layoutOverrides!=null){
+        layout=mergeDeep(layout,layoutOverrides);
     }
 
     return [plotData,layout];
 }
+
+function isObject(item) {
+    return (item && typeof item === 'object' && !Array.isArray(item));
+  }
+  
+
+function mergeDeep(target, ...sources) {
+    if (!sources.length) return target;
+    const source = sources.shift();
+  
+    if (isObject(target) && isObject(source)) {
+      for (const key in source) {
+        if (isObject(source[key])) {
+          if (!target[key]) target[key]={};
+          mergeDeep(target[key], source[key]);
+        } else {
+            target[key]=source[key];
+        }
+      }
+    }
+  
+    return mergeDeep(target, ...sources);
+  }
