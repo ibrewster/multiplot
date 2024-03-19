@@ -150,7 +150,7 @@ def get_volcs():
     #Default is Geodiva
     with MYSQLCursor(DB = 'geodiva') as cursor:
         cursor.execute(
-            "SELECT volcano_id, volcano_name,latitude,longitude FROM volcano WHERE volcano_name in %s", # OR (observatory='avo' and volcano_id=volcano_parent_id)", # AND monitored=true)",
+            "SELECT volcano_id, volcano_name,latitude,longitude FROM volcano WHERE volcano_name in %s OR (observatory='avo' AND monitored=true AND volcano_id=volcano_parent_id) ORDER BY longitude", # OR (observatory='avo' and volcano_id=volcano_parent_id)", # AND monitored=true)",
             (volcs, )
         )
 
@@ -170,22 +170,21 @@ def get_db_labels():
             tag = f"{category}|{title}"
             if not title in GEN_CATEGORIES[category]:
                 GEN_CATEGORIES[category].append(title)
-                
-            # Use the database by default, so if there is already a function 
+
+            # Use the database by default, so if there is already a function
             # for this category and title, this database version will override it.
             func = partial(database.plot_db_dataset, tag)
             GEN_FUNCS[tag] = func
             JS_FUNCS[tag] = database.plot_db_dataset.__name__
-            
+
 def get_combined_details():
     g_details = google.get_data()
     db_details = DBMetadata.get_db_details()
-    
+
     details = pandas.concat([g_details, db_details], sort=True, copy=False)
     # Entries from the google spreadsheet override identical entries from the database
     # Change 'first' to 'last' to reverse this logic.
     details = details[~details.index.duplicated(keep='first')]
     details = details.sort_index();
-    
+
     return details
-    
