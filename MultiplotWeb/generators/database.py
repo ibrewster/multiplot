@@ -41,9 +41,10 @@ def plot_db_dataset(tag, volcano, start=None, end=None):
 
     if start is not None:
         data_sql += " AND datetime>=%s"
+        start -= timedelta(days = 366)
         args.append(start)
     if end is not None:
-        end += timedelta(days = 365)
+        end += timedelta(days = 366)
         data_sql += " AND datetime<=%s"
         args.append(end)
 
