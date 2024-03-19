@@ -51,6 +51,8 @@ def plot_db_dataset(tag, volcano, start=None, end=None):
         data_sql += " AND type=ANY(%s)"
         args.append(requested_types)
 
+    data_sql += " ORDER BY datetime"
+
     with utils.PostgreSQLCursor("multiplot") as cursor:
         cursor.execute(METADATA_SQL, (title, category))
         metadata = cursor.fetchone() # better be one, and only one, otherwise
