@@ -150,7 +150,7 @@ def get_volcs():
     #Default is Geodiva
     with MYSQLCursor(DB = 'geodiva') as cursor:
         cursor.execute(
-            "SELECT volcano_id, volcano_name,latitude,longitude FROM volcano WHERE volcano_name in %s OR (observatory='avo' AND monitored=true AND volcano_id=volcano_parent_id) ORDER BY longitude", # OR (observatory='avo' and volcano_id=volcano_parent_id)", # AND monitored=true)",
+            "SELECT volcano_id, volcano_name,latitude,longitude FROM volcano WHERE volcano_name in %s OR (observatory='avo' AND monitored=true AND volcano_id=volcano_parent_id) ORDER BY longitude DESC", # OR (observatory='avo' and volcano_id=volcano_parent_id)", # AND monitored=true)",
             (volcs, )
         )
 

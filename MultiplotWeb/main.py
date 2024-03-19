@@ -25,7 +25,7 @@ def getPrefix():
     else:
         app.logger.warning("Running locally, not setting prefix")
         prefix = ''
-    
+
     return prefix
 
 
@@ -45,14 +45,14 @@ def api():
                                      mimetype='text/javascript')
     response.headers['Cache-Control'] = 'max-age=3600, no-cache'
     return response
-    
+
 @app.route('/headers')
 def headers():
     args = {
         'prefix': getPrefix(),
         'js_funcs': json.dumps(utils.JS_FUNCS)
     }
-    
+
     plottypes = []
     for cat, types in sorted(utils.GEN_CATEGORIES.items(), key = lambda x: x[0]):
         plottypes.append(f"---{cat}---")
@@ -61,7 +61,7 @@ def headers():
             plottypes.append((tag, item))
 
     args['plotTypes'] = json.dumps(plottypes)
-    
+
     # Get a list of database plot type options
     with utils.PostgreSQLCursor('multiplot') as cursor:
         type_SQL = """
@@ -73,16 +73,21 @@ def headers():
         WHERE types IS NOT NULL"""
         cursor.execute(type_SQL)
         type_lookup = {x[0]: x[1] for x in cursor}
-        
+
     args['plotDataTypes'] = json.dumps(type_lookup)
-    
+
     return flask.render_template('headers.html', **args)
 
+def longitudeSort(item):
+    lng = item[1][1]
+    if lng > 0:
+        lng -= 360
+    return lng
 
 @app.route('/body')
 def body():
     args = {
-        'volcanoes': sorted(utils.VOLCANOES.items(), key = lambda x: x[1][1], reverse = True),
+        'volcanoes': sorted(utils.VOLCANOES.items(), key = longitudeSort, reverse = True),
     }
 
     args['prefix'] = getPrefix()
@@ -121,7 +126,7 @@ def get_details():
     plot_type = flask.request.args['plotType']
     cat, label = plot_type.split('|')
     details = utils.get_combined_details()
-    
+
     description = details.loc[cat, label]
     return flask.jsonify(description)
 
