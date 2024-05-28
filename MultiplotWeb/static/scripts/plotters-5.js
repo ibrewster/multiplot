@@ -82,9 +82,9 @@ function plot_radiative_power_selector(addArgs){
     return selectorHTML
 }
 
-//SO2 emission rate Carn/AVO selector
+//SO2 emission rate Fioletov/AVO selector
 function so2_em_rate_combined_selector(addArgs){
-    const types=['AVO','Carn']
+    const types=['AVO','Fioletov']
     selectorHTML=generate_type_selector(types,addArgs,"Select Datasets to Show","Select Datasets...")
     return selectorHTML
 }
@@ -102,7 +102,7 @@ function plot_db_dataset_selector(addArgs){
     if(typeList==null || typeof(typeList)=='undefined'){
         return null;
     }
-    
+
     const selectorHTML=generate_type_selector(typeList,addArgs,"Select data types to show","Select Data Types...")
     return selectorHTML
 }
@@ -794,7 +794,7 @@ function so2_mass_combined(data){
 }
 
 function so2_em_rate_combined(data){
-    const carn_data=data.carn
+    const fioletov_data=data.Fioletov
     const avo_data=data.avo
     let plotData=[]
 
@@ -823,13 +823,13 @@ function so2_em_rate_combined(data){
 
     const yValues={};
     const xValues={};
-    if (typeof(carn_data)!='undefined'){
-        let carn_plot, carn_layout;
-        [carn_plot, carn_layout]=so2_rate_carn(carn_data)
-        plotData=plotData.concat(carn_plot)
+    if (typeof(fioletov_data)!='undefined'){
+        let fioletov_plot, fioletov_layout;
+        [fioletov_plot, fioletov_layout]=so2_rate_fioletov(fioletov_data)
+        plotData=plotData.concat(fioletov_plot)
 
-        yValues['carn']=[carn_data['lower'],carn_data['rate'],carn_data['upper']]
-        xValues['carn']=carn_data['year']
+        yValues['fioletov']=[fioletov_data['lower'],fioletov_data['rate'],fioletov_data['upper']]
+        xValues['fioletov']=fioletov_data['year']
     }
 
     if(typeof(avo_data)!='undefined'){
@@ -849,7 +849,7 @@ function so2_em_rate_combined(data){
     return [plotData,layout]
 }
 
-function so2_rate_carn(data){
+function so2_rate_fioletov(data){
     const layout={
         height:200,
         margin:{t:5,b:20},
@@ -891,7 +891,7 @@ function so2_rate_carn(data){
             y: data['rate'],
             fill:"tonexty",
             fillcolor:"rgba(0,176,246,0.2)",
-            name:'Carn'
+            name:'Fioletov'
         },
         {
             x: data['year'],
@@ -1013,7 +1013,7 @@ function plot_db_dataset(data){
                 yaxis+=`${yIdx}`;
             }
             console.log(yaxis);
-    
+
             layout[yaxis]={
                 autorange:true,
                 title:{
@@ -1079,12 +1079,12 @@ function plot_db_dataset(data){
 function isObject(item) {
     return (item && typeof item === 'object' && !Array.isArray(item));
   }
-  
+
 
 function mergeDeep(target, ...sources) {
     if (!sources.length) return target;
     const source = sources.shift();
-  
+
     if (isObject(target) && isObject(source)) {
       for (const key in source) {
         if (isObject(source[key])) {
@@ -1095,6 +1095,6 @@ function mergeDeep(target, ...sources) {
         }
       }
     }
-  
+
     return mergeDeep(target, ...sources);
   }

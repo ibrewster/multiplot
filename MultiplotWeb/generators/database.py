@@ -48,11 +48,6 @@ def plot_db_dataset(tag, volcano, start=None, end=None):
         data_sql += " AND datetime<=%s"
         args.append(end)
 
-    if requested_types:
-        data_sql += " AND type=ANY(%s)"
-        args.append(requested_types)
-
-    data_sql += " ORDER BY datetime"
 
     with utils.PostgreSQLCursor("multiplot") as cursor:
         cursor.execute(METADATA_SQL, (title, category))
@@ -78,11 +73,16 @@ def plot_db_dataset(tag, volcano, start=None, end=None):
         if('type' in columns):
             fields.append('type')
             result_cols.append('type')
+            if requested_types:
+                data_sql += " AND type=ANY(%s)"
+                args.append(requested_types)
 
         sql_fields = psycopg.sql.SQL(',').join([
             psycopg.sql.Identifier(x)
             for x in fields
         ])
+
+        data_sql += " ORDER BY datetime"
 
         # Compose the data request SQL statement
         data_query = psycopg.sql.SQL(data_sql).format(

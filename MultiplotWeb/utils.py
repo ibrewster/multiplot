@@ -165,7 +165,7 @@ def get_volcs():
 def get_db_labels():
     from .generators import database
     with PostgreSQLCursor("multiplot") as cursor:
-        cursor.execute("SELECT title, categories.name FROM plotinfo INNER JOIN categories ON categories.id=category")
+        cursor.execute("SELECT title, categories.name FROM plotinfo INNER JOIN categories ON categories.id=category WHERE visible=true")
         for title, category in cursor:
             tag = f"{category}|{title}"
             if not title in GEN_CATEGORIES[category]:

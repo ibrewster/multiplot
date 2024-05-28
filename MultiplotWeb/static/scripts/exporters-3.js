@@ -178,7 +178,7 @@ function exportSO2Rate(plotDiv){
             upper=upper.concat(upperVals)
             lower=lower.concat(lowerVals)
         }
-        else if(type=='carn'){
+        else if(type=='fioletov'){
             const [lowerVals,rateVals,upperVals]=data;
             lower=lower.concat(lowerVals);
             rate=rate.concat(rateVals);
