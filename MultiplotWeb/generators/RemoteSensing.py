@@ -125,6 +125,7 @@ def rs_detections(volcano, start, end) -> pandas.DataFrame:
         'Ash': [4],
         'SO2': [9],
         'ElevatedTemps': [35, 40, 45],
+        'Steam/Water': [25],
     }
 
     types_string = flask.request.args.get('addArgs')

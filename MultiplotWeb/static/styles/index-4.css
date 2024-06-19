@@ -165,6 +165,11 @@ div.multiplot-typeSelectorGuard{
 div.multiplot-selectorTypes{
     padding-left:10px;
     padding-right:10px;
+    padding-bottom:10px;
+
+    display:grid;
+    grid-template-columns: auto 1fr auto 1fr;
+    grid-column-gap: 5px;
 }
 
 div.multiplot-typesFooter{

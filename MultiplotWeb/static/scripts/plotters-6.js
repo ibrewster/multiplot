@@ -70,7 +70,7 @@ function generate_type_selector(types, selectedArgs, header, label){
 
 // Remote sensing detection type selector
 function rs_detections_selector(addArgs){
-    const types=['Ash','SO <sub>2</sub>','Elevated Temps']
+    const types=['Ash','SO <sub>2</sub>','Elevated Temps','Steam/Water'];
     selectorHTML=generate_type_selector(types,addArgs,"Select detection types to show")
     return selectorHTML
 }
@@ -237,6 +237,7 @@ function rs_detections(data){
     const typeSymbols={
         4:["triangle-up","gray","Ash"],
         9:['circle',"purple","SO<sub>2</sub>"],
+        25:["triangle-down",'blue','Steam/Water'],
         35:['hexagon','#ED1C24',"Temp - Saturated"],
         40:['hexagon','#F7931E',"Temp - Moderate"],
         45:['hexagon','#FFFF03', "Temp - Barely"]
