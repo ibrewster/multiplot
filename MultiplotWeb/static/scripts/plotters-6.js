@@ -120,11 +120,15 @@ function plot_db_dataset_selector(addArgs){
 // Can be modified, if needed, by editing the returned layout and PlotData objects
 // in the calling function.
 ///////////////////////////////////////////////////////////////////
-function generic_plot(data,ylabel,ydata){
+function generic_plot(data,ylabel,ydata,type){
     // ydata can be specified either as a data set, in which case it is used directly, or
     // as string, in which case it must be a key of the data object.
     if(typeof(ydata)=="string"){
         ydata=data[ydata]
+    }
+
+    if(typeof(type)=='undefined'){
+        type='scatter'
     }
 
     $(this).data('yValues',ydata);
@@ -148,7 +152,7 @@ function generic_plot(data,ylabel,ydata){
 
     const plotData=[
         {
-            type: "scatter",
+            type: type,
             x: data['date'],
             y: ydata,
             mode: 'markers'
@@ -216,19 +220,19 @@ function so2_detection_count(data){
     return generic_plot.call(this, data, "Detections","count")
 }
 
-function so2_rate(data){
-    return generic_plot.call(this, data,"EM Rate","rate")
-}
-
-function so2_mass(data){
-    return generic_plot.call(this, data,"SO<sub>2</sub> Mass (kt)","mass")
-}
-
 ///////////////////////////////////////////////////////////////////////
 // More advanced plotting functions that don't lend themselves
 // to using the generic plotting function due to extensive differences
 // or different plot types
 ///////////////////////////////////////////////////////////////////////
+function so2_rate(data){
+    return generic_plot.call(this, data,"EM Rate","rate","bar");
+}
+
+function so2_mass(data){
+    return generic_plot.call(this, data,"SO<sub>2</sub> Mass (kt)","mass","bar");
+}
+
 function rs_detections(data){
     const typeSymbols={
         4:["triangle-up","gray","Ash"],
