@@ -220,11 +220,6 @@ function so2_detection_count(data){
     return generic_plot.call(this, data, "Detections","count")
 }
 
-///////////////////////////////////////////////////////////////////////
-// More advanced plotting functions that don't lend themselves
-// to using the generic plotting function due to extensive differences
-// or different plot types
-///////////////////////////////////////////////////////////////////////
 function so2_rate(data){
     return generic_plot.call(this, data,"EM Rate","rate","bar");
 }
@@ -233,6 +228,11 @@ function so2_mass(data){
     return generic_plot.call(this, data,"SO<sub>2</sub> Mass (kt)","mass","bar");
 }
 
+///////////////////////////////////////////////////////////////////////
+// More advanced plotting functions that don't lend themselves
+// to using the generic plotting function due to extensive differences
+// or different plot types
+///////////////////////////////////////////////////////////////////////
 function rs_detections(data){
     const typeSymbols={
         4:["triangle-up","gray","Ash"],
