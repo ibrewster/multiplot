@@ -103,8 +103,6 @@ def so2_em_rate_combined(volcano, start, end):
 ####################
 # Mass
 ####################
-
-
 def so2_mass(volcano, start, end) -> pandas.DataFrame:
     # No calculations needed, so just use the same function here.
     return so2_rate(volcano, start, end)

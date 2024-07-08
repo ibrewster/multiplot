@@ -355,8 +355,8 @@ function rs_detections(data){
 
 function seisdb_keywords(data){
     const keywordSymbols={
-        71:['circle','red','Seismic Swarm',1],
-        81:['35','orangered','Low-Frequency Event',2],
+        71:['star','red','Seismic Swarm',1],
+        81:['circle','orangered','Low-Frequency Event',2],
         91:['circle','blue','very long period event(s)',2],
         101:['square','indianred','tremor',4],
         111:['hexagon','gray','suspected rockfall/debris flow/avalanche',6],
@@ -366,16 +366,17 @@ function seisdb_keywords(data){
         131:['pentagon','gray','Station Problem',6],
         141:['circle','red','Local Earthquake',1],
         151:['triangle-right','gray','Wind Noise',6],
-        161:['line-ns','gold','Ground Coupled Airwaves',3],
+        161:['cross','gold','Ground Coupled Airwaves',3],
         171:['square','gray','Other Seismic Events',6],
         181:['circle','gray','Mystery Events',6],
         191:['diamond','maroon','Explosions/Eruption',3],
         201:['square','gray','Network Outage',5],
     }
+    const text_symbols=['*','|']
 
     const plotData=[]
     const yLookup={
-        
+
     }
 
     let xVals={}
@@ -385,26 +386,25 @@ function seisdb_keywords(data){
         let row=keywordSymbols[keyword][3]
         yLookup[row]=row // start with default, but only for data we actually have
     }
-    
+
     const sortedRows=Object.keys(yLookup).map(Number).sort().reverse()
     for(let i=0;i<sortedRows.length;i++){
         yLookup[sortedRows[i]]=i+1
     }
-    
+
     const seenY=[]
-    
+
     // Now that we know the row for each original row.
     for(const keyword in data){
         let symbol,color,title,row;
         [symbol,color,title,row]=keywordSymbols[keyword];
-        
+
         let my_y=yLookup[row]
         const x=data[keyword];
 
         const y=new Array(x.length).fill(my_y);
         const usedCount=seenY.filter(x=>x===my_y).length
         seenY.push(my_y)
-        
 
         xVals[title]=x;
 
@@ -413,20 +413,38 @@ function seisdb_keywords(data){
             name:title,
             x:x,
             y:y,
-            mode:'markers',
             marker:{
                 symbol:symbol,
-                color:color,
                 size:12
             }
         }
+
+        mode="markers";
+        marker_color=color;
+        if(text_symbols.includes(symbol)){
+            mode="markers+text";
+            marker_color='rgba(0,0,0,0)';
+            text=new Array(x.length).fill(symbol);
+            dataItem['text']=text;
+            dataItem['textposition']='middle center';
+            textfont={
+                family: 'Arial, sans-serif',
+                size: 18,
+                color: color
+            }
+            dataItem['textfont']=textfont;
+            delete dataItem['marker']['symbol']
+        }
+
+        dataItem['mode']=mode;
+        dataItem['marker']['color']=marker_color;
 
         plotData.push(dataItem);
     }
 
     $(this).data('plotVals',xVals);
     $(this).data('exporter',exportRSDetections);
-    
+
     const topY=sortedRows.length+1
     let height=25*topY+35
 
