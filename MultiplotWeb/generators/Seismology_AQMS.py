@@ -131,17 +131,35 @@ def get_aqms_data(volcano, t_start = None, t_end = None):
     return events
 
 ################# SEISDB #################
+keyword_sort_order = {
+    71: 1,
+    141: 1,
+    81: 2,
+    91: 2,
+    191: 3,
+    161: 3.1,
+    101: 4,
+    201: 5,
+    111: 6,
+    121: 6,
+    122: 6,
+    123: 6,
+    131: 6,
+    151: 6,
+    171: 6,
+    181: 6
+}
 def get_seisdb_data(volcano: str, start, end) -> pandas.DataFrame:
     volc_id = utils.VOLC_IDS[volcano]
     args = [volc_id]
-    
+
     SQL = """
 SELECT DISTINCT
-    volcano_id, 
-    end_report_time, 
-    keyword_id 
-FROM report 
-INNER JOIN report_volcano ON report.report_id=report_volcano.report_id 
+    volcano_id,
+    end_report_time,
+    keyword_id
+FROM report
+INNER JOIN report_volcano ON report.report_id=report_volcano.report_id
 INNER JOIN report_volcano_keyword ON report_volcano_keyword.report_volcano_id=report_volcano.report_volcano_id
 WHERE report.published=true
 AND volcano_id=%s
@@ -154,7 +172,7 @@ AND volcano_id=%s
         args.append(end)
 
     SQL += "ORDER BY end_report_time"
-    
+
     with utils.MYSQLCursor(
         DB = 'seidb', user = config.RSDB_USER, password = config.RSDB_PASS
     ) as cursor:
@@ -169,8 +187,8 @@ AND volcano_id=%s
     detections.set_index('date', drop = False, inplace = True)
     detections.drop(columns=['end_report_time'])
 
-    return detections    
-    
+    return detections
+
 
 @generator("SEISDB Keywords")
 def seisdb_keywords(volcano, start, end) -> pandas.DataFrame:
@@ -187,14 +205,21 @@ def seisdb_keywords(volcano, start, end) -> pandas.DataFrame:
 
     data['date'] = data['date'].apply(lambda x: x.isoformat())
     found_keywords = data['keyword_id'].unique().tolist()
+
     grouped_data = data.groupby('keyword_id')
 
-    result = {
+    data = {
         str(x): grouped_data.get_group(x)['date'].tolist()
         for x in found_keywords
     }
+    order = sorted(found_keywords, key = keyword_sort_order.get)
+    result = {
+        'data': data,
+        'order': order,
+    }
 
     return result
+
 
 #######################################
 

@@ -353,7 +353,7 @@ function rs_detections(data){
 }
 
 
-function seisdb_keywords(data){
+function seisdb_keywords(result){
     const keywordSymbols={
         71:['star','red','Seismic Swarm',1],
         81:['circle','orangered','Low-Frequency Event',2],
@@ -373,6 +373,8 @@ function seisdb_keywords(data){
         201:['square','gray','Network Outage',5],
     }
     const text_symbols=['*','|']
+    const data=result['data']
+    const order=result['order']
 
     const plotData=[]
     const yLookup={
@@ -395,7 +397,7 @@ function seisdb_keywords(data){
     const seenY=[]
 
     // Now that we know the row for each original row.
-    for(const keyword in data){
+    for(const keyword of order){
         let symbol,color,title,row;
         [symbol,color,title,row]=keywordSymbols[keyword];
 
@@ -415,7 +417,7 @@ function seisdb_keywords(data){
             y:y,
             marker:{
                 symbol:symbol,
-                size:12
+                size:12,
             }
         }
 
@@ -436,6 +438,10 @@ function seisdb_keywords(data){
             delete dataItem['marker']['symbol']
         }
 
+        if(symbol=='cross'){
+            dataItem['marker']['size']=9
+        }
+
         dataItem['mode']=mode;
         dataItem['marker']['color']=marker_color;
 
@@ -446,7 +452,7 @@ function seisdb_keywords(data){
     $(this).data('exporter',exportRSDetections);
 
     const topY=sortedRows.length+1
-    let height=25*topY+35
+    let height=35*topY+35
 
     const layout={
         height:height,
