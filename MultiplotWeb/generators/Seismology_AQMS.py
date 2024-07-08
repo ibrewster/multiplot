@@ -4,8 +4,11 @@ Seismology_AQMS.py
 Data generation functions for the Seismology discipline, using the "AQMS" catalog.
 
 """
-CATEGORY = "Seismology (AQMS)"
+CATEGORY = "Seismology"
 
+from urllib.parse import parse_qs
+
+import flask
 import pandas
 
 from psycopg.rows import dict_row
@@ -127,14 +130,81 @@ def get_aqms_data(volcano, t_start = None, t_end = None):
 
     return events
 
+################# SEISDB #################
+def get_seisdb_data(volcano: str, start, end) -> pandas.DataFrame:
+    volc_id = utils.VOLC_IDS[volcano]
+    args = [volc_id]
+    
+    SQL = """
+SELECT DISTINCT
+    volcano_id, 
+    end_report_time, 
+    keyword_id 
+FROM report 
+INNER JOIN report_volcano ON report.report_id=report_volcano.report_id 
+INNER JOIN report_volcano_keyword ON report_volcano_keyword.report_volcano_id=report_volcano.report_volcano_id
+WHERE report.published=true
+AND volcano_id=%s
+"""
+    if start is not None:
+        SQL += "AND date>=%s "
+        args.append(start)
+    if end is not None:
+        SQL += "AND date<=%s "
+        args.append(end)
 
-@generator("Distance")
+    SQL += "ORDER BY end_report_time"
+    
+    with utils.MYSQLCursor(
+        DB = 'seidb', user = config.RSDB_USER, password = config.RSDB_PASS
+    ) as cursor:
+        cursor.execute(SQL, args)
+        headers = [x[0] for x in cursor.description]
+        detections = pandas.DataFrame(cursor, columns = headers)
+
+    if detections.size <= 0:
+        return detections
+
+    detections['date'] = detections['end_report_time'].dt.normalize()
+    detections.set_index('date', drop = False, inplace = True)
+    detections.drop(columns=['end_report_time'])
+
+    return detections    
+    
+
+@generator("SEISDB Keywords")
+def seisdb_keywords(volcano, start, end) -> pandas.DataFrame:
+    data = get_seisdb_data(volcano, start, end)
+
+    types_string = flask.request.args.get('addArgs')
+    types_dict = parse_qs(types_string)
+    if types_dict:
+        selectedTypes = [int(x) for x in types_dict['types']]
+        data = data.loc[data['keyword_id'].isin(selectedTypes)]
+
+    if data.size <= 0:
+        return {}
+
+    data['date'] = data['date'].apply(lambda x: x.isoformat())
+    found_keywords = data['keyword_id'].unique().tolist()
+    grouped_data = data.groupby('keyword_id')
+
+    result = {
+        str(x): grouped_data.get_group(x)['date'].tolist()
+        for x in found_keywords
+    }
+
+    return result
+
+#######################################
+
+@generator("Distance (AQMS)")
 def aqms_distances(volcano, start = None, end = None):
     data = get_aqms_data(volcano, start, end)
     return data[['date', 'distance']].to_dict(orient = "list")
 
 
-@generator("Magnitude")
+@generator("Magnitude (AQMS)")
 def aqms_magnitude(volcano, start = None, end = None):
     data = get_aqms_data(volcano, start, end)
     data = data.loc[:, ['date', 'mag']]
@@ -142,7 +212,7 @@ def aqms_magnitude(volcano, start = None, end = None):
     return data.to_dict(orient = "list")
 
 
-@generator("Depth")
+@generator("Depth (AQMS)")
 def aqms_depth(volcano, start = None, end = None):
     data = get_aqms_data(volcano)
     data = data.loc[:, ['date', 'depthKM']]
@@ -150,7 +220,7 @@ def aqms_depth(volcano, start = None, end = None):
     return data.to_dict(orient = "list")
 
 
-@generator("Weekly Event Count")
+@generator("Weekly Event Count (AQMS)")
 def aqms_event_count(volcano, start = None, end = None):
     data = get_aqms_data(volcano, start, end)
 

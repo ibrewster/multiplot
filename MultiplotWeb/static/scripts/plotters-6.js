@@ -40,16 +40,24 @@ function generate_type_selector(types, selectedArgs, header, label){
     `
 
     for(let item of types){
-        //strip any HTML tags
-        let cleanItem=$('<div>').html(item).text();
-        //remove spaces
-        cleanItem=cleanItem.replace(' ','')
+        let item_label, item_value;
+        if (Array.isArray(item) && item.length==2){
+            [item_label, item_value] = item;
+        } else if (typeof item === 'string'){
+            item_label=item;
+            //strip any HTML tags
+            item_value=$('<div>').html(item_label).text();
+            //remove spaces
+            item_value=item_value.replace(' ','')
+        } else {
+            console.error('The items must be either a string for an array with exactly two elements.')
+        }
 
-        checked= (selectedArgs.length==0 || selectedArgs.includes(cleanItem)) ? 'checked' : ''
+        checked= (selectedArgs.length==0 || selectedArgs.includes(item_value)) ? 'checked' : ''
 
         selectorHTML+=`
-            <input type="checkbox" id="${cleanItem}Type" name="types" ${checked} value="${cleanItem}">
-            <label for="${cleanItem}Type">${item}</label>
+            <input type="checkbox" id="${item_value}Type" name="types" ${checked} value="${item_value}">
+            <label for="${item_value}Type">${item_label}</label>
         `
     }
 
@@ -71,6 +79,30 @@ function generate_type_selector(types, selectedArgs, header, label){
 // Remote sensing detection type selector
 function rs_detections_selector(addArgs){
     const types=['Ash','SO <sub>2</sub>','Elevated Temps','Steam/Water'];
+    selectorHTML=generate_type_selector(types,addArgs,"Select detection types to show")
+    return selectorHTML
+}
+
+// seidb keyword selector
+function seisdb_keywords_selector(addArgs){
+    const types=[
+        ['Seismic Swarm', 71],
+        ['Low-Frequency Event', 81],
+        ['very long period event(s)',91],
+        ['tremor',101],
+        ['suspected rockfall/debris flow/avalanche',111],
+        ['other earthquake of note',121],
+        ['composite event',122],
+        ['felt event',123],
+        ['Station Problem',131],
+        ['Local Earthquake',141],
+        ['Wind Noise',151],
+        ['Ground Coupled Airwaves',161],
+        ['Other Seismic Events',171],
+        ['Mystery Events',181],
+        ['Explosions/Eruption',191],
+        ['Network Outage',201],
+    ];
     selectorHTML=generate_type_selector(types,addArgs,"Select detection types to show")
     return selectorHTML
 }
@@ -319,6 +351,114 @@ function rs_detections(data){
 
     return [plotData,layout]
 }
+
+
+function seisdb_keywords(data){
+    const keywordSymbols={
+        71:['circle','red','Seismic Swarm',1],
+        81:['35','orangered','Low-Frequency Event',2],
+        91:['circle','blue','very long period event(s)',2],
+        101:['square','indianred','tremor',4],
+        111:['hexagon','gray','suspected rockfall/debris flow/avalanche',6],
+        121:['star','gray','other earthquake of note',6],
+        122:['diamond','gray','composite event',6],
+        123:['X','gray','felt event',6],
+        131:['pentagon','gray','Station Problem',6],
+        141:['circle','red','Local Earthquake',1],
+        151:['triangle-right','gray','Wind Noise',6],
+        161:['line-ns','gold','Ground Coupled Airwaves',3],
+        171:['square','gray','Other Seismic Events',6],
+        181:['circle','gray','Mystery Events',6],
+        191:['diamond','maroon','Explosions/Eruption',3],
+        201:['square','gray','Network Outage',5],
+    }
+
+    const plotData=[]
+    const yLookup={
+        
+    }
+
+    let xVals={}
+    // two loops. First, figure out the y values to use for each keyword.
+    //The loops are short and fast.
+    for(const keyword in data){
+        let row=keywordSymbols[keyword][3]
+        yLookup[row]=row // start with default, but only for data we actually have
+    }
+    
+    const sortedRows=Object.keys(yLookup).map(Number).sort().reverse()
+    for(let i=0;i<sortedRows.length;i++){
+        yLookup[sortedRows[i]]=i+1
+    }
+    
+    const seenY=[]
+    
+    // Now that we know the row for each original row.
+    for(const keyword in data){
+        let symbol,color,title,row;
+        [symbol,color,title,row]=keywordSymbols[keyword];
+        
+        let my_y=yLookup[row]
+        const x=data[keyword];
+
+        const y=new Array(x.length).fill(my_y);
+        const usedCount=seenY.filter(x=>x===my_y).length
+        seenY.push(my_y)
+        
+
+        xVals[title]=x;
+
+        let dataItem={
+            type:"scatter",
+            name:title,
+            x:x,
+            y:y,
+            mode:'markers',
+            marker:{
+                symbol:symbol,
+                color:color,
+                size:12
+            }
+        }
+
+        plotData.push(dataItem);
+    }
+
+    $(this).data('plotVals',xVals);
+    $(this).data('exporter',exportRSDetections);
+    
+    const topY=sortedRows.length+1
+    let height=25*topY+35
+
+    const layout={
+        height:height,
+        showlegend:true,
+        margin:{t:5,b:40},
+        yaxis:{
+            showgrid:false,
+            linecolor:"black",
+            nticks:0,
+            zeroline:false,
+            range:[0,topY+1],
+            showticklabels:false
+        },
+        xaxis:{
+            showgrid:false,
+            linecolor:'black',
+        },
+        legend:{
+            orientation:"h",
+            y:1,
+            yanchor:'bottom',
+            font:{
+                color:'rgb(204,204,220)'
+            }
+        }
+    }
+
+    return [plotData,layout]
+}
+
 
 
 function eq_location_depth(data){
