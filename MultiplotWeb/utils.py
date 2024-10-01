@@ -27,8 +27,8 @@ VOLCANOES = {
 }
 VOLC_IDS = {}
 
-DATA_DIR = os.path.join(app.static_folder, 'data')
-
+# DATA_DIR = os.path.join(app.static_folder, 'data')
+DATA_DIR = '/shared/data/multiplot'
 
 class MYSQLCursor():
     def __init__(self, DB, user = config.GDDB_USER, password = config.GDDB_PASS):
