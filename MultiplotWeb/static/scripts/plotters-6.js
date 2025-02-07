@@ -139,6 +139,17 @@ function plot_db_dataset_selector(addArgs){
     return selectorHTML
 }
 
+function plot_preevents_dataset_selector(addArgs){
+    const plotType=$(this).data('plotType');
+    const typeList=plotDataTypes[plotType];
+    if(typeList==null || typeof(typeList)=='undefined'){
+        return null;
+    }
+
+    const selectorHTML=generate_type_selector(typeList,addArgs,"Select data types to show","Select Data Types...")
+    return selectorHTML
+}
+
 ////////////////////////////////
 
 //---------PLOTTING FUNCTIONS-----------//
@@ -1118,6 +1129,10 @@ function gen_db_data_def(data, name, idx, dataOverrides, plotErr){
     return data_def
 }
 
+function plot_preevents_dataset(data){
+    return plot_db_dataset(data);
+}
+
 function plot_db_dataset(data){
     const labels=data['labels']
     delete data['labels'];
@@ -1172,7 +1187,6 @@ function plot_db_dataset(data){
         let yIdx=1;
 
         //different labels per type
-        console.log(labels)
         if(typeof(labels)!='string'){
             yIdx=i+1;
             let label=labels[name];

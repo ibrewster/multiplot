@@ -10,3 +10,4 @@ utils.get_db_labels()
 
 # imported to register functions
 from .generators import *
+utils.get_preevents_labels()

@@ -8,9 +8,11 @@ import pandas
 import psycopg
 import pymysql
 
+from psycopg.cursor import Cursor as Psycopg3Cursor
+
 import numpy as np
 
-from . import config, app, google, DBMetadata
+from . import config, google, DBMetadata
 
 # TODO: better way of defining this? We need the latitude and longitude of the
 # view center - which may not be the same as the "volcano location" - as well
@@ -58,7 +60,7 @@ class PostgreSQLCursor():
         self._server = host
         self._row_factory = row_factory
 
-    def __enter__(self) -> psycopg.Cursor:
+    def __enter__(self) -> Psycopg3Cursor:
         self._conn = psycopg.connect(user = self._user, password = self._pass,
                                      dbname = self._db, host = self._server)
         return self._conn.cursor(row_factory = self._row_factory)
@@ -66,6 +68,16 @@ class PostgreSQLCursor():
     def __exit__(self, *args, **kwargs) -> None:
         self._conn.rollback()
         self._conn.close()
+
+# The PREEVENTS db is postgresql, so we can just re-use the above PostgreSQL cursor,
+# but with different default settings.
+PREEVENTSSQLCursor = partial(
+    PostgreSQLCursor,
+    DB = "preevents",
+    user = config.PREEVENTS_USER,
+    password = config.PREEVENTS_PASS,
+    host = config.PREEVENTS_HOST
+)
 
 
 ######## Generator Decorator########
@@ -163,6 +175,7 @@ def get_volcs():
                 VOLCANOES[volc_name] = [latitude, longitude, 10]
 
 def get_db_labels():
+    """Get a list of datasets from the database"""
     from .generators import database
     with PostgreSQLCursor("multiplot") as cursor:
         cursor.execute("SELECT title, categories.name FROM plotinfo INNER JOIN categories ON categories.id=category WHERE visible=true")
@@ -176,6 +189,24 @@ def get_db_labels():
             func = partial(database.plot_db_dataset, tag)
             GEN_FUNCS[tag] = func
             JS_FUNCS[tag] = database.plot_db_dataset.__name__
+
+def get_preevents_labels():
+    from .generators import preevents_db
+    with PREEVENTSSQLCursor() as cursor:
+        cursor.execute("""SELECT DISTINCT datastream_displayname, dataset_discipline
+FROM datastreams ds
+JOIN datavalues dv ON ds.datastream_id = dv.datastream_id
+INNER JOIN datasets ON datasets.dataset_id=ds.dataset_id
+WHERE dv.datavalue IS NOT NULL;"""
+                       )
+        for title, category in cursor:
+            tag = f"{category}|{title}"
+            if not title in GEN_CATEGORIES[category]:
+                GEN_CATEGORIES[category].append(title)
+
+            func = partial(preevents_db.plot_preevents_dataset, tag)
+            GEN_FUNCS[tag] = func
+            JS_FUNCS[tag] = preevents_db.plot_preevents_dataset.__name__
 
 def get_combined_details():
     g_details = google.get_data()

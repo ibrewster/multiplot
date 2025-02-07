@@ -9,6 +9,8 @@ import psycopg
 from .. import utils
 
 def plot_db_dataset(tag, volcano, start=None, end=None):
+    """Get plot data for a specified dataset from the database"""
+
     category, title = tag.split("|")
     query_string = flask.request.args.get('addArgs', '')
     requested_types = parse_qs(query_string).get('types')

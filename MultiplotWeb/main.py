@@ -116,6 +116,7 @@ def get_plot():
     try:
         data = utils.GEN_FUNCS[plot_type](volcano, start_date, end_date)
     except Exception as e:
+        app.logger.warning(str(e))
         return str(e), 404
 
     return data
