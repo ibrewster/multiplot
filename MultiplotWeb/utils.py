@@ -194,16 +194,15 @@ def get_preevents_labels():
     from .generators import preevents_db
     with PREEVENTSSQLCursor() as cursor:
         cursor.execute("""
-WITH numeric_streams AS (
-	SELECT DISTINCT datastream_id
-    FROM datavalues
-    WHERE datavalue IS NOT NULL AND categoryvalue IS NULL
-)
-SELECT DISTINCT datastream_displayname, discipline_name
-FROM datastreams ds
-INNER JOIN numeric_streams ON ds.datastream_id=numeric_streams.datastream_id
-INNER JOIN datasets ON datasets.dataset_id=ds.dataset_id
-INNER JOIN disciplines ON datasets.discipline_id=disciplines.discipline_id;
+SELECT DISTINCT
+	displayname,
+	discipline_name
+FROM disciplines
+INNER JOIN datasets ON datasets.discipline_id=disciplines.discipline_id
+INNER JOIN datastreams ON datastreams.dataset_id=datasets.dataset_id
+INNER JOIN variables ON variables.variable_id=datastreams.variable_id
+INNER JOIN displaynames ON displaynames.displayname_id=variables.displayname_id
+WHERE variables.unit_id!=6; --id 6 = categorical
 """
                        )
         for title, category in cursor:
@@ -222,11 +221,11 @@ def get_combined_details():
         to_concat.append(g_details)
     except Exception as e:
         print(f"Unable to get google sheet descriptions. {e}")
-    
+
     db_details = DBMetadata.get_db_details()
     to_concat.append(db_details)
-    postgres_details = DBMetadata.get_postgress_db_details()
-    to_concat.append(postgres_details)
+    preevents_details = DBMetadata.get_preevents_db_details()
+    to_concat.append(preevents_details)
 
     details = pandas.concat(to_concat, sort=True, copy=False)
     # Entries from the google spreadsheet override identical entries from the database

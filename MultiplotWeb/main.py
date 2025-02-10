@@ -74,6 +74,25 @@ def headers():
         cursor.execute(type_SQL)
         type_lookup = {x[0]: x[1] for x in cursor}
 
+    # Same for the PREEVENTS database
+    with utils.PREEVENTSSQLCursor() as cursor:
+        SQL = """
+        SELECT
+    discipline_name||'|'||displayname,
+	array_agg(DISTINCT device_name)
+FROM disciplines
+INNER JOIN datasets ON datasets.discipline_id=disciplines.discipline_id
+INNER JOIN datastreams ON datastreams.dataset_id=datasets.dataset_id
+INNER JOIN devices ON datastreams.device_id=devices.device_id
+INNER JOIN variables ON variables.variable_id=datastreams.variable_id
+INNER JOIN displaynames ON displaynames.displayname_id=variables.displayname_id
+WHERE variables.unit_id!=6 --id 6 = categorical
+GROUP BY 1
+        """
+        cursor.execute(SQL)
+        preevents_lookup = {x[0]: x[1] for x in cursor}
+        type_lookup.update(preevents_lookup)
+
     args['plotDataTypes'] = json.dumps(type_lookup)
 
     return flask.render_template('headers.html', **args)

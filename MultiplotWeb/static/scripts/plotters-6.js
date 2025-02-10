@@ -139,6 +139,7 @@ function plot_db_dataset_selector(addArgs){
     return selectorHTML
 }
 
+//Generic preevents db plot type selector
 function plot_preevents_dataset_selector(addArgs){
     const plotType=$(this).data('plotType');
     const typeList=plotDataTypes[plotType];

@@ -4,7 +4,6 @@ from urllib.parse import parse_qs
 
 import flask
 import pandas
-import psycopg
 
 from .. import utils
 
@@ -23,8 +22,9 @@ def plot_preevents_dataset(tag, volcano, start=None, end=None):
     FROM datastreams
     INNER JOIN devices ON devices.device_id=datastreams.device_id
     INNER JOIN variables ON variables.variable_id=datastreams.variable_id
+    INNER JOIN displaynames ON variables.displayname_id=displaynames.displayname_id
     INNER JOIN units ON variables.unit_id=units.unit_id
-    WHERE datastream_displayname=%s
+    WHERE displayname=%s
     AND volcano_id=%s
     """
 
@@ -50,7 +50,7 @@ def plot_preevents_dataset(tag, volcano, start=None, end=None):
 
     data_sql += " ORDER BY device_name, timestamp"
 
-    meta_args = (title, utils.VOLC_IDS[volcano])
+    meta_args = [title, utils.VOLC_IDS[volcano]]
     if requested_types is not None:
         METADATA_SQL += " AND device_name=ANY(%s)"
         meta_args.append(requested_types)
@@ -72,7 +72,7 @@ def plot_preevents_dataset(tag, volcano, start=None, end=None):
 
     if len(df) == 0:
         raise FileNotFoundError("Unable to find requested data")
-    
+
     df['datetime'] = df['datetime'].apply(lambda x: pandas.to_datetime(x).isoformat())
     result ={
         'labels': units,

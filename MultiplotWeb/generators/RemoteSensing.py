@@ -196,7 +196,7 @@ def process_percent_data(data):
 ############### Generators ####################
 
 
-@generator("Radiative Power")
+@generator("Radiative Power-Original")
 def plot_radiative_power(volcano, start = None, end = None):
     ret_data = {}
     query_string = flask.request.args.get('addArgs', '')
