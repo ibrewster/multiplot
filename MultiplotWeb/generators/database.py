@@ -94,6 +94,9 @@ def plot_db_dataset(tag, volcano, start=None, end=None):
         cursor.execute(data_query, args)
         df = pandas.DataFrame(cursor, columns=result_cols)
 
+    if len(df) == 0:
+        raise FileNotFoundError("Unable to find requested data")
+    
     df['datetime'] = df['datetime'].apply(lambda x: pandas.to_datetime(x).isoformat())
     result ={
         'labels': units,

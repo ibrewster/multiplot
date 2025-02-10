@@ -202,7 +202,7 @@ div.multiplot-typesFooter{
     box-shadow:0 8px 24px #010409;
     background-color:white;
     width:auto;
-    min-width:190px;
+    min-width:max(190px, 100%);
     margin-left:-10px;
     border-radius:5px;
     border-top-left-radius: 0px;

@@ -193,11 +193,18 @@ def get_db_labels():
 def get_preevents_labels():
     from .generators import preevents_db
     with PREEVENTSSQLCursor() as cursor:
-        cursor.execute("""SELECT DISTINCT datastream_displayname, dataset_discipline
+        cursor.execute("""
+WITH numeric_streams AS (
+	SELECT DISTINCT datastream_id
+    FROM datavalues
+    WHERE datavalue IS NOT NULL AND categoryvalue IS NULL
+)
+SELECT DISTINCT datastream_displayname, discipline_name
 FROM datastreams ds
-JOIN datavalues dv ON ds.datastream_id = dv.datastream_id
+INNER JOIN numeric_streams ON ds.datastream_id=numeric_streams.datastream_id
 INNER JOIN datasets ON datasets.dataset_id=ds.dataset_id
-WHERE dv.datavalue IS NOT NULL;"""
+INNER JOIN disciplines ON datasets.discipline_id=disciplines.discipline_id;
+"""
                        )
         for title, category in cursor:
             tag = f"{category}|{title}"
@@ -209,10 +216,19 @@ WHERE dv.datavalue IS NOT NULL;"""
             JS_FUNCS[tag] = preevents_db.plot_preevents_dataset.__name__
 
 def get_combined_details():
-    g_details = google.get_data()
+    to_concat = []
+    try:
+        g_details = google.get_data()
+        to_concat.append(g_details)
+    except Exception as e:
+        print(f"Unable to get google sheet descriptions. {e}")
+    
     db_details = DBMetadata.get_db_details()
+    to_concat.append(db_details)
+    postgres_details = DBMetadata.get_postgress_db_details()
+    to_concat.append(postgres_details)
 
-    details = pandas.concat([g_details, db_details], sort=True, copy=False)
+    details = pandas.concat(to_concat, sort=True, copy=False)
     # Entries from the google spreadsheet override identical entries from the database
     # Change 'first' to 'last' to reverse this logic.
     details = details[~details.index.duplicated(keep='first')]
