@@ -77,9 +77,9 @@ def headers():
     # Same for the PREEVENTS database
     with utils.PREEVENTSSQLCursor() as cursor:
         SQL = """
-        SELECT
-    discipline_name||'|'||displayname,
-	array_agg(DISTINCT device_name)
+SELECT
+    discipline_name||'|'||displayname, --multiplot selector identifier
+    array_agg(DISTINCT device_name)
 FROM disciplines
 INNER JOIN datasets ON datasets.discipline_id=disciplines.discipline_id
 INNER JOIN datastreams ON datastreams.dataset_id=datasets.dataset_id

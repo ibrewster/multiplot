@@ -74,7 +74,7 @@ def get_preevents_db_details() -> pandas.DataFrame:
 SELECT DISTINCT
     discipline_name,
     displayname,
-    variable_name||', '||variable_description
+    variable_name||', '||variable_description --string to be displayed to user.
 FROM disciplines
 INNER JOIN datasets ON datasets.discipline_id=disciplines.discipline_id
 INNER JOIN datastreams ON datastreams.dataset_id=datasets.dataset_id

@@ -17,14 +17,16 @@ def plot_preevents_dataset(tag, volcano, start=None, end=None):
     METADATA_SQL = """SELECT
         array_agg(datastream_id),
         array_agg(device_name),
-        array_agg(variable_name),
         array_agg(unit_name)
     FROM datastreams
+    INNER JOIN datasets ON datastreams.dataset_id=datasets.dataset_id
+    INNER JOIN disciplines ON disciplines.discipline_id=datasets.dataset_id
     INNER JOIN devices ON devices.device_id=datastreams.device_id
     INNER JOIN variables ON variables.variable_id=datastreams.variable_id
     INNER JOIN displaynames ON variables.displayname_id=displaynames.displayname_id
     INNER JOIN units ON variables.unit_id=units.unit_id
-    WHERE displayname=%s
+    WHERE discipline_name=%s
+    AND displayname=%s
     AND volcano_id=%s
     """
 
@@ -50,7 +52,9 @@ def plot_preevents_dataset(tag, volcano, start=None, end=None):
 
     data_sql += " ORDER BY device_name, timestamp"
 
-    meta_args = [title, utils.VOLC_IDS[volcano]]
+    meta_args = [category, title, utils.VOLC_IDS[volcano]]
+
+    # If the user has requested specific types, filter query by requested types.
     if requested_types is not None:
         METADATA_SQL += " AND device_name=ANY(%s)"
         meta_args.append(requested_types)
@@ -62,7 +66,8 @@ def plot_preevents_dataset(tag, volcano, start=None, end=None):
         if metadata is None:
             raise FileNotFoundError(f"Unable to locate config for {category} - {title}")
 
-        datastreams, types, variables, units = metadata
+        datastreams, types, units = metadata
+        units = dict(zip(types, units))
         args[0] = datastreams
         # args[0] = tuple(args[0])
 
