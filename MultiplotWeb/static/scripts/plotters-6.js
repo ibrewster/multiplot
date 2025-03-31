@@ -171,9 +171,7 @@ function generic_plot(data,ylabel,ydata,type){
         ydata=data[ydata]
     }
 
-    if(typeof(type)=='undefined'){
-        type='scatter'
-    }
+    type=type ?? 'scatter'
 
     $(this).data('yValues',ydata);
     $(this).data('xValues',data['date'])
@@ -199,9 +197,15 @@ function generic_plot(data,ylabel,ydata,type){
             type: type,
             x: data['date'],
             y: ydata,
-            mode: 'markers'
         }
     ]
+
+    if(type=="bar"){
+        plotData[0]['width'] = 86400000 // One day, in ms.
+    } else{
+        plotData[0]['mode'] = 'markers'
+    }
+
 
     return [plotData, layout]
 }
