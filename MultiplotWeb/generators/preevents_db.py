@@ -67,6 +67,7 @@ def plot_preevents_dataset(tag, volcano, start=None, end=None):
             raise FileNotFoundError(f"Unable to locate config for {category} - {title}")
 
         datastreams, types, units = metadata
+        units = [u if u != 'unitless' else '' for u in units]
         units = dict(zip(types, units))
         args[0] = datastreams
         # args[0] = tuple(args[0])
