@@ -17,17 +17,19 @@ def plot_preevents_dataset(tag, volcano, start=None, end=None):
     METADATA_SQL = """SELECT
         array_agg(datastream_id),
         array_agg(device_name),
-        array_agg(unit_name)
+        array_agg(unit_name),
+        datastreams.dataset_id,
+        datastreams.variable_id
     FROM datastreams
     INNER JOIN datasets ON datastreams.dataset_id=datasets.dataset_id
-    INNER JOIN disciplines ON disciplines.discipline_id=datasets.dataset_id
+    INNER JOIN disciplines ON disciplines.discipline_id=datasets.discipline_id
     INNER JOIN devices ON devices.device_id=datastreams.device_id
     INNER JOIN variables ON variables.variable_id=datastreams.variable_id
     INNER JOIN displaynames ON variables.displayname_id=displaynames.displayname_id
     INNER JOIN units ON variables.unit_id=units.unit_id
     WHERE discipline_name=%s
-    AND displayname=%s
-    AND volcano_id=%s
+        AND displayname=%s
+        AND volcano_id=%s
     """
 
     args = [[]]
@@ -58,6 +60,10 @@ def plot_preevents_dataset(tag, volcano, start=None, end=None):
     if requested_types is not None:
         METADATA_SQL += " AND device_name=ANY(%s)"
         meta_args.append(requested_types)
+        
+    METADATA_SQL += """
+    GROUP BY datastreams.dataset_id, datastreams.variable_id
+    ORDER BY datastreams.dataset_id"""
 
     with utils.PREEVENTSSQLCursor() as cursor:
         cursor.execute(METADATA_SQL, meta_args)
@@ -66,7 +72,7 @@ def plot_preevents_dataset(tag, volcano, start=None, end=None):
         if metadata is None:
             raise FileNotFoundError(f"Unable to locate config for {category} - {title}")
 
-        datastreams, types, units = metadata
+        datastreams, types, units, dataset_id, variable_id = metadata
         units = [u if u != 'unitless' else '' for u in units]
         units = dict(zip(types, units))
         args[0] = datastreams
@@ -80,9 +86,17 @@ def plot_preevents_dataset(tag, volcano, start=None, end=None):
         raise FileNotFoundError("Unable to find requested data")
 
     df['datetime'] = df['datetime'].apply(lambda x: pandas.to_datetime(x).isoformat())
+    # look for any overrides for this plot
+    with utils.PostgreSQLCursor("multiplot") as cursor:
+        cursor.execute("SELECT overrides FROM preevents WHERE dataset_id=%s and variable_id=%s",
+                       (dataset_id, variable_id))
+        overrides = cursor.fetchone()
+        if overrides is not None:
+            overrides = overrides[0]
+    
     result ={
         'labels': units,
-        'plotOverrides': None,
+        'plotOverrides': overrides,
     }
 
     if types is not None:

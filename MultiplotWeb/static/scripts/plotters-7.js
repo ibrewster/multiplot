@@ -1158,7 +1158,7 @@ function plot_db_dataset(data){
 
     const keys=Object.keys(data);
 
-    const layout={
+    let layout={
         height:205,
         margin:{t:5,b:20},
         xaxis:{
@@ -1252,7 +1252,6 @@ function plot_db_dataset(data){
 
         } else{
             plotData.push(dataDict);
-
         }
 
     }
@@ -1266,7 +1265,7 @@ function plot_db_dataset(data){
 
 function isObject(item) {
     return (item && typeof item === 'object' && !Array.isArray(item));
-  }
+}
 
 
 function mergeDeep(target, ...sources) {
@@ -1285,4 +1284,4 @@ function mergeDeep(target, ...sources) {
     }
 
     return mergeDeep(target, ...sources);
-  }
+}
