@@ -46,16 +46,16 @@ function MultiPlot(dest){
         })
         .done((headers) => {
             //append the scripts and stylesheets to the header
-    
+
             const parsedHtml=$.parseHTML(headers,null,true);
-    
+
             // we have to track the loading of the scripts so we don't try to execute before
             // all scripts have loaded.
             const neededScripts=new Set();
-    
+
             function scriptLoaded(src){
                 neededScripts.delete(src);
-    
+
                 if(neededScripts.size===0){
                     // once all scripts are loaded, go ahead load the body div
                     //followed by plot initilization
@@ -65,16 +65,16 @@ function MultiPlot(dest){
                     })
                 }
             }
-    
+
             parsedHtml.forEach( (element) => {
                 let newElement=element; //default, for css/link/etc tags
-    
+
                 if(element instanceof HTMLScriptElement){
                     // If we have a script, creating a new element the same as the old one seems to
                     // be the only way to get them to load, for some reason. CSS links just work...
                     newElement=document.createElement('script');
                     newElement.async=false;
-    
+
                     //if the script has text, set it on the new script.
                     //Otherwise, add the onload handler and set the src attribute.
                     if(element.text!=''){ newElement.text=element.text; }
@@ -84,10 +84,10 @@ function MultiPlot(dest){
                         newElement.src=element.src;
                     }
                 }
-    
+
                 document.head.appendChild(newElement);
             });
-    
+
         })
     })
 }
@@ -276,10 +276,10 @@ function setTheme(colorScheme, save){
     }
 
     theme=colorScheme;
-    
+
     if(save==true || typeof(save)=='undefined')
         localStorage.setItem('theme',theme);
-    
+
     if(theme==='dark'){
         parent.addClass('multiplot-dark');
     }
@@ -293,24 +293,24 @@ function setTheme(colorScheme, save){
 // -----printing three stage ---//
 function createNewWindowForPrint(){
     const myWindow=window.open('','PRINT','width=736px,height=1056px')
-    
+
     myWindow.document.write('<html><head>');
     myWindow.document.write('<script src="https://apps.avo.alaska.edu/multiplot/static/scripts/jquery-3.6.3.min.js"></script>\n');
     myWindow.document.write(myScriptTag.outerHTML);
-    
+
     let bodyClass='';
     if (navigator.appVersion.indexOf("Chrome/") != -1) {
         bodyClass='class="multiplot-print-chrome"'
     }
-    
+
     myWindow.document.write(`</head><body ${bodyClass}>`);
     myWindow.document.write('<div id="multiplot-print-div" class="multiplot-print" style="width:8in"></div>');
-    
+
     const dateFrom=$('#multiplot-dateFrom').val();
     const dateTo=$('#multiplot-dateTo').val();
     const volc=$('#multiplot-volcano').val();
     const plots=JSON.stringify(plot.getPlotParams().toArray())
-    
+
     const initScript=`<script type="text/javascript">
         $(document).ready(function(){
             prefix='${prefix}';
@@ -326,7 +326,7 @@ function createNewWindowForPrint(){
                     const addArgs=element['addArgs']
                     return plot.addPlot(type,addArgs)
                 })
-                
+
                 Promise.all(plotFutures).then(()=>{
                     setTheme('light',false); //not really needed, but it "kicks" the display nicely.
                     calcPageBreaks();
@@ -337,9 +337,9 @@ function createNewWindowForPrint(){
     </script>
     `
     myWindow.document.write(initScript)
-    
+
     myWindow.document.write('</body></html>');
-    
+
     myWindow.document.close();
     myWindow.focus();
 }
@@ -387,20 +387,20 @@ function createPlotDiv(type,addArgs){
     return new Promise((resolve) => {
         const dest=$('#multiplot-plots')
         const div=$('<div class="multiplot-plot">')
-    
+
         const typeDisplay=$('<div class="multiplot-plotSelect">')
         typeDisplay.html('<div class="multiplot-typeString">Select...</div>')
-    
+
         const helpDiv=$('<div class="multiplot-help" style="display:none;">')
         helpDiv.append('<div class="multiplot-category">')
         helpDiv.append('<div class="multiplot-dataset">')
         helpDiv.append('<div class="multiplot-description">')
-    
+
         typeDisplay.prepend(helpDiv)
-    
-    
+
+
         const typeSelect=$('<ul class="multiplot-plotSelectMenu" style="display:none">')
-    
+
         let curCat=null;
         let curCatTitle=''
         for(const plot of plotTypes){
@@ -431,7 +431,7 @@ function createPlotDiv(type,addArgs){
                 curCat.append(opt)
             }
         }
-    
+
         const selectDiv=$('<div class="multiplot-typeSelectWrapper">')
         selectDiv.append(typeDisplay)
         typeDisplay.append(typeSelect);
@@ -440,13 +440,13 @@ function createPlotDiv(type,addArgs){
             focus:plotSelectFocused,
             select:plotSelectSelected
         })
-    
+
         const auxDiv=$('<div class="multiplot-selectRight">');
         const downloadDiv=$('<div class="multiplot-download">');
         downloadDiv.html(downloadSVG());
         auxDiv.append(downloadDiv);
         selectDiv.append(auxDiv);
-    
+
         div.append(selectDiv)
         div.append('<div class="multiplot-plotContent"><div class="multiplot-placeholder">Select a plot type</div></div>')
         const rightDiv=$('<div class="multiplot-right">')
@@ -454,7 +454,7 @@ function createPlotDiv(type,addArgs){
         rightDiv.append('<div class=multiplot-removePlot>&times;</div>')
         div.append(rightDiv)
         dest.append(div)
-    
+
         if(typeof(type)!=='undefined'){
             plotTypeChanged.call(typeDisplay.get(0), addArgs, resolve);
         }
@@ -462,7 +462,7 @@ function createPlotDiv(type,addArgs){
             //done. Resolve the promise.
             resolve();
         }
-    
+
     })
 
 }
@@ -489,10 +489,40 @@ function plotSelectFocused(event, ui){
         description="No Description Provided"
     }
 
-    help.show();
-    help.children('.multiplot-category').html(cat)
-    help.children('.multiplot-dataset').html(label)
+    const categoryDiv = help.children('.multiplot-category').html(cat)
+    const datasetDiv = help.children('.multiplot-dataset').html(label)
     help.children('.multiplot-description').html(description)
+    const helpParent=help.parent()
+    const parentRight=helpParent.offset().left;
+    const viewportLeft = window.scrollX;
+    const helpRightMargin=parseInt(help.css('margin-right'),10);
+    const availableWidth=parentRight-viewportLeft-(2*helpRightMargin)
+
+    // Attempt to set a reasonable width based on a pleasing height-to-width ratio
+    const goldenRatio = 1.618;
+    const tempElement = $('<div>').css({
+        'position': 'absolute',
+        'visibility': 'hidden',
+        'white-space': 'nowrap',
+        'font': help.css('font'),
+    }).text(description);
+    $('body').append(tempElement);
+    const singleLineWidth = tempElement.width();
+    const lineHeight=tempElement.height();
+    const header_height=categoryDiv.height()+datasetDiv.height()
+
+    let lines=1;
+    let targetWidth=singleLineWidth;
+    while (targetWidth/((lineHeight*lines)+header_height)>goldenRatio ){
+        lines++;
+        targetWidth=singleLineWidth/lines;
+    }
+
+    const maxWidth=Math.max(Math.min(availableWidth, targetWidth),200);
+    help.css('width', `${maxWidth}px`);
+
+    help.show();
+
 }
 
 function plotSelectSelected(event, ui){
@@ -690,34 +720,34 @@ function genPlot(){
     const plotGenerated=new Promise((resolve,reject)=>{
         $.getJSON(prefix+'getPlot',args).done(function(data){
             Plotly.purge(plotElement)
-    
+
             placeholder.remove();
-    
+
             const plotType=args['plotType']
-    
+
             let plotData,layout;
             const plotFunc=plotFuncs[plotType];
-    
+
             isSpatial=false;
             [plotData,layout]=window[plotFunc].call(plotElement,data);
-    
+
             if(isSpatial){
                 plotDiv.addClass('multiplot-spatial');
             }
             else{
                 plotDiv.removeClass('multiplot-spatial');
             }
-    
+
             config={'responsive':true}
-    
+
             layout=setLayoutDefaults(layout,showXLabels)
-    
+
             Plotly.newPlot(plotElement,plotData,layout,config).then(()=>{resolve()});
-    
+
             plotElement.removeListener('plotly_relayout',plotRangeChanged)
             plotElement.on('plotly_relayout',plotRangeChanged);
-            
-    
+
+
         }).fail(function(e){
             if(e.status==404){
                 Plotly.purge(plotDiv);
@@ -738,7 +768,7 @@ function genPlot(){
             clearDateAxis(true);
         })
     })
-    
+
     return plotGenerated
 }
 

@@ -289,8 +289,9 @@ div.multiplot-typesFooter{
     padding:10px;
     margin-right:10px;
     border:1px solid;
-    width:200px;
-
+    min-width:200px;
+    max-width:40vw;
+    width:fit-content;
 }
 
 .multiplot-help > .multiplot-category {
