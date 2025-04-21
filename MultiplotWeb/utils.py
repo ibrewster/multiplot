@@ -232,9 +232,19 @@ ORDER BY discipline_name, enhanced_displayname
 
 def get_preevents_labels():
     from .generators import preevents_db
+    with PostgreSQLCursor("multiplot") as cursor:
+        cursor.execute("SELECT dataset_id,variable_id,hidden FROM preevents")
+        display_flags = {
+            (x[0], x[1]): x[2]
+            for x in cursor
+        }
 
     labels = preevents_label_query()
     for label in labels:
+        item_id = label[2:4]
+        if display_flags.get(item_id, False): # hidden==True
+            continue
+
         title, category = label[:2]
         tag = f"{category}|{title}"
         if not title in GEN_CATEGORIES[category]:
