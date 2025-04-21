@@ -496,10 +496,11 @@ function plotSelectFocused(event, ui){
     const parentRight=helpParent.offset().left;
     const viewportLeft = window.scrollX;
     const helpRightMargin=parseInt(help.css('margin-right'),10);
-    const availableWidth=parentRight-viewportLeft-(2*helpRightMargin)
+    const availableWidth=parentRight-viewportLeft-(4*helpRightMargin)
 
     // Attempt to set a reasonable width based on a pleasing height-to-width ratio
-    const goldenRatio = 1.618;
+    //const goldenRatio = 1.618;
+    const goldenRatio=3;
     const tempElement = $('<div>').css({
         'position': 'absolute',
         'visibility': 'hidden',
