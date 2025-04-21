@@ -69,19 +69,10 @@ def get_db_details() -> pandas.DataFrame:
 
 def get_preevents_db_details() -> pandas.DataFrame:
     """Get the descriptions of the available datasets/datastreams from the preevents database"""
-    with utils.PREEVENTSSQLCursor() as cursor:
-        cursor.execute("""
-SELECT DISTINCT
-    discipline_name,
-    displayname,
-    variable_name||', '||variable_description --string to be displayed to user.
-FROM disciplines
-INNER JOIN datasets ON datasets.discipline_id=disciplines.discipline_id
-INNER JOIN datastreams ON datastreams.dataset_id=datasets.dataset_id
-INNER JOIN variables ON variables.variable_id=datastreams.variable_id
-INNER JOIN displaynames ON displaynames.displayname_id=variables.displayname_id
-WHERE variables.unit_id!=6; --id 6 = categorical
-        """)
-        plot_descriptions = cursor.fetchall()
+    labels = utils.preevents_label_query()
+    plot_descriptions = []
+    for item in labels:
+        desc = f"<p>{item[4]}, {item[5]}</p><p>{item[6]}</p>"
+        plot_descriptions.append((item[1], item[0], desc))
 
     return create_description_dataframe(plot_descriptions)

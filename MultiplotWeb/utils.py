@@ -1,6 +1,6 @@
 import inspect
-import os
 
+from cachetools.func import ttl_cache
 from functools import wraps, partial
 from collections import defaultdict
 
@@ -190,29 +190,59 @@ def get_db_labels():
             GEN_FUNCS[tag] = func
             JS_FUNCS[tag] = database.plot_db_dataset.__name__
 
-def get_preevents_labels():
-    from .generators import preevents_db
+@ttl_cache(ttl = 86400) # cache for one day.
+def preevents_label_query():
     with PREEVENTSSQLCursor() as cursor:
         cursor.execute("""
-SELECT DISTINCT
-	displayname,
-	discipline_name
+WITH displayname_dataset_counts AS (
+    SELECT
+        display_names.displayname,
+        disciplines.discipline_name,
+        COUNT(DISTINCT datasets.dataset_id) AS dataset_count
+    FROM disciplines
+    INNER JOIN datasets ON datasets.discipline_id = disciplines.discipline_id
+    INNER JOIN datastreams ON datastreams.dataset_id = datasets.dataset_id
+    INNER JOIN variables ON variables.variable_id = datastreams.variable_id
+    INNER JOIN displaynames AS display_names ON display_names.displayname_id = variables.displayname_id
+    WHERE variables.unit_id != 6 --id 6 = categorical
+    GROUP BY display_names.displayname, disciplines.discipline_name
+)
+SELECT DISTINCT ON (enhanced_displayname, discipline_name)
+    CASE
+        WHEN ddc.dataset_count > 1 THEN display_names.displayname || ' (' || datasets.dataset_name || ')'
+        ELSE display_names.displayname
+    END AS enhanced_displayname,
+    disciplines.discipline_name,
+    datasets.dataset_id,
+    datastreams.variable_id,
+    variable_name,
+    variable_description,
+    dataset_description
 FROM disciplines
-INNER JOIN datasets ON datasets.discipline_id=disciplines.discipline_id
-INNER JOIN datastreams ON datastreams.dataset_id=datasets.dataset_id
-INNER JOIN variables ON variables.variable_id=datastreams.variable_id
-INNER JOIN displaynames ON displaynames.displayname_id=variables.displayname_id
-WHERE variables.unit_id!=6; --id 6 = categorical
+INNER JOIN datasets ON datasets.discipline_id = disciplines.discipline_id
+INNER JOIN datastreams ON datastreams.dataset_id = datasets.dataset_id
+INNER JOIN variables ON variables.variable_id = datastreams.variable_id
+INNER JOIN displaynames AS display_names ON display_names.displayname_id = variables.displayname_id
+INNER JOIN displayname_dataset_counts AS ddc ON ddc.displayname = display_names.displayname AND ddc.discipline_name = disciplines.discipline_name
+WHERE variables.unit_id != 6 --id 6 = categorical
+ORDER BY discipline_name, enhanced_displayname
 """
-                       )
-        for title, category in cursor:
-            tag = f"{category}|{title}"
-            if not title in GEN_CATEGORIES[category]:
-                GEN_CATEGORIES[category].append(title)
+                    )
+        return cursor.fetchall()
 
-            func = partial(preevents_db.plot_preevents_dataset, tag)
-            GEN_FUNCS[tag] = func
-            JS_FUNCS[tag] = preevents_db.plot_preevents_dataset.__name__
+def get_preevents_labels():
+    from .generators import preevents_db
+
+    labels = preevents_label_query()
+    for label in labels:
+        title, category = label[:2]
+        tag = f"{category}|{title}"
+        if not title in GEN_CATEGORIES[category]:
+            GEN_CATEGORIES[category].append(title)
+
+        func = partial(preevents_db.plot_preevents_dataset, tag)
+        GEN_FUNCS[tag] = func
+        JS_FUNCS[tag] = preevents_db.plot_preevents_dataset.__name__
 
 def get_combined_details():
     to_concat = []
