@@ -292,6 +292,7 @@ div.multiplot-typesFooter{
     min-width:200px;
     max-width:40vw;
     width:fit-content;
+    box-sizing:border-box;
 }
 
 .multiplot-help > .multiplot-category {
