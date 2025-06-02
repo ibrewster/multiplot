@@ -40,9 +40,11 @@ def api():
 
 
     script_file = os.path.basename(index_js_path[0])
-    response = flask.send_from_directory(app.static_folder,
-                                     os.path.join('scripts', script_file),
-                                     mimetype='text/javascript')
+    response = flask.send_from_directory(
+        app.static_folder,
+        os.path.join('scripts', script_file),
+        mimetype='text/javascript'
+    )
     response.headers['Cache-Control'] = 'max-age=3600, no-cache'
     return response
 

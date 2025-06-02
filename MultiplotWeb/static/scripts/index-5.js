@@ -583,8 +583,8 @@ function setLayoutDefaults(layout,showLabels){
     const dateFrom=$('#multiplot-dateFrom').val();
     const dateTo=$('#multiplot-dateTo').val();
     const range=[dateFrom,dateTo];
-    const left_margin=90;
-    const right_margin=10;
+    const left_margin=80;
+    const right_margin=50;
 
 
     if('xaxis' in layout){
@@ -740,6 +740,7 @@ function genPlot(){
             }
 
             config={'responsive':true}
+
 
             layout=setLayoutDefaults(layout,showXLabels)
 
