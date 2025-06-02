@@ -1204,6 +1204,7 @@ function plot_db_dataset(data){
 
             layout[yaxis]={
                 autorange:true,
+                side:'left',
                 title:{
                     text:label
                 },
@@ -1211,9 +1212,9 @@ function plot_db_dataset(data){
                 automargin:true
             }
 
-            if(i>0){
-                layout[yaxis]['side']='right';
-            }
+            // if(i>0){
+            //     layout[yaxis]['side']='right';
+            // }
         }
 
         let rawData=data[name];
