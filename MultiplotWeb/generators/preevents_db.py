@@ -60,7 +60,7 @@ def plot_preevents_dataset(tag, volcano, start=None, end=None):
     if requested_types is not None:
         METADATA_SQL += " AND device_name=ANY(%s)"
         meta_args.append(requested_types)
-        
+
     METADATA_SQL += """
     GROUP BY datastreams.dataset_id, datastreams.variable_id
     ORDER BY datastreams.dataset_id"""
@@ -74,7 +74,10 @@ def plot_preevents_dataset(tag, volcano, start=None, end=None):
 
         datastreams, types, units, dataset_id, variable_id = metadata
         units = [u if u != 'unitless' else '' for u in units]
-        units = dict(zip(types, units))
+        if all(x == units[0] for x in units):
+            units = units[0]
+        else:
+            units = dict(zip(types, units))
         args[0] = datastreams
         # args[0] = tuple(args[0])
 
@@ -93,7 +96,7 @@ def plot_preevents_dataset(tag, volcano, start=None, end=None):
         overrides = cursor.fetchone()
         if overrides is not None:
             overrides = overrides[0]
-    
+
     result ={
         'labels': units,
         'plotOverrides': overrides,
