@@ -4,6 +4,7 @@
 // be the same as the name of the plot function, with "_sselector" appended.
 
 // Selector utility functions to open/close the selector windows
+
 function closeTypeSelector(button){
     $(button).closest('.multiplot-typeSelector').hide();
     const select=$(button).closest('.multiplot-typeSelectWrapper').find('.multiplot-plotSelect');
@@ -142,6 +143,7 @@ function plot_db_dataset_selector(addArgs){
 //Generic preevents db plot type selector
 function plot_preevents_dataset_selector(addArgs){
     const plotType=$(this).data('plotType');
+
     const typeList=plotDataTypes[plotType];
     if(typeList==null || typeof(typeList)=='undefined'){
         return null;
@@ -150,6 +152,162 @@ function plot_preevents_dataset_selector(addArgs){
     const selectorHTML=generate_type_selector(typeList,addArgs,"Select data types to show","Select Data Types...")
     return selectorHTML
 }
+
+function HotLINKSelector(addArgs){
+    const plotType=$(this).data('plotType');
+    const typeList=plotDataTypes[plotType];
+    if(typeList==null || typeof(typeList)=='undefined'){
+        return null;
+    }
+
+    const selectorHTML=generate_type_selector(typeList,addArgs,"Select data types to show","Select Data Types...")
+    return selectorHTML
+}
+
+class RemoteSensing {
+    static HotLINKRadiativePower(addArgs){
+        return RemoteSensing.HotLINKGeneric.call(this, addArgs)
+    }
+
+    static HotLINKGeneric(selectedArgs, label, header){
+        label=label ?? "Select Filters...";
+        header=header ?? "Select Plot Filters"
+
+        const plotType=$(this).data('plotType');
+        const typeList=plotDataTypes[plotType];
+
+        if(typeof(selectedArgs)!='undefined'){
+            selectedArgs=new URLSearchParams(selectedArgs).getAll('types');
+        }
+        else{
+            selectedArgs=[];
+        }
+
+        const selButton = $('<button>', {
+            text: label,
+            click: showTypeSelector
+        });
+
+        const selectorDiv = $('<div>', {
+            class: 'multiplot-typeSelector',
+            style: 'display:none'
+        });
+
+        const selectorGuard = $('<div>', {
+            class: 'multiplot-typeSelectorGuard'
+        });
+
+        const typeHeader = $('<div>', {
+            class: 'multiplot-typeHeader',
+            text: header
+        });
+
+        const addArgsForm = $('<form>', {
+            class: 'multiplot-addArgs'
+        });
+
+        const typesContainer = $('<div>', {
+            class: 'multiplot-selectorTypes'
+        });
+
+        const filterContainer=$('<div>',{
+            class: 'multiplot-selectorTypes'
+        });
+
+        //filters
+        const filters=[
+            ['Night Only','nightOnly'],
+            ['Over .75','over75']
+        ]
+
+        for(const [item_label,item_value] of filters){
+            const isChecked= selectedArgs.includes(item_value);
+            const checkID="${item_value}Type";
+
+            const checkbox = $('<input>', {
+                type: 'checkbox',
+                id: checkID,
+                name: 'types',
+                value: item_value,
+                checked: isChecked
+            });
+
+            const labelElement = $('<label>', {
+                for: checkID,
+                text: item_label
+            });
+
+            filterContainer.append(checkbox,labelElement);
+        }
+
+        // add the selectors to the form
+        addArgsForm.append(typesContainer);
+        addArgsForm.append(filterContainer);
+
+        //create and the footer elements
+        const closeButton = $('<button>', {
+            type: 'button',
+            class: 'multiplot-close',
+            text: 'Close',
+            click: function() {
+                closeTypeSelector(this); // Assuming closeTypeSelector is defined elsewhere
+            }
+        });
+
+        const typesFooter = $('<div>', {
+            class: 'multiplot-typesFooter'
+        }).append(closeButton);
+
+        // Append all major sections to the main selectorDiv
+        selectorDiv.append(
+            selectorGuard,
+            typeHeader,
+            addArgsForm,
+            typesFooter
+        );
+
+
+        for(let item of typeList){
+            let item_label, item_value;
+            if (Array.isArray(item) && item.length==2){
+                [item_label, item_value] = item;
+            } else if (typeof item === 'string'){
+                item_label=item;
+                //strip any HTML tags and remove spaces
+                item_value=$('<div>').html(item_label).text().replace(' ','');
+            } else {
+                console.error('The items must be either a string for an array with exactly two elements.')
+            }
+
+            const isChecked= (selectedArgs.length==0 || selectedArgs.includes(item_value));
+            const checkID="${item_value}Type";
+
+            const checkbox = $('<input>', {
+                type: 'checkbox',
+                id: checkID,
+                name: 'types',
+                value: item_value,
+                checked: isChecked
+            });
+
+            const labelElement = $('<label>', {
+                for: checkID,
+                text: item_label
+            });
+
+            typesContainer.append(checkbox,labelElement);
+        }
+
+        const wrapper = $('<div>', {
+            class: 'multiplot-typeSelectorWrapper'
+        }).append(selButton, selectorDiv);
+
+        return wrapper;
+    }
+}
+window.RemoteSensing=RemoteSensing;
+
+
 
 ////////////////////////////////
 

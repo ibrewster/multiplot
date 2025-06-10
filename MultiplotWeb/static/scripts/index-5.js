@@ -653,9 +653,19 @@ function plotTypeChanged(addArgs, resolve){
 
     // add any custom components needed.
     // Custom component function is named the same as the
-    // plot function, but with _selector appended.
-    const selectorFuncName=plotFuncs[plotType]+"_selector"
-    const custFunc=window[selectorFuncName];
+    // plot function, but with _selector appended for simple options,
+    // or is a class/function for more complicated needs.
+    const [selectorCat,selectorTitle]=plotType.replace(/[^a-zA-Z0-9|]/g, '').split('|')
+
+    let custFunc=window[selectorCat];
+    if(custFunc){
+        custFunc=custFunc[selectorTitle];
+    }
+
+    if(!custFunc){
+        const selectorFuncName=plotFuncs[plotType]+"_selector"
+        custFunc=window[selectorFuncName];
+    }
 
     if(typeof(custFunc)!=="undefined"){
         const content=custFunc.call(this, addArgs);
