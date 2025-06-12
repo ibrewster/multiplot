@@ -657,19 +657,22 @@ function plotTypeChanged(addArgs, resolve){
     // or is a class/function for more complicated needs.
     const [selectorCat,selectorTitle]=plotType.replace(/[^a-zA-Z0-9|]/g, '').split('|')
 
-    let custFunc=window[selectorCat];
+    //check for a plotType *specific* option first
+    let custFunc=CustomOptionMap[selectorCat];
     if(custFunc){
         custFunc=custFunc[selectorTitle];
     }
-
+    
+    //if no plot type specific function, check for a generic "plot function" based option
     if(!custFunc){
         const selectorFuncName=plotFuncs[plotType]+"_selector"
         custFunc=window[selectorFuncName];
     }
 
-    if(typeof(custFunc)!=="undefined"){
+    //if neither are found, do nothing. Otherwise, run the code and add the HTML block
+    if(custFunc){
         const content=custFunc.call(this, addArgs);
-        if(content!=null && typeof(content)!='undefined'){
+        if(content){
             const selector=$('<div class="multiplot-customSelector">')
             selector.append(content);
             $(this).siblings('.multiplot-selectRight').prepend(selector);

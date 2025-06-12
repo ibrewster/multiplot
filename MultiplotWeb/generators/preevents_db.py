@@ -1,18 +1,45 @@
 """Generic database table plotting function. Should be written to work with ANY table provided."""
+
+import decimal
+import re
+
 from datetime import timedelta
 from urllib.parse import parse_qs
 
 import flask
 import pandas
+import psycopg
 
-from .. import utils
+from .. import utils, app
+
+def parse_condition(condition):
+    """Parse condition like 'datavalue=0' into components"""
+    # Simple regex to split on operators
+    match = re.match(r'^(\w+)\s*(=|!=|>=|<=|>|<)\s*(.+)$', condition.strip())
+    if not match:
+        raise ValueError(f"Invalid condition format: {condition}")
+    
+    field, operator, value = match.groups()
+    
+    # Convert value to appropriate type
+    value: str | float | int= value.strip()
+    if value.lstrip('-').isdigit():
+        value = int(value)
+    elif re.match(r'^-?\d+\.\d+$', value):
+        value = float(value)
+    # else keep as string
+    
+    return field, operator, value
 
 def plot_preevents_dataset(tag, volcano, start=None, end=None):
     """Get plot data for a specified dataset from the database"""
 
     category, title = tag.split("|")
     query_string = flask.request.args.get('addArgs', '')
-    requested_types = parse_qs(query_string).get('types')
+    query_args = parse_qs(query_string)
+    requested_types = query_args.get('types')
+    requested_filters = query_args.get('filters', [])
+    
 
     METADATA_SQL = """SELECT
         array_agg(datastream_id),
@@ -32,27 +59,91 @@ def plot_preevents_dataset(tag, volcano, start=None, end=None):
         AND volcano_id=%s
     """
 
-    args = [[]]
+    args = {}
 
-    data_sql = """
-        SELECT timestamp, datavalue, device_name
-        FROM datavalues
-        INNER JOIN datastreams ON datastreams.datastream_id=datavalues.datastream_id
-        INNER JOIN devices ON devices.device_id=datastreams.device_id
-        WHERE datavalues.datastream_id=ANY(%s)
-        AND datavalue IS NOT NULL
-    """
-
+    data_withs = []
+    data_joins = []
+    
+    data_sql = psycopg.sql.SQL("""base AS (
+        SELECT dv.*, ds.device_id, ds.volcano_id, ds.dataset_id
+        FROM datavalues dv
+        INNER JOIN datastreams ds ON ds.datastream_id=dv.datastream_id
+        WHERE dv.datastream_id = ANY(%(datastream_ids)s)
+        AND dv.datavalue IS NOT NULL
+        """)
+    
+    data_base = [data_sql]
+    
     if start is not None:
-        data_sql += " AND timestamp>=%s"
+        data_base.append(psycopg.sql.SQL(" AND dv.timestamp>=%(start_time)s"))
         start -= timedelta(days = 366)
-        args.append(start)
+        args['start_time'] = start
     if end is not None:
         end += timedelta(days = 366)
-        data_sql += " AND timestamp<=%s"
-        args.append(end)
-
-    data_sql += " ORDER BY device_name, timestamp"
+        data_base.append(psycopg.sql.SQL(" AND dv.timestamp<=%(end_time)s"))
+        args['end_time'] = end
+        
+    data_base.append(psycopg.sql.SQL(")"))
+    data_withs.append(psycopg.sql.Composed(data_base))
+    
+    for i, filter_value in enumerate(requested_filters):
+        try:
+            filter_var_id, condition = filter_value.split('|')
+            filter_var_id = int(filter_var_id)
+            
+            # Parse the condition
+            field, operator, value = parse_condition(condition)            
+        except ValueError:
+            app.logger.error(f"Bad filter passed. Not using. {filter_value}")
+            continue
+        
+        # Alias values
+        filter_alias = psycopg.sql.Identifier(f"filter_{i}")
+        datavalue_alias = psycopg.sql.Identifier(f"dv{i}")
+        var_param = f"variable_id_{i}"
+        value_param = f"value_{i}"
+        
+        
+        filter_sql = psycopg.sql.SQL("""
+        {filter_alias} AS (
+            SELECT datastream_id, device_id, dataset_id, volcano_id
+            FROM datastreams
+            WHERE variable_id={var_id}
+        )
+        """).format(
+               filter_alias=filter_alias,
+               var_id=psycopg.sql.Placeholder(var_param)
+        )
+        data_withs.append(filter_sql)
+        args[var_param] = filter_var_id
+        
+        join_sql = psycopg.sql.SQL("""
+            JOIN {f_alias} f{idx}
+              ON f{idx}.device_id = b.device_id AND f{idx}.dataset_id = b.dataset_id AND f{idx}.volcano_id = b.volcano_id
+            JOIN datavalues {dv_alias}
+              ON {dv_alias}.timestamp = b.timestamp AND {dv_alias}.datastream_id = f{idx}.datastream_id AND {dv_alias}.datavalue {op} {threshold}
+        """).format(
+            f_alias=filter_alias,
+            dv_alias=datavalue_alias,
+            idx=psycopg.sql.SQL(str(i)),
+            op=psycopg.sql.SQL(operator),
+            threshold=psycopg.sql.Placeholder(value_param)
+        )
+        data_joins.append(join_sql)
+        args[value_param] = value
+        
+        
+    data_sql = psycopg.sql.SQL("""
+    WITH {withs}
+    SELECT b.timestamp, b.datavalue, d.device_name
+    FROM base b
+    {joins}
+    JOIN devices d ON d.device_id=b.device_id
+    ORDER BY d.device_name, b.timestamp
+    """).format(
+        withs=psycopg.sql.SQL(',\n').join(data_withs),
+        joins=psycopg.sql.SQL('\n').join(data_joins)
+    )
 
     meta_args = [category, title, utils.VOLC_IDS[volcano]]
 
@@ -64,8 +155,9 @@ def plot_preevents_dataset(tag, volcano, start=None, end=None):
     METADATA_SQL += """
     GROUP BY datastreams.dataset_id, datastreams.variable_id
     ORDER BY datastreams.dataset_id"""
+    
 
-    with utils.PREEVENTSSQLCursor() as cursor:
+    with utils.PREEVENTSSQLCursor() as cursor:            
         cursor.execute(METADATA_SQL, meta_args)
         metadata = cursor.fetchone()
 
@@ -78,8 +170,7 @@ def plot_preevents_dataset(tag, volcano, start=None, end=None):
             units = units[0]
         else:
             units = dict(zip(types, units))
-        args[0] = datastreams
-        # args[0] = tuple(args[0])
+        args['datastream_ids'] = datastreams
 
         # Compose the data request SQL statement
         cursor.execute(data_sql, args)
@@ -101,6 +192,10 @@ def plot_preevents_dataset(tag, volcano, start=None, end=None):
         'labels': units,
         'plotOverrides': overrides,
     }
+    
+    # convert Decimal values to *real* numbers
+    if len(df) > 0 and isinstance(df['value'].iloc[0], decimal.Decimal):
+        df['value'] = df['value'].astype(float)
 
     if types is not None:
         type_df = df.groupby("type")

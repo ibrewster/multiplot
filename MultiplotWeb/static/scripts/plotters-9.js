@@ -153,18 +153,16 @@ function plot_preevents_dataset_selector(addArgs){
     return selectorHTML
 }
 
-function HotLINKSelector(addArgs){
-    const plotType=$(this).data('plotType');
-    const typeList=plotDataTypes[plotType];
-    if(typeList==null || typeof(typeList)=='undefined'){
-        return null;
-    }
 
-    const selectorHTML=generate_type_selector(typeList,addArgs,"Select data types to show","Select Data Types...")
-    return selectorHTML
-}
+/* lower level custom selector HTML, for when 
+    a single plot-function based selector isn't enough */
+
+CustomOptionMap={}
 
 class RemoteSensing {
+    static register = CustomOptionMap[RemoteSensing.name] = RemoteSensing;
+
+
     static HotLINKRadiativePower(addArgs){
         return RemoteSensing.HotLINKGeneric.call(this, addArgs)
     }
@@ -211,13 +209,21 @@ class RemoteSensing {
         });
 
         const filterContainer=$('<div>',{
-            class: 'multiplot-selectorTypes'
+            class: 'multiplot-selectorTypes',
+            style: 'border-top:3px groove;'
         });
+        
+        const filterTitle=$('<div>',{
+            style: 'text-align:center;grid-column:1/-1',
+            html: '<b>Data Filters</b>'
+        });
+        
+        filterContainer.append(filterTitle);
 
         //filters
         const filters=[
-            ['Night Only','nightOnly'],
-            ['Over .75','over75']
+            ['Night Only','24|datavalue=0'],
+            ['Over .75','3|datavalue>0.75']
         ]
 
         for(const [item_label,item_value] of filters){
@@ -227,7 +233,7 @@ class RemoteSensing {
             const checkbox = $('<input>', {
                 type: 'checkbox',
                 id: checkID,
-                name: 'types',
+                name: 'filters',
                 value: item_value,
                 checked: isChecked
             });
@@ -305,8 +311,6 @@ class RemoteSensing {
         return wrapper;
     }
 }
-window.RemoteSensing=RemoteSensing;
-
 
 
 ////////////////////////////////
