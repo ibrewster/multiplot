@@ -164,7 +164,27 @@ class RemoteSensing {
 
 
     static HotLINKRadiativePower(addArgs){
-        return RemoteSensing.HotLINKGeneric.call(this, addArgs)
+        return RemoteSensing.HotLINKGeneric.call(this, addArgs);
+    }
+    
+    static HotLINKprobability(addArgs){
+        return RemoteSensing.HotLINKGeneric.call(this, addArgs);
+    }
+    
+    static BackgroundMIRBrightnessTemperature(addArgs){
+        return RemoteSensing.HotLINKGeneric.call(this, addArgs);
+    }
+    
+    static HotspotMIRMaximumBrightnessTemperature(addArgs){
+        return RemoteSensing.HotLINKGeneric.call(this, addArgs);
+    }
+    
+    static HotspotMIRMeanBrightnessTemperature(addArgs){
+        return RemoteSensing.HotLINKGeneric.call(this, addArgs);
+    }
+    
+    static NumberofHotspotPixels(addArgs){
+        return RemoteSensing.HotLINKGeneric.call(this, addArgs);
     }
 
     static HotLINKGeneric(selectedArgs, label, header){

@@ -13,23 +13,45 @@ import psycopg
 from .. import utils, app
 
 def parse_condition(condition):
-    """Parse condition like 'datavalue=0' into components"""
-    # Simple regex to split on operators
-    match = re.match(r'^(\w+)\s*(=|!=|>=|<=|>|<)\s*(.+)$', condition.strip())
-    if not match:
-        raise ValueError(f"Invalid condition format: {condition}")
-    
-    field, operator, value = match.groups()
-    
-    # Convert value to appropriate type
-    value: str | float | int= value.strip()
+    """
+    Parse condition like:
+      - 'datavalue=0'
+      - 'categoryvalue.satellite = Aqua'
+      - 'categoryvalue->>satellite != Aqua'
+    Returns: (is_jsonb, field/column name, optional key, operator, value)
+    """
+    condition = condition.strip()
+
+    # Match JSON-style: categoryvalue.satellite or categoryvalue->>satellite
+    json_match = re.match(
+        r"^(\w+)(?:\.|->>)(\w+)\s*(=|!=|>=|<=|>|<)\s*(.+)$",
+        condition
+    )
+    if json_match:
+        column, key, operator, value = json_match.groups()
+        is_jsonb = True
+    else:
+        # Standard field match
+        match = re.match(r'^(\w+)\s*(=|!=|>=|<=|>|<)\s*(.+)$', condition)
+        if not match:
+            raise ValueError(f"Invalid condition format: {condition}")
+        column, operator, value = match.groups()
+        key = None
+        is_jsonb = False
+
+    # Sanitize operator
+    if operator not in ('=', '!=', '>=', '<=', '>', '<'):
+        raise ValueError(f"Unsupported operator: {operator}")
+
+    # Try to cast value to int or float
+    value = value.strip()
     if value.lstrip('-').isdigit():
         value = int(value)
     elif re.match(r'^-?\d+\.\d+$', value):
         value = float(value)
-    # else keep as string
-    
-    return field, operator, value
+    # Otherwise treat as string (safe as parameter)
+
+    return is_jsonb, column, key, operator, value
 
 def plot_preevents_dataset(tag, volcano, start=None, end=None):
     """Get plot data for a specified dataset from the database"""
@@ -92,7 +114,7 @@ def plot_preevents_dataset(tag, volcano, start=None, end=None):
             filter_var_id = int(filter_var_id)
             
             # Parse the condition
-            field, operator, value = parse_condition(condition)            
+            is_json, field, key, operator, value = parse_condition(condition)            
         except ValueError:
             app.logger.error(f"Bad filter passed. Not using. {filter_value}")
             continue
@@ -117,15 +139,29 @@ def plot_preevents_dataset(tag, volcano, start=None, end=None):
         data_withs.append(filter_sql)
         args[var_param] = filter_var_id
         
+        if is_json:
+            # Safely construct: column->>'key'
+            field_expr = psycopg.sql.SQL("{}.->>{}").format(
+                psycopg.sql.Identifier(field),
+                psycopg.sql.Literal(key)
+            )
+        else:
+            field_expr = psycopg.sql.Identifier(field)        
+        
         join_sql = psycopg.sql.SQL("""
             JOIN {f_alias} f{idx}
-              ON f{idx}.device_id = b.device_id AND f{idx}.dataset_id = b.dataset_id AND f{idx}.volcano_id = b.volcano_id
+              ON f{idx}.device_id = b.device_id
+              AND f{idx}.dataset_id = b.dataset_id
+              AND f{idx}.volcano_id = b.volcano_id
             JOIN datavalues {dv_alias}
-              ON {dv_alias}.timestamp = b.timestamp AND {dv_alias}.datastream_id = f{idx}.datastream_id AND {dv_alias}.datavalue {op} {threshold}
+              ON {dv_alias}.timestamp = b.timestamp
+              AND {dv_alias}.datastream_id = f{idx}.datastream_id
+              AND {dv_alias}.{field} {op} {threshold}
         """).format(
             f_alias=filter_alias,
             dv_alias=datavalue_alias,
             idx=psycopg.sql.SQL(str(i)),
+            field=field_expr, 
             op=psycopg.sql.SQL(operator),
             threshold=psycopg.sql.Placeholder(value_param)
         )
