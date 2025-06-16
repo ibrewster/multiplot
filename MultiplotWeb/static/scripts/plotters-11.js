@@ -154,7 +154,7 @@ function plot_preevents_dataset_selector(addArgs){
 }
 
 
-/* lower level custom selector HTML, for when 
+/* lower level custom selector HTML, for when
     a single plot-function based selector isn't enough */
 
 CustomOptionMap={}
@@ -166,23 +166,23 @@ class RemoteSensing {
     static HotLINKRadiativePower(addArgs){
         return RemoteSensing.HotLINKGeneric.call(this, addArgs);
     }
-    
+
     static HotLINKprobability(addArgs){
         return RemoteSensing.HotLINKGeneric.call(this, addArgs);
     }
-    
+
     static BackgroundMIRBrightnessTemperature(addArgs){
         return RemoteSensing.HotLINKGeneric.call(this, addArgs);
     }
-    
+
     static HotspotMIRMaximumBrightnessTemperature(addArgs){
         return RemoteSensing.HotLINKGeneric.call(this, addArgs);
     }
-    
+
     static HotspotMIRMeanBrightnessTemperature(addArgs){
         return RemoteSensing.HotLINKGeneric.call(this, addArgs);
     }
-    
+
     static NumberofHotspotPixels(addArgs){
         return RemoteSensing.HotLINKGeneric.call(this, addArgs);
     }
@@ -232,17 +232,17 @@ class RemoteSensing {
             class: 'multiplot-selectorTypes',
             style: 'border-top:3px groove;'
         });
-        
+
         const filterTitle=$('<div>',{
             style: 'text-align:center;grid-column:1/-1',
             html: '<b>Data Filters</b>'
         });
-        
+
         filterContainer.append(filterTitle);
 
         //filters
         const filters=[
-            ['Night Only','24|datavalue=0'],
+            ['Night Only',"24|categoryvalue->>day_night=N"],
             ['Over .75','3|datavalue>0.75']
         ]
 

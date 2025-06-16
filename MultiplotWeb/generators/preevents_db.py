@@ -61,7 +61,7 @@ def plot_preevents_dataset(tag, volcano, start=None, end=None):
     query_args = parse_qs(query_string)
     requested_types = query_args.get('types')
     requested_filters = query_args.get('filters', [])
-    
+
 
     METADATA_SQL = """SELECT
         array_agg(datastream_id),
@@ -85,7 +85,7 @@ def plot_preevents_dataset(tag, volcano, start=None, end=None):
 
     data_withs = []
     data_joins = []
-    
+
     data_sql = psycopg.sql.SQL("""base AS (
         SELECT dv.*, ds.device_id, ds.volcano_id, ds.dataset_id
         FROM datavalues dv
@@ -93,9 +93,9 @@ def plot_preevents_dataset(tag, volcano, start=None, end=None):
         WHERE dv.datastream_id = ANY(%(datastream_ids)s)
         AND dv.datavalue IS NOT NULL
         """)
-    
+
     data_base = [data_sql]
-    
+
     if start is not None:
         data_base.append(psycopg.sql.SQL(" AND dv.timestamp>=%(start_time)s"))
         start -= timedelta(days = 366)
@@ -104,28 +104,28 @@ def plot_preevents_dataset(tag, volcano, start=None, end=None):
         end += timedelta(days = 366)
         data_base.append(psycopg.sql.SQL(" AND dv.timestamp<=%(end_time)s"))
         args['end_time'] = end
-        
+
     data_base.append(psycopg.sql.SQL(")"))
     data_withs.append(psycopg.sql.Composed(data_base))
-    
+
     for i, filter_value in enumerate(requested_filters):
         try:
             filter_var_id, condition = filter_value.split('|')
             filter_var_id = int(filter_var_id)
-            
+
             # Parse the condition
-            is_json, field, key, operator, value = parse_condition(condition)            
+            is_json, field, key, operator, value = parse_condition(condition)
         except ValueError:
             app.logger.error(f"Bad filter passed. Not using. {filter_value}")
             continue
-        
+
         # Alias values
         filter_alias = psycopg.sql.Identifier(f"filter_{i}")
         datavalue_alias = psycopg.sql.Identifier(f"dv{i}")
         var_param = f"variable_id_{i}"
         value_param = f"value_{i}"
-        
-        
+
+
         filter_sql = psycopg.sql.SQL("""
         {filter_alias} AS (
             SELECT datastream_id, device_id, dataset_id, volcano_id
@@ -138,16 +138,16 @@ def plot_preevents_dataset(tag, volcano, start=None, end=None):
         )
         data_withs.append(filter_sql)
         args[var_param] = filter_var_id
-        
+
         if is_json:
             # Safely construct: column->>'key'
-            field_expr = psycopg.sql.SQL("{}.->>{}").format(
+            field_expr = psycopg.sql.SQL("{}->>{}").format(
                 psycopg.sql.Identifier(field),
                 psycopg.sql.Literal(key)
             )
         else:
-            field_expr = psycopg.sql.Identifier(field)        
-        
+            field_expr = psycopg.sql.Identifier(field)
+
         join_sql = psycopg.sql.SQL("""
             JOIN {f_alias} f{idx}
               ON f{idx}.device_id = b.device_id
@@ -161,14 +161,14 @@ def plot_preevents_dataset(tag, volcano, start=None, end=None):
             f_alias=filter_alias,
             dv_alias=datavalue_alias,
             idx=psycopg.sql.SQL(str(i)),
-            field=field_expr, 
+            field=field_expr,
             op=psycopg.sql.SQL(operator),
             threshold=psycopg.sql.Placeholder(value_param)
         )
         data_joins.append(join_sql)
         args[value_param] = value
-        
-        
+
+
     data_sql = psycopg.sql.SQL("""
     WITH {withs}
     SELECT b.timestamp, b.datavalue, d.device_name
@@ -191,9 +191,9 @@ def plot_preevents_dataset(tag, volcano, start=None, end=None):
     METADATA_SQL += """
     GROUP BY datastreams.dataset_id, datastreams.variable_id
     ORDER BY datastreams.dataset_id"""
-    
 
-    with utils.PREEVENTSSQLCursor() as cursor:            
+
+    with utils.PREEVENTSSQLCursor() as cursor:
         cursor.execute(METADATA_SQL, meta_args)
         metadata = cursor.fetchone()
 
@@ -228,7 +228,7 @@ def plot_preevents_dataset(tag, volcano, start=None, end=None):
         'labels': units,
         'plotOverrides': overrides,
     }
-    
+
     # convert Decimal values to *real* numbers
     if len(df) > 0 and isinstance(df['value'].iloc[0], decimal.Decimal):
         df['value'] = df['value'].astype(float)
