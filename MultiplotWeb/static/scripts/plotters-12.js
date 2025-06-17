@@ -161,7 +161,35 @@ CustomOptionMap={}
 
 class RemoteSensing {
     static register = CustomOptionMap[RemoteSensing.name] = RemoteSensing;
+    static instanceID=0;
 
+    static filterChanged(){
+        const wrapper = $(this).closest('.multiplot-typeSelectWrapper');
+        const cur_type = wrapper.find('.multiplot-typeString');
+
+        if (!cur_type.length) {
+            console.warn('No .multiplot-typeString element found in wrapper');
+            return;
+        }
+
+        // Check if any filter or type checkbox differs from its default state
+        const allCheckboxes = wrapper.find('input[name="filters"], input[name="types"]');
+        const isFiltered = allCheckboxes.toArray().some(checkbox => {
+            const $checkbox = $(checkbox);
+            const isChecked = $checkbox.is(':checked');
+            const defaultState = $checkbox.data('default') === true; // Convert to boolean
+            return isChecked !== defaultState; // Filter active if state differs
+        });
+
+        const currentHtml = cur_type.html();
+        const filteredText = " (filtered)";
+
+        if (isFiltered && !currentHtml.endsWith(filteredText)) {
+            cur_type.html(currentHtml + filteredText);
+        } else if (!isFiltered && currentHtml.endsWith(filteredText)) {
+            cur_type.html(currentHtml.replace(filteredText, ""));
+        }
+    }
 
     static HotLINKRadiativePower(addArgs){
         return RemoteSensing.HotLINKGeneric.call(this, addArgs);
@@ -188,6 +216,7 @@ class RemoteSensing {
     }
 
     static HotLINKGeneric(selectedArgs, label, header){
+        RemoteSensing.instanceID++;
         label=label ?? "Select Filters...";
         header=header ?? "Select Plot Filters"
 
@@ -243,19 +272,21 @@ class RemoteSensing {
         //filters
         const filters=[
             ['Night Only',"24|categoryvalue->>day_night=N"],
-            ['Over .75','3|datavalue>0.75']
+            ['P Over .75','3|datavalue>0.75']
         ]
 
         for(const [item_label,item_value] of filters){
             const isChecked= selectedArgs.includes(item_value);
-            const checkID="${item_value}Type";
+            const checkID=`${item_value}Filter_${RemoteSensing.instanceID}`;
 
             const checkbox = $('<input>', {
                 type: 'checkbox',
                 id: checkID,
                 name: 'filters',
                 value: item_value,
-                checked: isChecked
+                checked: isChecked,
+                change: RemoteSensing.filterChanged,
+                'data-default': isChecked
             });
 
             const labelElement = $('<label>', {
@@ -306,14 +337,15 @@ class RemoteSensing {
             }
 
             const isChecked= (selectedArgs.length==0 || selectedArgs.includes(item_value));
-            const checkID="${item_value}Type";
+            const checkID=`${item_value}Type_${RemoteSensing.instanceID}`
 
             const checkbox = $('<input>', {
                 type: 'checkbox',
                 id: checkID,
                 name: 'types',
                 value: item_value,
-                checked: isChecked
+                checked: isChecked,
+                'data-default': isChecked
             });
 
             const labelElement = $('<label>', {
