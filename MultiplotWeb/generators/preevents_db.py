@@ -92,6 +92,7 @@ def plot_preevents_dataset(tag, volcano, start=None, end=None):
         INNER JOIN datastreams ds ON ds.datastream_id=dv.datastream_id
         WHERE dv.datastream_id = ANY(%(datastream_ids)s)
         AND dv.datavalue IS NOT NULL
+        AND dv.datavalue::text!='NaN'
         """)
 
     data_base = [data_sql]
@@ -214,6 +215,9 @@ def plot_preevents_dataset(tag, volcano, start=None, end=None):
 
     if len(df) == 0:
         raise FileNotFoundError("Unable to find requested data")
+
+    # Get rid of any NaN values. There shouldn't be any at this point, but better safe (belt-and-suspenders)
+    df = df.dropna(subset = ['value'])
 
     df['datetime'] = df['datetime'].apply(lambda x: pandas.to_datetime(x).isoformat())
     # look for any overrides for this plot
