@@ -6,12 +6,84 @@ import re
 from datetime import timedelta
 from urllib.parse import parse_qs
 
+from cachetools.func import ttl_cache
+
 import flask
 import pandas
 import psycopg
 
 from .. import utils, app
+from ..utils import generator
 
+########## Label queries ############
+@ttl_cache(ttl = 86400) # cache for one day.
+def preevents_label_query():
+    with utils.PREEVENTSSQLCursor() as cursor:
+        cursor.execute("""
+WITH displayname_dataset_counts AS (
+    SELECT
+        display_names.displayname,
+        disciplines.discipline_name,
+        COUNT(DISTINCT datasets.dataset_id) AS dataset_count
+    FROM disciplines
+    INNER JOIN datasets ON datasets.discipline_id = disciplines.discipline_id
+    INNER JOIN datastreams ON datastreams.dataset_id = datasets.dataset_id
+    INNER JOIN variables ON variables.variable_id = datastreams.variable_id
+    INNER JOIN displaynames AS display_names ON display_names.displayname_id = variables.displayname_id
+    WHERE variables.unit_id != 6 --id 6 = categorical
+    GROUP BY display_names.displayname, disciplines.discipline_name
+)
+SELECT DISTINCT ON (enhanced_displayname, discipline_name)
+    CASE
+        WHEN ddc.dataset_count > 1 THEN display_names.displayname || ' (' || datasets.dataset_name || ')'
+        ELSE display_names.displayname
+    END AS enhanced_displayname,
+    disciplines.discipline_name,
+    datasets.dataset_id,
+    datastreams.variable_id,
+    variable_name,
+    variable_description,
+    dataset_description
+FROM disciplines
+INNER JOIN datasets ON datasets.discipline_id = disciplines.discipline_id
+INNER JOIN datastreams ON datastreams.dataset_id = datasets.dataset_id
+INNER JOIN variables ON variables.variable_id = datastreams.variable_id
+INNER JOIN displaynames AS display_names ON display_names.displayname_id = variables.displayname_id
+INNER JOIN displayname_dataset_counts AS ddc ON ddc.displayname = display_names.displayname AND ddc.discipline_name = disciplines.discipline_name
+WHERE variables.unit_id != 6 --id 6 = categorical
+ORDER BY discipline_name, enhanced_displayname
+"""
+                    )
+        return cursor.fetchall()
+
+def get_preevents_labels():
+    with utils.PostgreSQLCursor("multiplot") as cursor:
+        cursor.execute("SELECT dataset_id,variable_id,hidden FROM preevents")
+        display_flags = {
+            (x[0], x[1]): x[2]
+            for x in cursor
+        }
+
+    labels = preevents_label_query()
+    labels = [
+        label[:2]
+        for label in preevents_label_query()
+        if not display_flags.get(label[2:4], False)
+    ]
+    return labels
+
+######### Descriptions #############
+def get_preevents_db_details() -> pandas.DataFrame:
+    """Get the descriptions of the available datasets/datastreams from the preevents database"""
+    labels = preevents_label_query()
+    plot_descriptions = []
+    for item in labels:
+        desc = f"<p>{item[4]}, {item[5]}</p><p>{item[6]}</p>"
+        plot_descriptions.append((item[1], item[0], desc))
+
+    return utils.create_description_dataframe(plot_descriptions)
+
+######## Processing #################
 def parse_condition(condition):
     """
     Parse condition like:
@@ -53,8 +125,12 @@ def parse_condition(condition):
 
     return is_jsonb, column, key, operator, value
 
-def plot_preevents_dataset(tag, volcano, start=None, end=None):
+
+@generator(get_preevents_labels, description = get_preevents_db_details)
+def plot_preevents_dataset(volcano, start=None, end=None):
     """Get plot data for a specified dataset from the database"""
+
+    tag = utils.current_plot_tag.get()
 
     category, title = tag.split("|")
     query_string = flask.request.args.get('addArgs', '')

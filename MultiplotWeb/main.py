@@ -119,6 +119,10 @@ def body():
 @app.route('/getPlot')
 def get_plot():
     plot_type = flask.request.args['plotType']
+
+    # Make the plot type "tag" available to any function that wants it.
+    utils.current_plot_tag.set(plot_type)
+
     volcano = flask.request.args['volcano']
     start_date = flask.request.args.get('dateFrom')
     end_date = flask.request.args.get('dateTo')

@@ -1,8 +1,13 @@
 import inspect
+import re
+import warnings
 
-from cachetools.func import ttl_cache
-from functools import wraps, partial
 from collections import defaultdict
+from collections.abc import Iterable
+from contextvars import ContextVar
+from functools import wraps, partial
+from html.parser import HTMLParser
+from io import StringIO
 
 import pandas
 import psycopg
@@ -31,6 +36,8 @@ VOLC_IDS = {}
 
 # DATA_DIR = os.path.join(app.static_folder, 'data')
 DATA_DIR = '/shared/data/multiplot'
+
+current_plot_tag = ContextVar("current_plot_tag")
 
 class MYSQLCursor():
     def __init__(self, DB, user = config.GDDB_USER, password = config.GDDB_PASS):
@@ -94,44 +101,193 @@ PREEVENTSSQLCursor = partial(
 GEN_FUNCS = {}
 GEN_CATEGORIES = defaultdict(list)
 JS_FUNCS = {}
+GEN_DESCRIPTIONS: list[pandas.DataFrame] = []
 
 
-def generator(label: str):
+def generator(label_or_labels_or_func, category=None, description = None):
     """
-    A wrapper to register a function with a category and label.
-    label is provided as an argument to the decorator, while the category
-    is the filename in which the wrapped function lives.
+    Decorator to register a function under one or more (label, category) pairs.
+
+    Accepts:
+    ---------
+    label_or_labels_or_func : str | list[str] | list[tuple[str, str]] | Callable
+        - A single string label (uses default or global category)
+        - A list of string labels (all use default or global category)
+        - A list of (label, category) tuples
+        - A function returning one of the above
+
+    category : str, optional
+        The fallback category to use if labels are not paired with explicit categories.
+        If omitted, the decorator looks for a `CATEGORY` global variable defined in the
+        module where the decorator is used.
+
+    Returns:
+    --------
+    Callable
+        The decorated function, registered under all specified label/category pairs.
+
+    Notes:
+    ------
+    - If a tuple contains more than two elements, only the first two are used.
+      This allows passing extra metadata without interfering with registration.
     """
+    # Try to determine a default category from the caller's module if not provided explicitly
     frame = inspect.stack()[1]
-    category = frame.frame.f_globals['CATEGORY']
+    if category is None:
+        category = frame.frame.f_globals.get('CATEGORY') # May still be None, fine depending on how labels is passed.
 
-    tag = f"{category}|{label}"
+    if callable(description):
+        GEN_DESCRIPTIONS.append(description())
 
-    if label in GEN_CATEGORIES[category]:
-        raise ValueError(f"Label '{label}' is duplicated. Labels must be unique.")
-
-    # Register the label under the specified category
-    GEN_CATEGORIES[category].append(label)
+    labels = resolve_labels(label_or_labels_or_func, category)
+    category_doc = frame.frame.f_globals.get('__doc__')
 
     def inner(func):
-        # Register the function itself into a lookup dictionary we can use
-        # to call the specified function when the specified label is selected
-        # by the user.
-        GEN_FUNCS[tag] = func
+        desc_rows = {}
+        default_func_doc = desc_from_docstring(func.__doc__)
 
-        # And store the function *name* in a seperate dictionary we can use on the
-        # javascript side for a similar purpose.
-        JS_FUNCS[tag] = func.__name__
+        for label, category in labels:
+            if category is None:
+                raise ValueError(f"No category provided for label {label}")
 
-        #Then we can just run the function as normal when called :-)
+            if category not in GEN_CATEGORIES:
+                GEN_CATEGORIES[category] = []
+
+            tag = f"{category}|{label}"
+
+            if label in GEN_CATEGORIES[category]:
+                raise ValueError(f"Label '{label}' is duplicated in category '{category}'.")
+
+            GEN_CATEGORIES[category].append(label)
+            GEN_FUNCS[tag] = func
+            JS_FUNCS[tag] = func.__name__
+
+            # descriptions
+            # Add function-level label description
+            if not callable(description):
+                func_doc = None
+                if isinstance(description, dict):
+                    # Try label+category key first, then label alone, else fallback
+                    func_doc = description.get((label, category)) or description.get(label)
+                elif isinstance(description, str):
+                    if len(labels) > 1:
+                        raise ValueError("Need dict or callable description for multiple labels")
+                    func_doc = description
+                elif description is None and len(labels) == 1:
+                    func_doc = default_func_doc
+                elif description is not None:
+                    raise ValueError("description must be either callable, dictionary, string, or None")
+
+                if func_doc is not None:
+                    desc_rows[(category, label)] = (category, label, func_doc)
+
+                # Add category-level description if not already present
+                if (category, '') not in desc_rows:
+                    desc_rows[(category, '')] = (category, '', category_doc)
+
+        if desc_rows:
+            df = create_description_dataframe(desc_rows.values())
+            GEN_DESCRIPTIONS.append(df)
+
         @wraps(func)
         def wrapper(*args, **kwargs):
             return func(*args, **kwargs)
+
         return wrapper
+
     return inner
 
 ###############Other utility functions #################
 
+def desc_from_docstring(docstring: str) -> str:
+    """
+    If a DESCRIPTION: section exists in the docstring, use it.
+    Otherwise return the entire docstring.
+    """
+    if not docstring:
+        return ''
+    match = re.search(r"DESCRIPTION:(.*)", docstring, re.IGNORECASE | re.DOTALL)
+    return match.group(1).strip() if match else docstring.strip()
+
+
+# Normalize input into a list of (label, category) tuples
+def resolve_labels(value, default_category):
+    """
+    Normalize various input types into a list of (label, category) pairs.
+    Category may be None if not provided.
+    """
+
+    # If a function is passed in, call it and treat the result as the label input
+    if callable(value):
+        value = value()
+
+    if isinstance(value, str):
+        return [(value, default_category)]
+
+    if isinstance(value, Iterable): # str is already handled, so no need to check here.
+        out = []
+        for item in value:
+            if isinstance(item, str):
+                out.append((item, default_category))
+            elif isinstance(item, (tuple, list)) and len(item) >= 2:
+                label, category = item[:2]
+                if not (isinstance(label, str) and isinstance(category, str)):
+                    raise TypeError("Label and category in tuple/list must both be strings.")
+                out.append((label, category))
+                if len(item) > 2:
+                    warnings.warn("Ignoring extra elements in label/category tuple")
+            else:
+                raise TypeError("Iterable must contain strings or (label, category) tuples/lists.")
+        return out
+
+    else:
+        raise TypeError(
+            "Argument must be a string, iterable of strings or (label, category) pairs, or a function returning one of those."
+        )
+
+
+def create_description_dataframe(data: list[tuple], columns=['Category', 'Dataset', 'Description']) -> pandas.DataFrame:
+    """
+    Creates a standardized description DataFrame with proper formatting and indexing.
+
+    ARGUMENTS
+    ---------
+        data: List of tuples containing the raw data
+        columns: Column names for the DataFrame (default: ['Category', 'Dataset', 'Description'])
+
+    RETURNS
+    -------
+        pandas.DataFrame: Formatted DataFrame with MultiIndex
+    """
+    df = pandas.DataFrame(data, columns=columns)
+
+    # Strip HTML formatting from Category and Dataset
+    df['Category'] = df['Category'].apply(stripHTML)
+    df['Dataset'] = df['Dataset'].apply(stripHTML)
+
+    # Create MultiIndex from Category and Dataset
+    df.index = pandas.MultiIndex.from_frame(df[['Category', 'Dataset']])
+
+    return df
+
+class Stripper(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.reset()
+        self.strict = False
+        self.convert_charrefs = True
+        self.text = StringIO()
+
+    def handle_data(self, data):
+        # This function is only called for the raw text, so tags don't show up here.
+        self.text.write(data)
+    def get_clean(self):
+        return self.text.getvalue()
+
+def stripHTML(value):
+    html = Stripper()
+    html.feed(value)
+    return html.get_clean()
 
 def haversine_np(lon1, lat1, lon2, lat2):
     """
@@ -190,72 +346,8 @@ def get_db_labels():
             GEN_FUNCS[tag] = func
             JS_FUNCS[tag] = database.plot_db_dataset.__name__
 
-@ttl_cache(ttl = 86400) # cache for one day.
-def preevents_label_query():
-    with PREEVENTSSQLCursor() as cursor:
-        cursor.execute("""
-WITH displayname_dataset_counts AS (
-    SELECT
-        display_names.displayname,
-        disciplines.discipline_name,
-        COUNT(DISTINCT datasets.dataset_id) AS dataset_count
-    FROM disciplines
-    INNER JOIN datasets ON datasets.discipline_id = disciplines.discipline_id
-    INNER JOIN datastreams ON datastreams.dataset_id = datasets.dataset_id
-    INNER JOIN variables ON variables.variable_id = datastreams.variable_id
-    INNER JOIN displaynames AS display_names ON display_names.displayname_id = variables.displayname_id
-    WHERE variables.unit_id != 6 --id 6 = categorical
-    GROUP BY display_names.displayname, disciplines.discipline_name
-)
-SELECT DISTINCT ON (enhanced_displayname, discipline_name)
-    CASE
-        WHEN ddc.dataset_count > 1 THEN display_names.displayname || ' (' || datasets.dataset_name || ')'
-        ELSE display_names.displayname
-    END AS enhanced_displayname,
-    disciplines.discipline_name,
-    datasets.dataset_id,
-    datastreams.variable_id,
-    variable_name,
-    variable_description,
-    dataset_description
-FROM disciplines
-INNER JOIN datasets ON datasets.discipline_id = disciplines.discipline_id
-INNER JOIN datastreams ON datastreams.dataset_id = datasets.dataset_id
-INNER JOIN variables ON variables.variable_id = datastreams.variable_id
-INNER JOIN displaynames AS display_names ON display_names.displayname_id = variables.displayname_id
-INNER JOIN displayname_dataset_counts AS ddc ON ddc.displayname = display_names.displayname AND ddc.discipline_name = disciplines.discipline_name
-WHERE variables.unit_id != 6 --id 6 = categorical
-ORDER BY discipline_name, enhanced_displayname
-"""
-                    )
-        return cursor.fetchall()
-
-def get_preevents_labels():
-    from .generators import preevents_db
-    with PostgreSQLCursor("multiplot") as cursor:
-        cursor.execute("SELECT dataset_id,variable_id,hidden FROM preevents")
-        display_flags = {
-            (x[0], x[1]): x[2]
-            for x in cursor
-        }
-
-    labels = preevents_label_query()
-    for label in labels:
-        item_id = label[2:4]
-        if display_flags.get(item_id, False): # hidden==True
-            continue
-
-        title, category = label[:2]
-        tag = f"{category}|{title}"
-        if not title in GEN_CATEGORIES[category]:
-            GEN_CATEGORIES[category].append(title)
-
-        func = partial(preevents_db.plot_preevents_dataset, tag)
-        GEN_FUNCS[tag] = func
-        JS_FUNCS[tag] = preevents_db.plot_preevents_dataset.__name__
-
 def get_combined_details():
-    to_concat = []
+    to_concat = GEN_DESCRIPTIONS.copy()
     try:
         g_details = google.get_data()
         to_concat.append(g_details)
@@ -264,8 +356,8 @@ def get_combined_details():
 
     db_details = DBMetadata.get_db_details()
     to_concat.append(db_details)
-    preevents_details = DBMetadata.get_preevents_db_details()
-    to_concat.append(preevents_details)
+    # preevents_details = DBMetadata.get_preevents_db_details()
+    # to_concat.append(preevents_details)
 
     details = pandas.concat(to_concat, sort=True, copy=False)
     # Entries from the google spreadsheet override identical entries from the database
