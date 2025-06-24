@@ -1,9 +1,13 @@
+"""
+Simple code to pull "global" descriptions in from a google sheets sheet.
+"""
+
 import os
 from cachetools.func import ttl_cache
 
 import pandas
 
-from . import app
+from . import app, utils
 
 from apiclient import discovery
 from google.oauth2 import service_account
@@ -19,6 +23,7 @@ def auth():
 
 
 @ttl_cache(ttl = 300)
+@utils.global_description_source
 def get_data():
     service = discovery.build('sheets', 'v4', credentials = auth())
     sheet = service.spreadsheets()

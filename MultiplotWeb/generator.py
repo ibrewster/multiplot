@@ -8,8 +8,7 @@ from functools import wraps
 
 import pandas
 
-from . import google
-from .utils import create_description_dataframe
+from .utils import create_description_dataframe, GEN_DESCRIPTION_SOURCES
 
 ######## Generator Decorator########
 # This decorator registers a function with a category and label to do three things:
@@ -179,12 +178,16 @@ def resolve_labels(value, default_category):
         )
 
 def generator_descriptions():
-    to_concat = GEN_DESCRIPTIONS.copy()
-    try:
-        g_details = google.get_data()
-        to_concat.append(g_details)
-    except Exception as e:
-        print(f"Unable to get google sheet descriptions. {e}")
+    to_concat = []
+    # Add all registered external/global sources
+    for func in GEN_DESCRIPTION_SOURCES:
+        try:
+            df = func()
+            to_concat.append(df)
+        except Exception as e:
+            print(f"Unable to get description from {func.__name__}: {e}")
+
+    to_concat.extend(GEN_DESCRIPTIONS.copy())
 
     details = pandas.concat(to_concat, sort=True, copy=False)
     # Entries from the google spreadsheet override identical entries from the database

@@ -11,7 +11,20 @@ from psycopg.cursor import Cursor as Psycopg3Cursor
 
 import numpy as np
 
-from . import config, google
+from . import config
+
+########## Global description decorator/functions ##########
+GEN_DESCRIPTION_SOURCES = []
+def global_description_source(func):
+    """
+    Registers a function that returns a pandas DataFrame of descriptions.
+    Each function must return a DataFrame indexed by (category, label),
+    with a 'Description' column.
+
+    These sources will be included in generator_descriptions().
+    """
+    GEN_DESCRIPTION_SOURCES.append(func)
+    return func
 
 # TODO: better way of defining this? We need the latitude and longitude of the
 # view center - which may not be the same as the "volcano location" - as well
