@@ -25,13 +25,15 @@ INSTRUCTIONS:
    If you instead provide labels as (label, category) tuples (or a function that returns such)
    in the @generator(...) call, the CATEGORY variable is not needed and can be omitted.
 
-
    NOTE: if you want a new dataset under an existing category, skip steps 1 & 2, and simply
          proceed with step 3 in the existing file.
 3. Add one or more functions decorated with `@generator(...)`.
+   - If your function needs access to the requested plot, it can be accessed by calling
+     `utils.current_plot_tag.get()`
    NOTE: Make sure your function either:
-   - Returns the expected dictionary for the *generic* plotter
-   - Has a JavaScript function of the same name that handles rendering
+         - Returns the expected dictionary for the *generic* plotter
+         - Has a JavaScript function of the same name that handles rendering
+
 
 NOTES ON RETURN FORMATS
 ------------------------
@@ -111,6 +113,9 @@ def string_desc_plot(volcano, start, end):
 def multi_plot(volcano, start, end):
     """
     Registers the function under multiple labels within the same CATEGORY.
+
+    You can access the current plot tag (category|label) being processed via:
+    `current_tag = utils.current_plot_tag.get()`
     """
     # Implement your data generation here
     return {
@@ -126,6 +131,9 @@ def multi_plot(volcano, start, end):
 def multi_cat_plot(volcano, start, end):
     """
     Registers the function under two different (label, category) pairs.
+
+    You can access the current plot tag (category|label) being processed via:
+    `current_tag = utils.current_plot_tag.get()`
     """
     # Implement your data generation here
     return {

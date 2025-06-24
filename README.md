@@ -31,6 +31,7 @@ To add a new dataset plugin:
         - Multiple labels (list of strings)
         - Label/category pairs (list of `(label, category)` tuples), in which case the provided category overrrides the default.
         - A function that returns any of the above
+    - If the function handles multiple labels, you can access the label requested using `utils.current_plot_tag.get()`. Value will be in the format `category|label`.
 4. **(Optional) Add a `description=` argument to the decorator**:
    Description formats allowed:
 
@@ -52,7 +53,7 @@ To add a new dataset plugin:
 
 5. Your function will be registered and appear in the UI automatically.
 
-➡ For code examples, see [`generators/_SAMPLE.py`](generators/_SAMPLE.py)
+➡ For code examples, see [`MultiplotWeb/generators/_SAMPLE.py`](MultiplotWeb/generators/_SAMPLE.py)
 
 #### Return Formats
 
