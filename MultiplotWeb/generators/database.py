@@ -1,4 +1,4 @@
-"""Generic database table plotting function. Should be written to work with ANY table provided."""
+"""Generic database table plotting functions. Should be written to work with ANY table provided."""
 from datetime import timedelta
 from urllib.parse import parse_qs
 
@@ -6,10 +6,40 @@ import flask
 import pandas
 import psycopg
 
-from .. import utils
+from . import utils, generator
 
-def plot_db_dataset(tag, volcano, start=None, end=None):
+
+def get_db_labels():
+    """Get a list of datasets from the database"""
+    with utils.PostgreSQLCursor("multiplot") as cursor:
+        cursor.execute("SELECT title, categories.name FROM plotinfo INNER JOIN categories ON categories.id=category WHERE visible=true")
+        return cursor.fetchall()
+
+def get_db_details() -> pandas.DataFrame:
+    """Get the description of the available datasets from the database"""
+    with utils.PostgreSQLCursor("multiplot") as cursor:
+        # Get plot descriptions
+        cursor.execute("""
+            SELECT categories.name, title, plotinfo.description
+            FROM plotinfo
+            INNER JOIN categories ON categories.id=plotinfo.category
+        """)
+        plot_descriptions = cursor.fetchall()
+
+        # Get category descriptions
+        cursor.execute("SELECT name, '', description FROM categories")
+        cat_descriptions = cursor.fetchall()
+
+        descriptions = plot_descriptions + cat_descriptions
+
+    return utils.create_description_dataframe(descriptions)
+
+
+generator(get_db_labels, description = get_db_details)
+def plot_db_dataset(volcano, start=None, end=None):
     """Get plot data for a specified dataset from the database"""
+
+    tag = utils.current_plot_tag.get()
 
     category, title = tag.split("|")
     query_string = flask.request.args.get('addArgs', '')
@@ -96,7 +126,7 @@ def plot_db_dataset(tag, volcano, start=None, end=None):
 
     if len(df) == 0:
         raise FileNotFoundError("Unable to find requested data")
-    
+
     df['datetime'] = df['datetime'].apply(lambda x: pandas.to_datetime(x).isoformat())
     result ={
         'labels': units,

@@ -1,9 +1,9 @@
 """
 Seismology_AQMS.py
 
-Data generation functions for the Seismology discipline, using the "AQMS" catalog.
-
+DESCRIPTION: Data generation functions for the Seismology discipline, using the "AQMS" catalog.
 """
+
 CATEGORY = "Seismology"
 
 from urllib.parse import parse_qs
@@ -13,9 +13,7 @@ import pandas
 
 from psycopg.rows import dict_row
 
-from .. import utils, config
-from ..utils import generator
-
+from . import utils, config, generator
 
 def get_aqms_data(volcano, t_start = None, t_end = None):
     v_lat, v_lon = utils.VOLCANOES[volcano][:2]

@@ -1,8 +1,7 @@
 """
 Seismology_REC.py
 
-Data generation functions for the Seismology discipline, using the "Relocated" catalog.
-
+DESCRIPTION: Data generation functions for the Seismology discipline, using the "Relocated" catalog.
 """
 CATEGORY = "Seismology (REC)"
 
@@ -13,9 +12,7 @@ from datetime import timezone
 
 import pandas
 
-from .. import utils
-from ..utils import generator
-
+from . import utils, generator
 
 def get_seismology_rec(volcano):
     """Utility function to retrieve the relocated catalog for a volcano as a pandas data frame"""

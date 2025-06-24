@@ -1,14 +1,13 @@
-#####################
-# Code to load and generate the data needed for various types of graphs
-#####################
+"""
+General plotting functions that don't fall into any specific category
+"""
 CATEGORY = "General"
 
 from datetime import datetime
 
 import pandas
 
-from .. import utils
-from ..utils import generator
+from . import utils, generator
 
 ######### COLOR CODES##########
 COLORS = {

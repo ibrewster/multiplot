@@ -3,18 +3,16 @@ RemoteSensing.py
 
 Data generation functions for the Remote Sensing discipline.
 
+DESCRIPTION: Data obtained via remote sensing methods, such as satelite.
 """
 CATEGORY = "Remote Sensing"
-import os
 
-from datetime import timedelta
 from urllib.parse import parse_qs
 
 import flask
 import pandas
 
-from .. import utils, config
-from ..utils import generator
+from . import utils, config, generator
 
 ############ Remote Detections #################
 def get_detection_data(volcano: str, start, end) -> pandas.DataFrame:

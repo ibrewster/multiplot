@@ -1,8 +1,7 @@
 """
 Seismology_TC.py
 
-Data generation functions for the Seismology discipline, using the "Temporally Complete" catalog.
-
+DESCRIPTION: Data generation functions for the Seismology discipline, using the "Temporally Complete" catalog.
 """
 CATEGORY = "Seismology (TC)"
 
@@ -11,9 +10,7 @@ import os
 
 import pandas
 
-from .. import utils
-from ..utils import generator
-
+from . import utils, generator
 
 def get_seismology_tc(volcano):
     """Utility function to retrieve the temporally complete event list for a volcano as a pandas data frame"""

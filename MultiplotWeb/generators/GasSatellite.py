@@ -1,9 +1,7 @@
 """
-Thermal.py
-
-Data generation functions for the Thermal discipline.
-
+SO<sub>2</sub> readings obtained from satelite methods
 """
+
 CATEGORY = "Gas - Satellite SO<sub>2</sub>"
 
 import os
@@ -15,8 +13,7 @@ import pandas
 
 from .RemoteSensing import get_detection_data
 from .database import plot_db_dataset
-from .. import utils, app
-from ..utils import generator
+from . import utils, app, generator
 
 
 def so2_rate(volcano, start, end) -> pandas.DataFrame:
@@ -33,39 +30,6 @@ def so2_rate(volcano, start, end) -> pandas.DataFrame:
 
 
 def so2_rate_fioletov(volcano, start, end):
-
-    # data_filename = "Carn2017Alaska.csv"
-    # data_path = os.path.join(utils.DATA_DIR, data_filename)
-    # data = pandas.read_csv(data_path, header = 1, index_col = 'Volcano')
-    # try:
-        # volc_data = data.loc[volcano].to_frame().reset_index(drop = False)
-    # except KeyError:
-        # raise FileNotFoundError
-
-    # rate_data = volc_data = volc_data[~pandas.to_numeric(volc_data['index'], errors = 'coerce').isnull()]
-    # rate_data.rename(columns = {'index': 'year'}, inplace = True)
-    # rate_data['year'] = rate_data['year'].astype(float)
-    # rate_data['is_rate'] = rate_data['year'].apply(lambda x: x.is_integer())
-
-    # em_rate = rate_data[rate_data['is_rate'] == True].reset_index(drop = True)
-    # em_error = rate_data[rate_data['is_rate'] == False].reset_index(drop = True)
-
-    # em_error.loc[:, 'year'] -= 0.1
-
-    # em_rate.rename(columns = {volcano: 'rate'}, inplace = True)
-    # em_error.rename(columns = {volcano: 'error'}, inplace = True)
-
-    # em_rate.drop(columns = 'is_rate', inplace = True)
-    # em_error.drop(columns = 'is_rate', inplace = True)
-
-    # volc_data = pandas.merge(em_rate, em_error, on = 'year')
-    # volc_data.loc[:, 'upper'] = volc_data.loc[:, 'rate'] + volc_data.loc[:, 'error']
-    # volc_data.loc[:, 'lower'] = volc_data.loc[:, 'rate'] - volc_data.loc[:, 'error']
-    # volc_data['year'] = volc_data['year'].astype(int)
-
-    # volc_data = volc_data[volc_data['year'] >= start.year]
-    # volc_data = volc_data[volc_data['year'] <= end.year]
-
     db_data = plot_db_dataset('Gas - Satellite SO<sub>2</sub>|Fioletov Catalogue', volcano, start, end)
     db_data = pandas.DataFrame(db_data['Fioletov Catalogue']).rename(columns = {'value': 'rate',})
     db_data['upper']=db_data['rate']+db_data['error']

@@ -1,7 +1,7 @@
 """
 Petrology.py
 
-Data generation functions for the Petrology discipline.
+DESCRIPTION: Data generation functions for the Petrology discipline.
 
 """
 CATEGORY = "Petrology"
@@ -10,15 +10,13 @@ import os
 
 import pandas
 
-from .. import utils
-from ..utils import generator
-
+from . import utils, generator
 
 ##############Petrology###############
 
 
 @generator("Diffusion")
-def plot_diffusion(volcano, start = None, end = None):    
+def plot_diffusion(volcano, start = None, end = None):
     data_filename = f"{volcano} Moshrefzadeh.csv"
     data_path = os.path.join(utils.DATA_DIR, 'Diffusion', data_filename)
     date_cols = [

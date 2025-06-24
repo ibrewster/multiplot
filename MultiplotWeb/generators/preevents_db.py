@@ -12,8 +12,7 @@ import flask
 import pandas
 import psycopg
 
-from .. import utils, app
-from ..utils import generator
+from . import generator, utils, app
 
 ########## Label queries ############
 @ttl_cache(ttl = 86400) # cache for one day.

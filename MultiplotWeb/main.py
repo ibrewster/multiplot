@@ -6,7 +6,7 @@ import flask
 from collections import defaultdict
 from dateutil.parser import parse
 
-from . import app, utils, google, DBMetadata
+from . import app, utils, generator
 
 
 @app.route('/')
@@ -52,11 +52,11 @@ def api():
 def headers():
     args = {
         'prefix': getPrefix(),
-        'js_funcs': json.dumps(utils.JS_FUNCS)
+        'js_funcs': json.dumps(generator.JS_FUNCS)
     }
 
     plottypes = []
-    for cat, types in sorted(utils.GEN_CATEGORIES.items(), key = lambda x: x[0]):
+    for cat, types in sorted(generator.GEN_CATEGORIES.items(), key = lambda x: x[0]):
         plottypes.append(f"---{cat}---")
         for item in sorted(types):
             tag = "|".join((cat, item))
@@ -139,7 +139,7 @@ def get_plot():
         end_date = None
 
     try:
-        data = utils.GEN_FUNCS[plot_type](volcano, start_date, end_date)
+        data = generator.GEN_FUNCS[plot_type](volcano, start_date, end_date)
     except Exception as e:
         app.logger.warning(str(e))
         return str(e), 404
@@ -151,14 +151,14 @@ def get_plot():
 def get_details():
     plot_type = flask.request.args['plotType']
     cat, label = plot_type.split('|')
-    details = utils.get_combined_details()
+    details = generator.generator_descriptions()
 
     description = details.loc[cat, label]
     return flask.jsonify(description)
 
 @app.route('/getDescriptions')
 def get_descriptions():
-    data = utils.get_combined_details()
+    data = generator.generator_descriptions()
     data['Category'] = data['Category'].apply(lambda x: '' if not x else x)
     data['Dataset'] = data['Dataset'].apply(lambda x: '' if not x else x)
     data = data[['Category', 'Dataset', 'Description']].reset_index(drop = True)
