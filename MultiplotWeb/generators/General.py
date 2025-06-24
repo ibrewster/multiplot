@@ -19,7 +19,7 @@ COLORS = {
 }
 
 
-@generator("Color Code")
+@generator("Color Code", description = "Color code of the volcano, based on HANS2/Geodiva")
 def plot_color_code(volcano, start = None, end = None):
     args = [volcano, ]
     SQL_BASE = """

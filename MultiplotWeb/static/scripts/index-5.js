@@ -662,7 +662,7 @@ function plotTypeChanged(addArgs, resolve){
     if(custFunc){
         custFunc=custFunc[selectorTitle];
     }
-    
+
     //if no plot type specific function, check for a generic "plot function" based option
     if(!custFunc){
         const selectorFuncName=plotFuncs[plotType]+"_selector"
@@ -740,10 +740,16 @@ function genPlot(){
             const plotType=args['plotType']
 
             let plotData,layout;
-            const plotFunc=plotFuncs[plotType];
+            const plotFuncName=plotFuncs[plotType];
 
             isSpatial=false;
-            [plotData,layout]=window[plotFunc].call(plotElement,data);
+            plotFunc=window[plotFuncName];
+            if (plotFunc==null){
+                [plotData,layout]=generic_plot.call(plotElement, data, data['ylabel'],"y")
+            } else {
+                [plotData,layout]=plotFunc.call(plotElement,data);
+            }
+
 
             if(isSpatial){
                 plotDiv.addClass('multiplot-spatial');

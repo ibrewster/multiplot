@@ -30,7 +30,8 @@ def so2_rate(volcano, start, end) -> pandas.DataFrame:
 
 
 def so2_rate_fioletov(volcano, start, end):
-    db_data = plot_db_dataset('Gas - Satellite SO<sub>2</sub>|Fioletov Catalogue', volcano, start, end)
+    utils.current_plot_tag.set('Gas - Satellite SO<sub>2</sub>|Fioletov Catalogue')
+    db_data = plot_db_dataset(volcano, start, end)
     db_data = pandas.DataFrame(db_data['Fioletov Catalogue']).rename(columns = {'value': 'rate',})
     db_data['upper']=db_data['rate']+db_data['error']
     db_data['lower']=db_data['rate']-db_data['error']

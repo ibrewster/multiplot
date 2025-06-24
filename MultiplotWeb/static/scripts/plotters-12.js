@@ -424,6 +424,10 @@ function generic_plot(data,ylabel,ydata,type){
     return [plotData, layout]
 }
 
+function plot_generic_plot(data){
+    return generic_plot.call(this, data, "value", "y");
+}
+
 //////////////////////////////////////////////////////////////////
 
 //various plotting functions that use the generic_plot directly,

@@ -28,7 +28,7 @@ JS_FUNCS = {}
 GEN_DESCRIPTIONS: list[pandas.DataFrame] = []
 
 
-def generator(label_or_labels_or_func, category=None, description = None):
+def generator(label_or_labels_or_func, description = None):
     """
     Decorator to register a function under one or more (label, category) pairs.
 
@@ -39,11 +39,6 @@ def generator(label_or_labels_or_func, category=None, description = None):
         a list of string labels (all use the default or global category),
         a list of (label, category) tuples,
         or a function returning one of the above.
-
-    category : str, optional
-        The fallback category to use if labels are not paired with explicit categories.
-        If omitted, the decorator looks for a `CATEGORY` global variable defined
-        in the module where the decorator is used.
 
     description : str or dict or Callable, optional
         Description text for the registered label(s), used for tooltips or UI metadata.
@@ -73,8 +68,8 @@ def generator(label_or_labels_or_func, category=None, description = None):
     """
     # Try to determine a default category from the caller's module if not provided explicitly
     frame = inspect.stack()[1]
-    if category is None:
-        category = frame.frame.f_globals.get('CATEGORY') # May still be None, fine depending on how labels is passed.
+
+    category = frame.frame.f_globals.get('CATEGORY') # May be None, fine depending on how labels is passed.
 
     if callable(description):
         GEN_DESCRIPTIONS.append(description())
