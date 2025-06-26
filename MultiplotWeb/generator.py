@@ -1,5 +1,6 @@
 import inspect
 import re
+import textwrap
 import warnings
 
 from collections import defaultdict
@@ -8,7 +9,8 @@ from functools import wraps
 
 import pandas
 
-from .utils import create_description_dataframe, GEN_DESCRIPTION_SOURCES
+from .descriptors import create_description_dataframe
+from .descriptors import DESCRIPTION_SOURCES
 
 ######## Generator Decorator########
 # This decorator registers a function with a category and label to do three things:
@@ -24,10 +26,8 @@ from .utils import create_description_dataframe, GEN_DESCRIPTION_SOURCES
 GEN_FUNCS = {}
 GEN_CATEGORIES = defaultdict(list)
 JS_FUNCS = {}
-GEN_DESCRIPTIONS: list[pandas.DataFrame] = []
 
-
-def generator(label_or_labels_or_func, description = None):
+def generator(label_or_labels_or_func):
     """
     Decorator to register a function under one or more (label, category) pairs.
 
@@ -38,18 +38,6 @@ def generator(label_or_labels_or_func, description = None):
         a list of string labels (all use the default or global category),
         a list of (label, category) tuples,
         or a function returning one of the above.
-
-    description : str or dict or Callable, optional
-        Description text for the registered label(s), used for tooltips or UI metadata.
-
-        - If a **string**, it applies only when registering a single label.
-        - If a **dict**, keys may be labels or (label, category) pairs, with
-          description strings as values.
-        - If a **callable**, it must return a DataFrame with
-          ['Category', 'Dataset', 'Description'] columns and a MultiIndex of
-          (Category, Dataset).
-        - If **None**, the function docstring is used (for single labels),
-          and the module-level docstring is used for the category.
 
     Returns
     -------
@@ -65,13 +53,11 @@ def generator(label_or_labels_or_func, description = None):
     - Category-level descriptions are auto-generated from the module-level docstring
       unless overridden by a callable.
     """
+    
     # Try to determine a default category from the caller's module if not provided explicitly
     frame = inspect.stack()[1]
 
     category = frame.frame.f_globals.get('CATEGORY') # May be None, fine depending on how labels is passed.
-
-    if callable(description):
-        GEN_DESCRIPTIONS.append(description())
 
     labels = resolve_labels(label_or_labels_or_func, category)
     category_doc = desc_from_docstring(frame.frame.f_globals.get('__doc__'))
@@ -98,30 +84,20 @@ def generator(label_or_labels_or_func, description = None):
 
             # descriptions
             # Add function-level label description
-            if not callable(description):
-                func_doc = None
-                if isinstance(description, dict):
-                    # Try label+category key first, then label alone, else fallback
-                    func_doc = description.get((label, category)) or description.get(label)
-                elif isinstance(description, str):
-                    if len(labels) > 1:
-                        raise ValueError("Need dict or callable description for multiple labels")
-                    func_doc = description
-                elif description is None and len(labels) == 1:
-                    func_doc = default_func_doc
-                elif description is not None:
-                    raise ValueError("description must be either callable, dictionary, string, or None")
+            func_doc = None
+            if len(labels) == 1:
+                func_doc = default_func_doc
 
-                if func_doc:
-                    desc_rows[(category, label)] = (category, label, func_doc)
+            if func_doc:
+                desc_rows[(category, label)] = (category, label, func_doc)
 
-                # Add category-level description if not already present
-                if (category, '') not in desc_rows and category_doc:
-                    desc_rows[(category, '')] = (category, '', category_doc)
+            # Add category-level description if not already present
+            if (category, '') not in desc_rows and category_doc:
+                desc_rows[(category, '')] = (category, '', category_doc)
 
         if desc_rows:
             df = create_description_dataframe(desc_rows.values())
-            GEN_DESCRIPTIONS.append(df)
+            DESCRIPTION_SOURCES.append(df)
 
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -133,13 +109,34 @@ def generator(label_or_labels_or_func, description = None):
 
 def desc_from_docstring(docstring: str) -> str:
     """
-    If a DESCRIPTION: section exists in the docstring, use it.
-    Otherwise return the entire docstring.
+    Extracts the DESCRIPTION section from a docstring.
+
+    Supports formats like:
+    - DESCRIPTION: text
+    - DESCRIPTION\n------\ntext
+    - Description:\n    text
+    If no DESCRIPTION section is found, returns the full docstring.
     """
     if not docstring:
         return ''
-    match = re.search(r"DESCRIPTION:(.*)", docstring, re.IGNORECASE | re.DOTALL)
-    return match.group(1).strip() if match else docstring.strip()
+
+    # Normalize indentation
+    docstring = textwrap.dedent(docstring)
+
+    # Patterns to try, in order of specificity
+    patterns = [
+        r"^#*\s*DESCRIPTION:\s*(.+?)(?=\n\S|\Z)",                   # DESCRIPTION: text
+        r"^#*\s*DESCRIPTION\n[-=]+\n(.+?)(?=\n\S|\Z)",              # DESCRIPTION\n-----
+        r"^#*\s*DESCRIPTION\n\s*\n(.+?)(?=\n\S|\Z)",                # DESCRIPTION\n\ntext
+        r"^#*\s*Description:\s*\n((?:[ \t].*\n)+)",                 # Description:\n    text
+    ]
+
+    for pattern in patterns:
+        match = re.search(pattern, docstring, re.DOTALL | re.MULTILINE | re.IGNORECASE)
+        if match:
+            return match.group(1).strip()
+
+    return docstring.strip()
 
 
 # Normalize input into a list of (label, category) tuples
@@ -176,23 +173,3 @@ def resolve_labels(value, default_category):
         raise TypeError(
             "Argument must be a string, iterable of strings or (label, category) pairs, or a function returning one of those."
         )
-
-def generator_descriptions():
-    to_concat = []
-    # Add all registered external/global sources
-    for func in GEN_DESCRIPTION_SOURCES:
-        try:
-            df = func()
-            to_concat.append(df)
-        except Exception as e:
-            print(f"Unable to get description from {func.__name__}: {e}")
-
-    to_concat.extend(GEN_DESCRIPTIONS.copy())
-
-    details = pandas.concat(to_concat, sort=True, copy=False)
-    # Entries from the google spreadsheet override identical entries from the database
-    # Change 'first' to 'last' to reverse this logic.
-    details = details[~details.index.duplicated(keep='first')]
-    details = details.sort_index();
-
-    return details

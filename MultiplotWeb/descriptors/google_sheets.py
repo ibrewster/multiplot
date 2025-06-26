@@ -7,7 +7,7 @@ from cachetools.func import ttl_cache
 
 import pandas
 
-from . import app, utils
+from . import app, description_source
 
 from apiclient import discovery
 from google.oauth2 import service_account
@@ -23,7 +23,7 @@ def auth():
 
 
 @ttl_cache(ttl = 300)
-@utils.global_description_source
+@description_source
 def get_data():
     service = discovery.build('sheets', 'v4', credentials = auth())
     sheet = service.spreadsheets()

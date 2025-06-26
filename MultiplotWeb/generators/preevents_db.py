@@ -71,17 +71,6 @@ def get_preevents_labels():
     ]
     return labels
 
-######### Descriptions #############
-def get_preevents_db_details() -> pandas.DataFrame:
-    """Get the descriptions of the available datasets/datastreams from the preevents database"""
-    labels = preevents_label_query()
-    plot_descriptions = []
-    for item in labels:
-        desc = f"<p>{item[4]}, {item[5]}</p><p>{item[6]}</p>"
-        plot_descriptions.append((item[1], item[0], desc))
-
-    return utils.create_description_dataframe(plot_descriptions)
-
 ######## Processing #################
 def parse_condition(condition):
     """
@@ -125,7 +114,7 @@ def parse_condition(condition):
     return is_jsonb, column, key, operator, value
 
 
-@generator(get_preevents_labels, description = get_preevents_db_details)
+@generator(get_preevents_labels)
 def plot_preevents_dataset(volcano, start=None, end=None):
     """Get plot data for a specified dataset from the database"""
 

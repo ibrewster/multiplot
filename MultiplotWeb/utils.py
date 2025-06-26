@@ -1,7 +1,5 @@
 from contextvars import ContextVar
 from functools import partial
-from html.parser import HTMLParser
-from io import StringIO
 
 import pandas
 import psycopg
@@ -12,19 +10,6 @@ from psycopg.cursor import Cursor as Psycopg3Cursor
 import numpy as np
 
 from . import config
-
-########## Global description decorator/functions ##########
-GEN_DESCRIPTION_SOURCES = []
-def global_description_source(func):
-    """
-    Registers a function that returns a pandas DataFrame of descriptions.
-    Each function must return a DataFrame indexed by (category, label),
-    with a 'Description' column.
-
-    These sources will be included in generator_descriptions().
-    """
-    GEN_DESCRIPTION_SOURCES.append(func)
-    return func
 
 # TODO: better way of defining this? We need the latitude and longitude of the
 # view center - which may not be the same as the "volcano location" - as well
@@ -135,46 +120,3 @@ def get_volcs():
             VOLC_IDS[volc_name] = volc_id
             if volc_name not in VOLCANOES:
                 VOLCANOES[volc_name] = [latitude, longitude, 10]
-
-class Stripper(HTMLParser):
-    def __init__(self):
-        super().__init__()
-        self.reset()
-        self.strict = False
-        self.convert_charrefs = True
-        self.text = StringIO()
-
-    def handle_data(self, data):
-        # This function is only called for the raw text, so tags don't show up here.
-        self.text.write(data)
-    def get_clean(self):
-        return self.text.getvalue()
-
-def stripHTML(value):
-    html = Stripper()
-    html.feed(value)
-    return html.get_clean()
-
-def create_description_dataframe(data: list[tuple], columns=['Category', 'Dataset', 'Description']) -> pandas.DataFrame:
-    """
-    Creates a standardized description DataFrame with proper formatting and indexing.
-
-    ARGUMENTS
-    ---------
-        data: List of tuples containing the raw data
-        columns: Column names for the DataFrame (default: ['Category', 'Dataset', 'Description'])
-
-    RETURNS
-    -------
-        pandas.DataFrame: Formatted DataFrame with MultiIndex
-    """
-    df = pandas.DataFrame(data, columns=columns)
-
-    # Strip HTML formatting from Category and Dataset
-    df['Category'] = df['Category'].apply(stripHTML)
-    df['Dataset'] = df['Dataset'].apply(stripHTML)
-
-    # Create MultiIndex from Category and Dataset
-    df.index = pandas.MultiIndex.from_frame(df[['Category', 'Dataset']])
-
-    return df

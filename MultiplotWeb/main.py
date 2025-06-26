@@ -6,7 +6,7 @@ import flask
 from collections import defaultdict
 from dateutil.parser import parse
 
-from . import app, utils, generator
+from . import app, utils, generator, descriptors
 
 
 @app.route('/')
@@ -151,14 +151,14 @@ def get_plot():
 def get_details():
     plot_type = flask.request.args['plotType']
     cat, label = plot_type.split('|')
-    details = generator.generator_descriptions()
+    details = descriptors.get_descriptions()
 
     description = details.loc[cat, label]
     return flask.jsonify(description)
 
 @app.route('/getDescriptions')
 def get_descriptions():
-    data = generator.generator_descriptions()
+    data = descriptors.get_descriptions()
     data['Category'] = data['Category'].apply(lambda x: '' if not x else x)
     data['Dataset'] = data['Dataset'].apply(lambda x: '' if not x else x)
     data = data[['Category', 'Dataset', 'Description']].reset_index(drop = True)
