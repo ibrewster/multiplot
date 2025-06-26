@@ -17,105 +17,30 @@ Key features:
 
 ## Plugin Development
 
-### 🐍 Python
+MultiplotWeb plugins are organized into two key systems:
 
-To add a new dataset plugin:
+### 🔹 [Dataset Generators](MultiplotWeb/generators/README.md)
 
-1. **Create a new file** in the `generators/` directory with a descriptive name.
-2. **Set a `CATEGORY`** variable to group the datasets in the dropdown.
-    - Alternatively, supply categories directly via the `@generator(...)` call (using `(label, category)` pairs).
-3. **Add a function** decorated with `@generator(...)`:
-    - The function must accept three parameters: `volcano`, `start`, `end`
-    - The first argument to the decorator defines how the function is registered. You can provide:
-        - A single label (string)
-        - Multiple labels (list of strings)
-        - Label/category pairs (list of `(label, category)` tuples), in which case the provided category overrrides the default.
-        - A function that returns any of the above
-    - If the function handles multiple labels, you can access the label requested using `utils.current_plot_tag.get()`. Value will be in the format `category|label`.
-4. **(Optional) Add a `description=` argument to the decorator**:
-   Description formats allowed:
+Dataset generator functions define what data is returned to the frontend. Each is registered using the `@generator(...)` decorator and can:
 
-   - A string (for single-label usage)
-   - A dictionary mapping `label` or `(label, category)` to a string
-   - A function returning a `pandas.DataFrame` with columns: `Category`, `Label`, and `Description`
+- Return basic dictionary output for default Plotly rendering
+- Define custom JavaScript handlers for complex visualizations
+- Specify labels and categories via simple arguments or dynamic functions
+- Include descriptions parsed from docstrings or provided externally
 
-   - If using a function to provide descriptions, you can include a row with an empty string (`""`) for the `Label` column to define a **category-level description**.
-     Example: `("My Category", "", "This is the description for the entire category.")`
-
-   If you do **not** provide a description:
-
-   - The system will use the **function's docstring** as the label’s description (if available).
-
-   Also:
-
-   - The file-level docstring (i.e., the string at the top of the `.py` file) will be used as the **category description** for any category associated with labels in that file.
-   - In case of duplication (e.g. category description provided by multiple decorators), the **first** description provided will be used.
-
-5. Your function will be registered and appear in the UI automatically.
-
-➡ For code examples, see [`MultiplotWeb/generators/_SAMPLE.py`](MultiplotWeb/generators/_SAMPLE.py)
-
-#### Return Formats
-
-There are two return format options:
-
-##### a) Generic Format (default rendering):
-
-If no JavaScript renderer exists for your function, the system expects:
-
-```python
-{
-    "date": [...],      # ISO-format datetime strings
-    "y": [...],         # Y-axis values
-    "ylabel": "..."     # (Optional) Label for the y-axis
-}
-```
-
-##### b) Custom Format:
-
-If a matching JavaScript function exists, your Python function can return **any JSON-serializable object**. The JavaScript renderer will be passed the return value directly.
-
-The JavaScript function must return a two-element array:
-
-```javascript
-return [data, layout];
-```
-
-Where:
-
-- `data`: a Plotly.js-compatible data array (trace objects)
-- `layout`: a Plotly.js layout configuration object
+See [`generators/README.md`](MultiplotWeb/generators/README.md) for full instructions and examples.
 
 ---
 
-### 💻 JavaScript
+### 🔹 [Descriptions](MultiplotWeb/descriptors/README.md)
 
-In the frontend, JavaScript is responsible for rendering plots using Plotly.
+If you want to document datasets without modifying the plugin source code, you can register description providers using the `@description_source` decorator. This allows you to supply descriptions from centralized sources like:
 
-#### Generic Rendering
+- Google Sheets
+- Shared CSV files
+- Dynamic external APIs
+- etc
 
-If no renderer exists for a label, a fallback renderer will be used to display the data assuming it conforms to the generic format shown above (`date`, `y`, `ylabel`). This will give you a scatter plot with your ylabel on the Y axis.
-
-#### Custom Rendering
-
-To override rendering:
-
-1. Create a JavaScript function **named identically** to the Python function.
-2. This function will receive the exact return value from Python.
-3. It must return an array: `[data, layout]`, where:
-
-```javascript
-function myCustomPlot(result) {
-    const data = [...];     // one or more Plotly trace objects
-    const layout = {...};   // a Plotly layout configuration
-    return [data, layout];
-}
-```
+See [`descriptors/README.md`](MultiplotWeb/descriptors/README.md) for how to implement metadata sources.
 
 ---
-
-## Design Notes
-
-- Decorated functions are auto-discovered on startup by importing all files in the `generators/` module.
-- Categories are inferred from the module `CATEGORY` constant or provided per-label in the decorator.
-- All metadata is collected and used to populate dropdowns and tooltips in the UI.
