@@ -55,31 +55,6 @@ These are passed automatically from the frontend when the user requests a plot.
     ```python
     @generator(get_db_plots_func)
     ```
-
-4. **Description Handling**
-
-Descriptions for both **categories** and **labels** are used in the frontend UI for help text and tooltips.
-
-#### a. From Docstrings (Default Behavior)
-
-- **Category descriptions** come from the **file-level docstring** — the docstring at the top of the `.py` file.
-- **Label descriptions** come from the **function's docstring**, but **only if the function registers a single tag** (i.e., one label, or one (label, category) pair).
-
-In both cases, if the docstring contains a section headed with `Description:` or a similar heading (such as a Markdown `# Description`), that section is extracted and used.  
-If no such heading is found, the **entire docstring** is used as the description.
-
-#### b. From Global Sources (`@description_source`)
-
-You can define a **global description source** by adding a file/function to the `descriptors` module and decorating it with `@description_source`.
-
-That function must return a `pandas.DataFrame` with:
-- Columns: `Category`, `Label`, `Description`
-- A `MultiIndex` on `(Category, Label)`
-
-A helper function `create_description_dataframe` is provided to properly format a list of (Category, Label, Description) tuples into the required dataframe. See the descriptors module for more information.
-
-These descriptions will be used automatically, unless overridden by a valid docstring (as described above).  
-
 ---
 
 ## Return Format
@@ -122,7 +97,7 @@ Descriptions shown in the UI can come from:
 
 - Function docstrings (used by default)
 - File-level docstrings (used for the category)
-- Functions decorated with the `description_source` decorator and returning a properly formatted pandas dataframe. See the [`../descriptors/README.md`](descriptors module README) for more information.
+- Functions decorated with the `description_source` decorator and returning a properly formatted pandas dataframe. See the [`descriptors ` module README](../descriptors/README.md) for more information.
 
 
 ---
@@ -152,4 +127,4 @@ The following are available by default in every plugin module via `generators/__
 
 ## See Also
 
-For concrete examples, see [`./_SAMPLE.py`](./_SAMPLE.py).
+For concrete examples, see [`./_SAMPLES.py`](./_SAMPLES.py).
