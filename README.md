@@ -1,4 +1,4 @@
-**MultiplotWeb** is a plugin-based framework for building interactive data dashboards, especially suited for volcano and geoscience datasets. It uses a simple decorator system in Python to register dataset-generating functions, which are then rendered on the frontend via Plotly.js.
+**MultiplotWeb** is a plugin-based framework for building a display of multiple time-series plots that share a time axis. It uses a simple decorator system in Python to register dataset-generating functions, which are then rendered on the frontend via Plotly.js.
 
 ---
 
@@ -34,11 +34,12 @@ See [`generators/README.md`](MultiplotWeb/generators/README.md) for full instruc
 
 ### 🔹 [Descriptions](MultiplotWeb/descriptors/README.md)
 
-If you want to document datasets without modifying the plugin source code, you can register description providers using the `@description_source` decorator. This allows you to supply descriptions from centralized sources like:
+If you want to document datasets beyond simple docstring descriptions (e.g if your function handles multiple datasets and/or you want to retrieve the descriptions from an external source), you can register description providers using the `@description_source` decorator. This allows you to supply descriptions from centralized sources like:
 
 - Google Sheets
 - Shared CSV files
 - Dynamic external APIs
+- Database queries
 - etc
 
 See [`descriptors/README.md`](MultiplotWeb/descriptors/README.md) for how to implement metadata sources.

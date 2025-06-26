@@ -19,7 +19,7 @@ def load_plugins(pkg):
         if not is_pkg and not module_name.startswith("_"):
             importlib.import_module(f"{pkg.__name__}.{module_name}")
 
-print("Loading generators")
-load_plugins(generators_pkg)
 print("loading descriptors")
 load_plugins(descriptors_pkg)
+print("Loading generators")
+load_plugins(generators_pkg)
