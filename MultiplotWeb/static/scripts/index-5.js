@@ -184,27 +184,47 @@ const plotterRegistryPromise = loadUserModules('plotters');
 const selectorRegistryPromise = loadUserModules('selectors');
 
 async function loadUserModules(path) {
-  const registry = {};
-  try {
-    const fileList = await fetch(`list-js/${path}`).then(res => res.json());
-    for (const file of fileList) {
-      try {
-        const module = await import(`./static/scripts/${path}/${file}`);
-        for (const [exportName, exportValue] of Object.entries(module)) {
-          if (typeof exportValue === 'function') {
-            console.log(`Registering function: ${exportName} from ${file}`);
-            registry[exportName] = exportValue;
-          }
+    const registry = {};
+    try {
+        const fileList = await fetch(`list-js/${path}`).then(res => res.json());
+        for (const file of fileList) {
+            try {
+                const module = await import(`./static/scripts/${path}/${file}`);
+                for (const [exportName, exportValue] of Object.entries(module)) {
+                    if (isClass(exportValue) ){
+                        const className = exportValue.name;
+                        const staticMethods = Object.getOwnPropertyNames(exportValue).filter(name => 
+                            typeof exportValue[name] === 'function' && 
+                            name !== 'prototype' && 
+                            name !== 'length' && 
+                            name !== 'name'
+                        );
+                        for (const methodName of staticMethods) {
+                            const key = `${className}|${methodName}`;
+                            console.log(`Registering static method: ${key} from ${path}/${file}`);
+                            registry[key] = exportValue[methodName];
+                        }
+                    }
+                    else if (typeof exportValue === 'function') {
+                        console.log(`Registering function: ${exportName} from ${path}/${file}`);
+                        registry[exportName] = exportValue;
+                    }
+                }
+            } catch (error) {
+                console.error(`Failed to load module ${file} from ${path}:`, error);
+            }
         }
-      } catch (error) {
-        console.error(`Failed to load module ${file} from ${path}:`, error);
-      }
+    } catch (error) {
+        console.error('Failed to fetch file list:', error);
     }
-  } catch (error) {
-    console.error('Failed to fetch file list:', error);
-  }
-  return registry;
+    return registry;
 }
+
+
+function isClass(value) {
+  return typeof value === 'function' && Function.prototype.toString.call(value).startsWith('class');
+}
+
 
 function formatUTCDateString(date){
     let dateYear=date.getUTCFullYear();
@@ -679,29 +699,28 @@ function selectPlotType(){
     $(this).addClass('multiplot-open');
 }
 
-function plotTypeChanged(addArgs, resolve){
+async function plotTypeChanged(addArgs, resolve){
     const plotType=$(this).data('plotType');
 
     //remove any existing custom selectors
     $(this).siblings().find('.multiplot-customSelector').remove();
 
     // add any custom components needed.
-    // Custom component function is named the same as the
-    // plot function, but with _selector appended for simple options,
-    // or is a class/function for more complicated needs.
-    const [selectorCat,selectorTitle]=plotType.replace(/[^a-zA-Z0-9|]/g, '').split('|')
-
-    //check for a plotType *specific* option first
-    let custFunc=CustomOptionMap[selectorCat];
-    if(custFunc){
-        custFunc=custFunc[selectorTitle];
+    // Custom component function is either a function with the same
+    // name as the plot/python function for single-label/selector situations, 
+    // or a class for category, with static functions for each label
+    const selectorRegistry=await selectorRegistryPromise;
+    
+    //Start by looking for category/label based selectors (classes)
+    let selectorFuncName=plotType.replace(/[^a-zA-Z0-9|]/g, '')
+    if (!Object.hasOwn(selectorRegistry, selectorFuncName)){
+        //if not found, try normal function selectors
+        selectorFuncName=plotFuncs[plotType]
     }
-
-    //if no plot type specific function, check for a generic "plot function" based option
-    if(!custFunc){
-        const selectorFuncName=plotFuncs[plotType]+"_selector"
-        custFunc=window[selectorFuncName];
-    }
+    
+    // will be undefined if neither a function or a class function is found
+    // this is actually normal and expected for most cases.
+    const custFunc=selectorRegistry[selectorFuncName]; 
 
     //if neither are found, do nothing. Otherwise, run the code and add the HTML block
     if(custFunc){
