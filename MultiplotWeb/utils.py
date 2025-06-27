@@ -1,7 +1,6 @@
 from contextvars import ContextVar
 from functools import partial
 
-import pandas
 import psycopg
 import pymysql
 
@@ -25,9 +24,6 @@ VOLCANOES = {
     'Veniaminof': [56.1979, -159.3931, 10],
 }
 VOLC_IDS = {}
-
-# DATA_DIR = os.path.join(app.static_folder, 'data')
-DATA_DIR = '/shared/data/multiplot'
 
 current_plot_tag = ContextVar("current_plot_tag")
 

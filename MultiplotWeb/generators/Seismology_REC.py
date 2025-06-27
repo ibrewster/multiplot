@@ -12,11 +12,11 @@ from datetime import timezone
 
 import pandas
 
-from . import utils, generator
+from . import utils, generator, config
 
 def get_seismology_rec(volcano):
     """Utility function to retrieve the relocated catalog for a volcano as a pandas data frame"""
-    data_dir = os.path.join(utils.DATA_DIR, "SeismoAcoustic_Data")
+    data_dir = os.path.join(config.DATA_DIR, "SeismoAcoustic_Data")
     volc_dir = glob.glob(os.path.join(data_dir, f"{volcano}*"))
     if not volc_dir:
         raise FileNotFoundError(f"No data found for {volcano}")
@@ -37,16 +37,24 @@ def get_seismology_rec(volcano):
 def eq_frequency_index_rec(volcano, start = None, end = None):
     data = get_seismology_rec(volcano)
     data = data.loc[:, ['date', 'FI']]
+    
+    data.rename(columns={'FI': 'y',}, inplace=True)
+    resp = data.to_dict(orient = "list")
+    resp['ylabel'] = 'Frequency Index'    
 
-    return data.to_dict(orient = "list")
+    return resp
 
 
 @generator("Magnitude")
 def eq_magnitude(volcano, start = None, end = None):
     data = get_seismology_rec(volcano)
     data = data.loc[:, ['date', 'Magnitude']]
+    
+    data.rename(columns={'Magnitude': 'y',}, inplace=True)
+    resp = data.to_dict(orient = "list")
+    resp['ylabel'] = 'Magnitude'
 
-    return data.to_dict(orient = "list")
+    return resp
 
 
 @generator("Depth")
@@ -64,9 +72,12 @@ def eq_distance(volcano, start = None, end = None):
     # TODO: Calculate distance to volcano
     v_lat, v_lon = utils.VOLCANOES[volcano][:2]
     distances = utils.haversine_np(v_lon, v_lat, data['Longitude'], data['Latitude'])
-    data.loc[:, 'Distance'] = distances
+    data.loc[:, 'y'] = distances
+    
+    resp = data.to_dict(orient = "list")
+    resp['ylabel'] = 'Distance (km)'    
 
-    return data.to_dict(orient = "list")
+    return resp
 
 
 @generator("Location/Depth")

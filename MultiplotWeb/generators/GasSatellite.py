@@ -13,7 +13,7 @@ import pandas
 
 from .RemoteSensing import get_detection_data
 from .database import plot_db_dataset
-from . import utils, app, generator
+from . import utils, app, generator, config
 
 
 def so2_rate(volcano, start, end) -> pandas.DataFrame:
@@ -26,6 +26,7 @@ def so2_rate(volcano, start, end) -> pandas.DataFrame:
         raise FileNotFoundError
 
     data['date'] = data['date'].apply(lambda x: x.isoformat())
+    
     return data.to_dict(orient = "list")
 
 
@@ -75,7 +76,7 @@ def so2_mass(volcano, start, end) -> pandas.DataFrame:
 
 def so2_mass_carn(volcano, start, end):
     data_filename = "GVP_Emission_Results.csv"
-    data_path = os.path.join(utils.DATA_DIR, data_filename)
+    data_path = os.path.join(config.DATA_DIR, data_filename)
     data = pandas.read_csv(
         data_path,
         header = 1,

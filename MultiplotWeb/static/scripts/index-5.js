@@ -180,7 +180,31 @@ MultiPlot.prototype.setDateRange = (dateFrom,dateTo) => {
 
 // ---------- END MultiPlot Functions------------------/
 
+const plotterRegistryPromise = loadUserModules('plotters');
+const selectorRegistryPromise = loadUserModules('selectors');
 
+async function loadUserModules(path) {
+  const registry = {};
+  try {
+    const fileList = await fetch(`list-js/${path}`).then(res => res.json());
+    for (const file of fileList) {
+      try {
+        const module = await import(`./static/scripts/${path}/${file}`);
+        for (const [exportName, exportValue] of Object.entries(module)) {
+          if (typeof exportValue === 'function') {
+            console.log(`Registering function: ${exportName} from ${file}`);
+            registry[exportName] = exportValue;
+          }
+        }
+      } catch (error) {
+        console.error(`Failed to load module ${file} from ${path}:`, error);
+      }
+    }
+  } catch (error) {
+    console.error('Failed to fetch file list:', error);
+  }
+  return registry;
+}
 
 function formatUTCDateString(date){
     let dateYear=date.getUTCFullYear();
@@ -553,13 +577,23 @@ function refreshPlots(){
 
 function clearDateAxis(setLast){
     $('.js-plotly-plot:not(multiplot-spatial)').each(function(){
-        Plotly.relayout(this,{'xaxis.showticklabels':false})
+        try {
+            Plotly.relayout(this,{'xaxis.showticklabels':false})
+        } catch {
+            console.log("Unable to set showticklabels on");
+            console.log(this);
+        }
     });
 
     if(setLast===true){
         const lastPlot=$('.js-plotly-plot:not(multiplot-spatial):last').get(0)
         if(typeof(lastPlot)!='undefined'){
-            Plotly.relayout(lastPlot,{'xaxis.showticklabels':true})
+            try {
+                Plotly.relayout(lastPlot,{'xaxis.showticklabels':true})
+            } catch {
+                console.log("Unable to set showticklabels on");
+                console.log(lastPlot)
+            }
         }
     }
 }
@@ -732,24 +766,19 @@ function genPlot(){
     }
 
     const plotGenerated=new Promise((resolve,reject)=>{
-        $.getJSON(prefix+'getPlot',args).done(function(data){
+        $.getJSON(prefix+'getPlot',args).then(async function(data){
             Plotly.purge(plotElement)
 
             placeholder.remove();
 
             const plotType=args['plotType']
 
-            let plotData,layout;
-            const plotFuncName=plotFuncs[plotType];
-
             isSpatial=false;
-            plotFunc=window[plotFuncName];
-            if (plotFunc==null){
-                [plotData,layout]=generic_plot.call(plotElement, data, data['ylabel'],"y")
-            } else {
-                [plotData,layout]=plotFunc.call(plotElement,data);
-            }
-
+            const requestedPlotter=plotFuncs[plotType];
+            const funcRegistry=await plotterRegistryPromise;
+            const plotFuncName = Object.hasOwn(funcRegistry, requestedPlotter) ? requestedPlotter : 'plot_generic_plot';
+            const plotFunc = funcRegistry[plotFuncName];
+            let [plotData,layout]=plotFunc.call(plotElement,data);
 
             if(isSpatial){
                 plotDiv.addClass('multiplot-spatial');
@@ -767,8 +796,6 @@ function genPlot(){
 
             plotElement.removeListener('plotly_relayout',plotRangeChanged)
             plotElement.on('plotly_relayout',plotRangeChanged);
-
-
         }).fail(function(e){
             if(e.status==404){
                 Plotly.purge(plotDiv);

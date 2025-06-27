@@ -224,15 +224,21 @@ def seisdb_keywords(volcano, start, end) -> pandas.DataFrame:
 @generator("Distance (AQMS)")
 def aqms_distances(volcano, start = None, end = None):
     data = get_aqms_data(volcano, start, end)
-    return data[['date', 'distance']].to_dict(orient = "list")
+    data.rename(columns={'distance': 'y'}, inplace=True)
+    ret = data[['date', 'y']].to_dict(orient = "list")
+    ret['ylabel'] = 'Distance (km)'
+    return ret
 
 
 @generator("Magnitude (AQMS)")
 def aqms_magnitude(volcano, start = None, end = None):
     data = get_aqms_data(volcano, start, end)
     data = data.loc[:, ['date', 'mag']]
+    data.rename(columns={'mag': 'y'}, inplace=True)
+    ret = data.to_dict(orient = "list")
+    ret['ylabel'] = "Magnitude"
 
-    return data.to_dict(orient = "list")
+    return ret
 
 
 @generator("Depth (AQMS)")
@@ -251,9 +257,11 @@ def aqms_event_count(volcano, start = None, end = None):
     grouper = pandas.Grouper(level = 0, freq = 'W')
 
     # Too much chaining to get a single-line function :-)
-    counts = data.loc[:, 'mag'].groupby([grouper]).count().reset_index(drop = False).rename(columns = {'mag': 'Count'})
+    counts = data.loc[:, 'mag'].groupby([grouper]).count().reset_index(drop = False).rename(columns = {'mag': 'y'})
 
     #Plotly wants an ISO string for the date, simple json doesn't convert correctly.
     counts['date'] = counts['date'].apply(lambda x: pandas.to_datetime(x).isoformat())
+    ret = counts.to_dict(orient = "list")
+    ret['ylabel'] = "Events/week"
 
-    return counts.to_dict(orient = "list")
+    return ret 

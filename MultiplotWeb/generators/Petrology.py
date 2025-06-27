@@ -10,7 +10,7 @@ import os
 
 import pandas
 
-from . import utils, generator
+from . import config, generator
 
 ##############Petrology###############
 
@@ -18,7 +18,7 @@ from . import utils, generator
 @generator("Diffusion")
 def plot_diffusion(volcano, start = None, end = None):
     data_filename = f"{volcano} Moshrefzadeh.csv"
-    data_path = os.path.join(utils.DATA_DIR, 'Diffusion', data_filename)
+    data_path = os.path.join(config.DATA_DIR, 'Diffusion', data_filename)
     date_cols = [
         'cpx date',
         'cpx date neg',

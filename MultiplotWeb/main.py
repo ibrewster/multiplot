@@ -63,6 +63,8 @@ def headers():
             plottypes.append((tag, item))
 
     args['plotTypes'] = json.dumps(plottypes)
+    
+    # TODO: does this need to be removed / generified?
 
     # Get a list of database plot type options
     with utils.PostgreSQLCursor('multiplot') as cursor:
@@ -166,3 +168,24 @@ def get_descriptions():
     for idx, row in data.iterrows():
         return_obj[row['Category']][row['Dataset']] = row['Description']
     return return_obj
+
+
+def list_js_files(subdir):
+    """Return a list of .js files (not recursive) in a subdir of /static/scripts/."""
+    scripts_path = os.path.join(app.static_folder, 'scripts', subdir)
+    try:
+        files = [
+            f for f in os.listdir(scripts_path)
+            if os.path.isfile(os.path.join(scripts_path, f)) and f.endswith('.js')
+        ]
+        return files
+    except FileNotFoundError:
+        return []
+    
+@app.route('/list-js/plotters')
+def list_plotters():
+    return flask.jsonify(list_js_files('plotters'))
+
+@app.route('/list-js/selectors')
+def list_selectors():
+    return flask.jsonify(list_js_files('selectors'))
