@@ -1,14 +1,14 @@
-function closeTypeSelector(button){
+export function closeTypeSelector(button){
     $(button).closest('.multiplot-typeSelector').hide();
     const select=$(button).closest('.multiplot-typeSelectWrapper').find('.multiplot-plotSelect');
     genPlot.call(select.get(0));
 }
 
-function showTypeSelector(){
+export function showTypeSelector(){
     $(this).closest('div').find('.multiplot-typeSelector').show();
 }
 
-function generate_type_selector(types, selectedArgs, header, label){
+export function generate_type_selector(types, selectedArgs, header, label){
     if(typeof(label)=='undefined'){
         label="Select Types..."
     }

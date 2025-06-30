@@ -1,4 +1,4 @@
-function downloadPlotData(){
+export function downloadPlotData(){
     const parentPlot=$(this).closest('div.multiplot-plot')
     const plotDiv=parentPlot.find('div.multiplot-plotContent');
     const type=parentPlot.find('.multiplot-plotSelect').data('plotType');
@@ -65,7 +65,7 @@ function genericExport(plotDiv){
     return [headers,[xvals,yvals]]
 }
 
-function exportRSDetections(plotDiv){
+export function exportRSDetections(plotDiv){
     //keys are detection types, values are lists of detection dates
     const detections=plotDiv.data('plotVals');
     const headers=['date','type'];
@@ -82,7 +82,7 @@ function exportRSDetections(plotDiv){
     return [headers,[dates,types]];
 }
 
-function exportLocationDepth(plotDiv){
+export function exportLocationDepth(plotDiv){
     const lats=plotDiv.data('lats');
     const lons=plotDiv.data('lons');
     const depth=plotDiv.data('depth');
@@ -91,7 +91,7 @@ function exportLocationDepth(plotDiv){
     return [headers,[lats,lons,depth]];
 }
 
-function exportColorCode(plotDiv){
+export function exportColorCode(plotDiv){
     const colorLookup={
         '#FF0000':'RED',
         '#FFA500':'ORANGE',
@@ -112,7 +112,7 @@ function exportColorCode(plotDiv){
     return [headers,[colorNames,start,end]]
 }
 
-function exportThermalData(plotDiv){
+export function exportThermalData(plotDiv){
     const exportData=plotDiv.data('exportData');
 
     const types=[],dates=[],values=[];
@@ -130,7 +130,7 @@ function exportThermalData(plotDiv){
     return [headers,[types,dates,values]];
 }
 
-function exportDiffusionData(plotDiv){
+export function exportDiffusionData(plotDiv){
     const error=plotDiv.data('errorData');
     const cpx=plotDiv.data('cpx');
     const plag=plotDiv.data('plag');
@@ -157,7 +157,7 @@ function exportDiffusionData(plotDiv){
     return [headers, [types,dates,negs,pos]]
 }
 
-function exportSO2Rate(plotDiv){
+export function exportSO2Rate(plotDiv){
     const xData=plotDiv.data('xValues')
     const yData=plotDiv.data('yValues')
 
@@ -193,7 +193,7 @@ function exportSO2Rate(plotDiv){
     return [headers,[types,dates,lower,rate,upper]];
 }
 
-function exportSO2Mass(plotDiv){
+export function exportSO2Mass(plotDiv){
     const xData=plotDiv.data('xValues')
     const yData=plotDiv.data('yValues')
 

@@ -145,7 +145,7 @@ export class RemoteSensing {
             class: 'multiplot-close',
             text: 'Close',
             click: function() {
-                closeTypeSelector(this); // Assuming closeTypeSelector is defined elsewhere
+                closeTypeSelector(this);
             }
         });
 

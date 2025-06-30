@@ -50,56 +50,7 @@ def api():
 
 @app.route('/headers')
 def headers():
-    args = {
-        'prefix': getPrefix(),
-        'js_funcs': json.dumps(generator.JS_FUNCS)
-    }
-
-    plottypes = []
-    for cat, types in sorted(generator.GEN_CATEGORIES.items(), key = lambda x: x[0]):
-        plottypes.append(f"---{cat}---")
-        for item in sorted(types):
-            tag = "|".join((cat, item))
-            plottypes.append((tag, item))
-
-    args['plotTypes'] = json.dumps(plottypes)
-    
-    # TODO: does this need to be removed / generified?
-
-    # Get a list of database plot type options
-    with utils.PostgreSQLCursor('multiplot') as cursor:
-        type_SQL = """
-        SELECT
-            categories.name||'|'||title,
-            types
-        FROM plotinfo
-        INNER JOIN categories ON categories.id=category
-        WHERE types IS NOT NULL"""
-        cursor.execute(type_SQL)
-        type_lookup = {x[0]: x[1] for x in cursor}
-
-    # Same for the PREEVENTS database
-    with utils.PREEVENTSSQLCursor() as cursor:
-        SQL = """
-SELECT
-    discipline_name||'|'||displayname, --multiplot selector identifier
-    array_agg(DISTINCT device_name)
-FROM disciplines
-INNER JOIN datasets ON datasets.discipline_id=disciplines.discipline_id
-INNER JOIN datastreams ON datastreams.dataset_id=datasets.dataset_id
-INNER JOIN devices ON datastreams.device_id=devices.device_id
-INNER JOIN variables ON variables.variable_id=datastreams.variable_id
-INNER JOIN displaynames ON displaynames.displayname_id=variables.displayname_id
-WHERE variables.unit_id!=6 --id 6 = categorical
-GROUP BY 1
-        """
-        cursor.execute(SQL)
-        preevents_lookup = {x[0]: x[1] for x in cursor}
-        type_lookup.update(preevents_lookup)
-
-    args['plotDataTypes'] = json.dumps(type_lookup)
-
-    return flask.render_template('headers.html', **args)
+    return flask.render_template('headers.html')
 
 def longitudeSort(item):
     lng = item[1][1]
@@ -181,7 +132,7 @@ def list_js_files(subdir):
         return files
     except FileNotFoundError:
         return []
-    
+
 @app.route('/list-js/plotters')
 def list_plotters():
     return flask.jsonify(list_js_files('plotters'))
@@ -189,3 +140,82 @@ def list_plotters():
 @app.route('/list-js/selectors')
 def list_selectors():
     return flask.jsonify(list_js_files('selectors'))
+
+@app.route('/static/scripts/core/constants.js')
+def list_constants():
+    args = {
+        'prefix': getPrefix(),
+        'js_funcs': json.dumps(generator.JS_FUNCS)
+    }
+
+    plottypes = []
+    for cat, types in sorted(generator.GEN_CATEGORIES.items(), key = lambda x: x[0]):
+        plottypes.append(f"---{cat}---")
+        for item in sorted(types):
+            tag = "|".join((cat, item))
+            plottypes.append((tag, item))
+
+    args['plotTypes'] = json.dumps(plottypes)
+
+    # TODO: does this need to be removed / generified?
+
+    # Get a list of database plot type options
+    with utils.PostgreSQLCursor('multiplot') as cursor:
+        type_SQL = """
+        SELECT
+            categories.name||'|'||title,
+            types
+        FROM plotinfo
+        INNER JOIN categories ON categories.id=category
+        WHERE types IS NOT NULL"""
+        cursor.execute(type_SQL)
+        type_lookup = {x[0]: x[1] for x in cursor}
+
+    # Same for the PREEVENTS database
+    with utils.PREEVENTSSQLCursor() as cursor:
+        SQL = """
+SELECT
+    discipline_name||'|'||displayname, --multiplot selector identifier
+    array_agg(DISTINCT device_name)
+FROM disciplines
+INNER JOIN datasets ON datasets.discipline_id=disciplines.discipline_id
+INNER JOIN datastreams ON datastreams.dataset_id=datasets.dataset_id
+INNER JOIN devices ON datastreams.device_id=devices.device_id
+INNER JOIN variables ON variables.variable_id=datastreams.variable_id
+INNER JOIN displaynames ON displaynames.displayname_id=variables.displayname_id
+WHERE variables.unit_id!=6 --id 6 = categorical
+GROUP BY 1
+        """
+        cursor.execute(SQL)
+        preevents_lookup = {x[0]: x[1] for x in cursor}
+        type_lookup.update(preevents_lookup)
+
+    args['plotDataTypes'] = json.dumps(type_lookup)
+
+    js_content = flask.render_template('constants.js', **args)  # or whatever you name your template
+
+    # Create a response with appropriate headers
+    response = flask.make_response(js_content)
+    response.headers['Content-Type'] = 'application/javascript'
+    response.headers['Cache-Control'] = 'no-cache'  # Optional: prevent caching during development
+
+    return response
+
+@app.route('/scripts')
+def list_core_scripts():
+    scripts_path = os.path.join(app.static_folder, 'scripts','core')
+    try:
+        files = [
+            f for f in os.listdir(scripts_path)
+            if os.path.isfile(os.path.join(scripts_path, f))
+            and f.endswith('.js')
+            and f != 'utils.js'
+        ]
+    except FileNotFoundError:
+        files = []
+
+    files.append('constants.js')
+    # We need to make sure to load utils first
+    files = ['utils.js'] + files
+
+    return flask.jsonify(files)
