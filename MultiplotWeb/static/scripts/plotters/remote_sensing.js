@@ -52,7 +52,6 @@ export function rs_detections(data){
     }
 
     $(this).data('plotVals',xVals);
-    $(this).data('exporter',exportRSDetections);
 
     let height=25*y_idx+35
 

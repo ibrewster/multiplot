@@ -1,4 +1,4 @@
-const plotterRegistryPromise = loadUserModules('plotters');
+const plotterRegistry = loadUserModules('plotters'); //this returns a promise. Use as such.
 const selectorRegistryPromise = loadUserModules('selectors');
 
 export function plotSelectSelected(event, ui){
@@ -30,18 +30,7 @@ export async function plotTypeChanged(addArgs, resolve){
     // Custom component function is either a function with the same
     // name as the plot/python function for single-label/selector situations,
     // or a class for category, with static functions for each label
-    const selectorRegistry=await selectorRegistryPromise;
-
-    //Start by looking for category/label based selectors (classes)
-    let selectorFuncName=plotType.replace(/[^a-zA-Z0-9|]/g, '')
-    if (!Object.hasOwn(selectorRegistry, selectorFuncName)){
-        //if not found, try normal function selectors
-        selectorFuncName=plotFuncs[plotType]
-    }
-
-    // will be undefined if neither a function or a class function is found
-    // this is actually normal and expected for most cases.
-    const custFunc=selectorRegistry[selectorFuncName];
+    const custFunc=await getFunc(selectorRegistryPromise,plotType);
 
     //if neither are found, do nothing. Otherwise, run the code and add the HTML block
     if(custFunc){
@@ -90,10 +79,10 @@ export function genPlot(){
             const plotType=args['plotType']
 
             isSpatial=false;
-            const requestedPlotter=plotFuncs[plotType];
-            const funcRegistry=await plotterRegistryPromise;
-            const plotFuncName = Object.hasOwn(funcRegistry, requestedPlotter) ? requestedPlotter : 'plot_generic_plot';
-            const plotFunc = funcRegistry[plotFuncName];
+            const plotFunc=await getFunc(plotterRegistry,plotType,'plot_generic_plot');
+            // if plotFunc is undefined (which it should never be with the default option)
+            // then this will "crash". Arguably, that's as good an option as any, as we can't
+            // continue without a valid plot func.
             let [plotData,layout]=plotFunc.call(plotElement,data);
 
             if(isSpatial){

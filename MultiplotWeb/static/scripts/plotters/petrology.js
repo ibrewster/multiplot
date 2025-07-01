@@ -52,7 +52,6 @@ export function plot_diffusion(data){
         plotData.push(entry)
     }
 
-    $(this).data('exporter',exportDiffusionData);
     $(this).data('errorData',errorData);
 
     const cpx={

@@ -112,7 +112,6 @@ export function so2_mass_combined(data){
 
     $(this).data('yValues',yValues);
     $(this).data('xValues',xValues);
-    $(this).data('exporter',exportSO2Mass);
 
     return [plotData,layout]
 }
@@ -169,7 +168,6 @@ export function so2_em_rate_combined(data){
 
     $(this).data('yValues',yValues);
     $(this).data('xValues',xValues);
-    $(this).data('exporter',exportSO2Rate);
 
     return [plotData,layout]
 }

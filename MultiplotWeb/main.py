@@ -1,6 +1,8 @@
 import glob
 import json
 import os
+import pathlib
+
 import flask
 
 from collections import defaultdict
@@ -121,25 +123,22 @@ def get_descriptions():
     return return_obj
 
 
+@app.route('/list-js/<subdir>')
 def list_js_files(subdir):
     """Return a list of .js files (not recursive) in a subdir of /static/scripts/."""
-    scripts_path = os.path.join(app.static_folder, 'scripts', subdir)
+    base_path = pathlib.Path(app.static_folder) / 'scripts'
+    base_path = base_path.resolve()
+    scripts_path = base_path / subdir
+    scripts_path = scripts_path.resolve()
+
     try:
-        files = [
-            f for f in os.listdir(scripts_path)
-            if os.path.isfile(os.path.join(scripts_path, f)) and f.endswith('.js')
-        ]
-        return files
-    except FileNotFoundError:
-        return []
+        scripts_path.relative_to(base_path)
+    except ValueError:
+        flask.abort(400)
 
-@app.route('/list-js/plotters')
-def list_plotters():
-    return flask.jsonify(list_js_files('plotters'))
 
-@app.route('/list-js/selectors')
-def list_selectors():
-    return flask.jsonify(list_js_files('selectors'))
+    return flask.jsonify([f.name for f in scripts_path.glob('*.js')])
+
 
 @app.route('/static/scripts/core/constants.js')
 def list_constants():

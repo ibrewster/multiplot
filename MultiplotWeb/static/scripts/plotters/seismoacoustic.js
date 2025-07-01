@@ -110,7 +110,6 @@ export function seisdb_keywords(result){
     }
 
     $(this).data('plotVals',xVals);
-    $(this).data('exporter',exportRSDetections);
 
     const topY=sortedRows.length+1
     let height=35*topY+35
@@ -152,7 +151,6 @@ export function eq_location_depth(data){
     const depth=data['Depth_km'];
     const location=$('#multiplot-volcano option:selected').data('loc');
 
-    $(this).data('exporter',exportLocationDepth);
     $(this).data('lats',lat);
     $(this).data('lons',lon);
     $(this).data('depth',depth);

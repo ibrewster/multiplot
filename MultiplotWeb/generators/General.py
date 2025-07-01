@@ -20,13 +20,13 @@ COLORS = {
 
 
 @generator("Color Code")
-def plot_color_code(volcano, start = None, end = None):
+def color_code(volcano, start = None, end = None):
     """
     Function to retrieve the color code "timeseries" from the hans database
-    
+
     DESCRIPTION: Color code of the volcano, based on HANS2/Geodiva
     """
-    
+
     args = [volcano, ]
     SQL_BASE = """
     SELECT sent_utc,color_code

@@ -62,7 +62,7 @@ export function plot_generic_plot(data){
 }
 
 //############ COLOR CODE ##########
-export function plot_color_code(data){
+export function color_code(data){
     const layout={
         height:60,
         margin:{t:10,b:20},
@@ -83,8 +83,6 @@ export function plot_color_code(data){
 
     const plotData=[]
     const start=[],end=[],color=[];
-    $(this).data('exporter',exportColorCode);
-
 
     // the last record in this dataset is a "dummy" record, provided to prevent
     // off-by-one errors when running this loop, and "fill" the last color

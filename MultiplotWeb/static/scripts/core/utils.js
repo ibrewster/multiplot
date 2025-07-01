@@ -23,6 +23,14 @@ export async function loadUserModules(path) {
                     else if (typeof exportValue === 'function') {
                         console.log(`Registering function: ${exportName} from ${path}/${file}`);
                         registry[exportName] = exportValue;
+
+                        // Register aliases with validation
+                        if (exportValue.aliases && Array.isArray(exportValue.aliases)) {
+                            exportValue.aliases.forEach(alias => {
+                                console.log(`Registering alias: ${alias} -> ${exportName} from ${path}/${file}`);
+                                registry[alias] = exportValue;
+                            });
+                        }
                     }
                 }
             } catch (error) {
@@ -49,4 +57,16 @@ export function formatUTCDateString(date){
     if(dateDay<10){ dateDay = "0" + dateDay;}
 
     return `${dateYear}-${dateMonth}-${dateDay}`
+}
+
+export async function getFunc(registry, identifier, default_func=null){
+    const funcRegistry=await registry;
+
+    const funcName = [
+        identifier.replace(/[^a-zA-Z0-9|]/g, ''),
+        plotFuncs[identifier],
+        default_func
+    ].find(candidate => Object.hasOwn(funcRegistry, candidate));
+
+    return funcRegistry[funcName]
 }
