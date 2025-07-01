@@ -1,3 +1,5 @@
+const myScriptTag=document.currentScript
+
 // -----printing three stage ---//
 // Stage 1: size for print page (8" wide")
 export function sizeAndPrint(){

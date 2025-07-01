@@ -1,12 +1,12 @@
-function multiPlot(dest){
-    return new MultiPlot(dest)
-}
-
 let theme='dark'
 let plotDescriptions={}
 let prefix=''
 let parent=''
 const myScriptTag=document.currentScript
+
+function multiPlot(dest){
+    return new MultiPlot(dest)
+}
 
 class MultiPlot {
     constructor(dest){
