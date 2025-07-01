@@ -65,6 +65,7 @@ class MultiPlot {
                 //now that we have the CSS, load the scripts
                 Promise.all(stdScripts).then(()=>{
                     loadCoreModules().then(()=>{
+                        this['addPlot']=createPlotDiv;
                         parent.load(prefix+'body', function(){
                             parent.addClass('multiplot-top-div');
                             initMultiPlot(resolve);
@@ -93,10 +94,6 @@ class MultiPlot {
         }
 
         return refreshPlots();
-    }
-
-    addPlot() {
-        return createPlotDiv();
     }
 
     removePlot(idx){

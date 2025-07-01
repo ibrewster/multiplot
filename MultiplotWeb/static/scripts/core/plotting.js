@@ -44,7 +44,6 @@ export async function plotTypeChanged(addArgs, resolve){
 
     //clear data from plot div
     $(this).parent().siblings('div.multiplot-plotContent').removeData();
-    console.log(resolve)
     genPlot.call(this).then(()=>{
         if(typeof(resolve)!='undefined'){
             resolve();

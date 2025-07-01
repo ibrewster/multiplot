@@ -1,5 +1,3 @@
-const myScriptTag=document.currentScript
-
 // -----printing three stage ---//
 // Stage 1: size for print page (8" wide")
 export function sizeAndPrint(){
@@ -11,7 +9,7 @@ function createNewWindowForPrint(){
 
     myWindow.document.write('<html><head>');
     myWindow.document.write('<script src="https://apps.avo.alaska.edu/multiplot/static/scripts/jquery-3.6.3.min.js"></script>\n');
-    myWindow.document.write(myScriptTag.outerHTML);
+    myWindow.document.write('<script src="api"></script>');
 
     let bodyClass='';
     if (navigator.appVersion.indexOf("Chrome/") != -1) {
@@ -28,8 +26,8 @@ function createNewWindowForPrint(){
 
     const initScript=`<script type="text/javascript">
         $(document).ready(function(){
-            prefix='${prefix}';
-            plot=new MultiPlot(document.getElementById('multiplot-print-div'))
+            const prefix='${prefix}';
+            const plot=new MultiPlot(document.getElementById('multiplot-print-div'))
             plot.initialized.then(()=>{
                 setTheme('light',false);
                 plot.removePlot(0);
@@ -37,12 +35,15 @@ function createNewWindowForPrint(){
                 plot.setDateRange('${dateFrom}','${dateTo}');
                 const plots=${plots}
                 const plotFutures=plots.map(function(element){
+                    debugger
                     const type=element['plotType']
                     const addArgs=element['addArgs']
+                    console.log("Adding plot of type: "+type)
                     return plot.addPlot(type,addArgs)
                 })
 
                 Promise.all(plotFutures).then(()=>{
+                    debugger
                     setTheme('light',false); //not really needed, but it "kicks" the display nicely.
                     calcPageBreaks();
                     window.print();
@@ -66,14 +67,14 @@ function printPage(){
 }
 
 // Stage 3: Restore to original size
-function restoreAfterPrint(){
+export function restoreAfterPrint(){
     //setTheme(multiplotPrePrintStyle);
 }
 
 // ------- Printing Complete ---------//
 const PAGE_HEIGHT=984;
 
-function calcPageBreaks(){
+export function calcPageBreaks(){
     let lastPage=0;
     const plotsTop=$('#multiplot-plots').offset().top
     $('div.multiplot-plot').each(function(){

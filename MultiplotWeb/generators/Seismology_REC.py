@@ -37,10 +37,10 @@ def get_seismology_rec(volcano):
 def eq_frequency_index_rec(volcano, start = None, end = None):
     data = get_seismology_rec(volcano)
     data = data.loc[:, ['date', 'FI']]
-    
+
     data.rename(columns={'FI': 'y',}, inplace=True)
     resp = data.to_dict(orient = "list")
-    resp['ylabel'] = 'Frequency Index'    
+    resp['ylabel'] = 'Frequency Index'
 
     return resp
 
@@ -49,7 +49,7 @@ def eq_frequency_index_rec(volcano, start = None, end = None):
 def eq_magnitude(volcano, start = None, end = None):
     data = get_seismology_rec(volcano)
     data = data.loc[:, ['date', 'Magnitude']]
-    
+
     data.rename(columns={'Magnitude': 'y',}, inplace=True)
     resp = data.to_dict(orient = "list")
     resp['ylabel'] = 'Magnitude'
@@ -69,13 +69,12 @@ def eq_depth(volcano, start = None, end = None):
 def eq_distance(volcano, start = None, end = None):
     data = get_seismology_rec(volcano)
     data = data.loc[data['Magnitude'] > -5, ['date', 'Latitude', 'Longitude']]
-    # TODO: Calculate distance to volcano
     v_lat, v_lon = utils.VOLCANOES[volcano][:2]
     distances = utils.haversine_np(v_lon, v_lat, data['Longitude'], data['Latitude'])
     data.loc[:, 'y'] = distances
-    
+
     resp = data.to_dict(orient = "list")
-    resp['ylabel'] = 'Distance (km)'    
+    resp['ylabel'] = 'Distance (km)'
 
     return resp
 

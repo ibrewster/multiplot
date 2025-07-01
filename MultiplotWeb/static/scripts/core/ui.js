@@ -58,7 +58,6 @@ export function createPlotDiv(type,addArgs){
 
         typeDisplay.prepend(helpDiv)
 
-
         const typeSelect=$('<ul class="multiplot-plotSelectMenu" style="display:none">')
 
         let curCat=null;

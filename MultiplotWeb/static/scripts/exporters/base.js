@@ -1,10 +1,25 @@
 // This is the default exporter function. It will simply create a CSV with x and y from the plot.
 export function genericExport(plotDiv){
-//TODO: make this even more generic - use plotly x/y
-    const yvals=plotDiv.data('yValues');
-    const xvals=plotDiv.data('xValues');
-    const headers=['date','y value'];
-    return [headers,[xvals,yvals]]
+    const data=plotDiv.get(0).data
+    const headers=['date']
+    const vals=[]
+
+    if(data.length==0){
+        alert("Unable to get data to export");
+        return;
+    }
+
+    //x axis/date/time
+    vals.push(data[0].x)
+
+    data.forEach((item)=>{
+        const name=item.name || 'value';
+        const val=item.y;
+        headers.push(name);
+        vals.push(val);
+    })
+
+    return [headers,vals]
 }
 
 export function color_code(plotDiv){
