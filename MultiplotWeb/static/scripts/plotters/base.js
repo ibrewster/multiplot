@@ -20,9 +20,6 @@ export function generic_plot(data,ylabel,ydata,type){
 
     type=type ?? 'scatter'
 
-    $(this).data('yValues',ydata);
-    $(this).data('xValues',data['date'])
-
     const layout={
         height:200,
         margin:{t:5,b:20},
