@@ -16,7 +16,7 @@
 
             $(document).ready(function(){
                 //Initialize the MultiPlot instance
-                plot=new MultiPlot(document.getElementById('multiplot'));
+                const plot = $('#multiplot').MultiPlot();
                 
                 // Optional: Create one plot by default, the color code plot
                 plot.addPlot('General|Color Code');

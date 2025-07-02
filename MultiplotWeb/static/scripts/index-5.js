@@ -4,10 +4,6 @@ let prefix=''
 let parent=''
 const myScriptTag=document.currentScript
 
-function multiPlot(dest){
-    return new MultiPlot(dest)
-}
-
 class MultiPlot {
     constructor(dest){
         //constructor Function
@@ -218,3 +214,18 @@ function loadClassicScript(element){
         document.head.appendChild(script);
     });
 };
+
+
+(function($){
+    $.fn.MultiPlot = function(options) {
+        // Support chaining, but return the MultiPlot instance
+        if (this.length === 0) return null;
+
+        const instance = new MultiPlot(this[0], options);
+
+        // Optional: attach instance to element for later access
+        this.data('MultiPlot', instance);
+
+        return instance;
+    };
+})(jQuery);
