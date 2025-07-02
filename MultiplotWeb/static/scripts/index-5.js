@@ -160,7 +160,7 @@ class MultiPlot {
 
 async function loadCoreModules(){
     try{
-        const fileList = await fetch(`${prefix}scripts`).then(res => res.json());
+        const fileList = await fetch(`${prefix}list-scripts`).then(res => res.json());
         for (const file of fileList) {
             try {
                 const module = await import(`./static/scripts/core/${file}`);
@@ -176,7 +176,7 @@ async function loadCoreModules(){
     }
 }
 
-const loadClassicScript = (src) => {
+function loadClassicScript(src){
     return new Promise((res, rej) => {
         const script = document.createElement('script');
         script.src = src;

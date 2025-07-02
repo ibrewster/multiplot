@@ -140,7 +140,7 @@ def list_js_files(subdir):
     return flask.jsonify([f.name for f in scripts_path.glob('*.js')])
 
 
-@app.route('/static/scripts/core/constants.js')
+@app.route('/dynamic/scripts/constants.js')
 def list_constants():
     args = {
         'prefix': getPrefix(),
@@ -200,7 +200,7 @@ GROUP BY 1
 
     return response
 
-@app.route('/scripts')
+@app.route('/list-scripts')
 def list_core_scripts():
     scripts_path = os.path.join(app.static_folder, 'scripts','core')
     try:
@@ -213,7 +213,6 @@ def list_core_scripts():
     except FileNotFoundError:
         files = []
 
-    files.append('constants.js')
     # We need to make sure to load utils first
     files = ['utils.js'] + files
 

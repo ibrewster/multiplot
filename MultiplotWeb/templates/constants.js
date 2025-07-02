@@ -1,3 +1,3 @@
-export const plotTypes={{plotTypes| safe}}
-export const plotFuncs={{js_funcs | safe}}
-export const plotDataTypes={{plotDataTypes | safe}}
+const plotTypes={{plotTypes| safe}}
+const plotFuncs={{js_funcs | safe}}
+const plotDataTypes={{plotDataTypes | safe}}
