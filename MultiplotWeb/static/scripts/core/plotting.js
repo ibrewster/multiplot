@@ -23,25 +23,6 @@ export function plotSelectSelected(event, ui){
 export async function plotTypeChanged(addArgs, resolve){
     const plotType=$(this).data('plotType');
 
-    //remove any existing custom selectors
-    $(this).siblings().find('.multiplot-customSelector').remove();
-
-    // add any custom components needed.
-    // Custom component function is either a function with the same
-    // name as the plot/python function for single-label/selector situations,
-    // or a class for category, with static functions for each label
-    const custFunc=await getFunc(selectorRegistryPromise,plotType);
-
-    //if neither are found, do nothing. Otherwise, run the code and add the HTML block
-    if(custFunc){
-        const content=custFunc.call(this, addArgs);
-        if(content){
-            const selector=$('<div class="multiplot-customSelector">')
-            selector.append(content);
-            $(this).siblings('.multiplot-selectRight').prepend(selector);
-        }
-    }
-
     //clear data from plot div
     $(this).parent().siblings('div.multiplot-plotContent').removeData();
     genPlot.call(this).then(()=>{
@@ -83,6 +64,26 @@ export function genPlot(){
             // then this will "crash". Arguably, that's as good an option as any, as we can't
             // continue without a valid plot func.
             let [plotData,layout]=plotFunc.call(plotElement,data);
+            
+            //set up selector (if any)
+            //remove any existing custom selectors
+            plotDiv.parent().find('.multiplot-customSelector').remove();
+        
+            // add any custom components needed.
+            // Custom component function is either a function with the same
+            // name as the plot/python function for single-label/selector situations,
+            // or a class for category, with static functions for each label
+            const custFunc=await getFunc(selectorRegistryPromise,plotType);
+        
+            //if neither are found, do nothing. Otherwise, run the code and add the HTML block
+            if(custFunc){
+                const content=custFunc.call(plotDiv, args['addArgs']);
+                if(content){
+                    const selector=$('<div class="multiplot-customSelector">')
+                    selector.append(content);
+                    $(plotDiv).parent().find('.multiplot-selectRight').prepend(selector);
+                }
+            }
 
             if(isSpatial){
                 plotDiv.addClass('multiplot-spatial');

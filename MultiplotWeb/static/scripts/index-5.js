@@ -54,7 +54,7 @@ class MultiPlot {
                     let newElement=element; //default, for css/link/etc tags
 
                     if(element instanceof HTMLScriptElement){
-                        const loadPromise=loadClassicScript(element.src);
+                        const loadPromise=loadClassicScript(element);
                         stdScripts.push(loadPromise);
                     } else {
                         document.head.appendChild(newElement);
@@ -176,19 +176,30 @@ async function loadCoreModules(){
     }
 }
 
-function loadClassicScript(src){
+function loadClassicScript(element){
     return new Promise((res, rej) => {
         const script = document.createElement('script');
-        script.src = src;
+        if(element.text){
+            script.text=element.text;
+        }
         script.async = false; // Important for order if dependencies exist
-        script.onload = () => {
-            console.log(`Classic script loaded: ${src}`);
-            res();
-        };
-        script.onerror = (e) => {
-            console.error(`Error loading classic script: ${src}`, e);
-            res(); // Resolve even on error to not block Promise.all for other scripts
-        };
+        
+        if(element.src){
+            script.src = element.src;
+            
+            script.onload = () => {
+                console.log(`Classic script loaded: ${element.src}`);
+                res();
+            };
+            script.onerror = (e) => {
+                console.error(`Error loading classic script: ${element.src}`, e);
+                res(); // Resolve even on error to not block Promise.all for other scripts
+            };
+                
+        } else {
+            setTimeout(res, 0); // Let script execute before resolving
+        }
+        
         document.head.appendChild(script);
     });
 };

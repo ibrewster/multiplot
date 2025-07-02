@@ -35,10 +35,14 @@ function gen_db_data_def(data, name, idx, dataOverrides, plotErr){
 }
 
 export function plot_preevents_dataset(data){
-    return plot_db_dataset(data);
+    return plot_db_dataset.call(this, data);
 }
 
 export function plot_db_dataset(data){
+    //store the types for this plot, for use in the selector
+
+    $(this).data('datasetTypes',data['types']);
+
     const labels=data['labels']
     delete data['labels'];
     const plotOverrides=data['plotOverrides'];

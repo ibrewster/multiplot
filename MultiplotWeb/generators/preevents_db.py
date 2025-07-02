@@ -293,6 +293,7 @@ def plot_preevents_dataset(volcano, start=None, end=None):
             overrides = overrides[0]
 
     result ={
+        'types': types,
         'labels': units,
         'plotOverrides': overrides,
     }

@@ -12,7 +12,7 @@ export function plot_db_dataset(addArgs){
 export function plot_preevents_dataset(addArgs){
     const plotType=$(this).data('plotType');
 
-    const typeList=plotDataTypes[plotType];
+    const typeList=$(this).data('types');
     if(typeList==null || typeof(typeList)=='undefined'){
         return null;
     }

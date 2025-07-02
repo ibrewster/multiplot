@@ -59,14 +59,17 @@ export class RemoteSensing {
         header=header ?? "Select Plot Filters"
 
         const plotType=$(this).data('plotType');
-        const typeList=plotDataTypes[plotType];
+        const typeList=$(this).data('datasetTypes') || []; //custom for preevents DB
 
         if(typeof(selectedArgs)!='undefined'){
-            selectedArgs=new URLSearchParams(selectedArgs).getAll('types');
+            selectedArgs=new URLSearchParams(selectedArgs);
         }
         else{
-            selectedArgs=[];
+            selectedArgs=new URLSearchParams();
         }
+        const selectedTypes=selectedArgs.getAll('types');
+        const selectedFilters=selectedArgs.getAll('filters');
+        
 
         const selButton = $('<button>', {
             text: label,
@@ -114,7 +117,7 @@ export class RemoteSensing {
         ]
 
         for(const [item_label,item_value] of filters){
-            const isChecked= selectedArgs.includes(item_value);
+            const isChecked= selectedFilters.includes(item_value);
             const checkID=`${item_value}Filter_${RemoteSensing.instanceID}`;
 
             const checkbox = $('<input>', {
@@ -161,7 +164,6 @@ export class RemoteSensing {
             typesFooter
         );
 
-
         for(let item of typeList){
             let item_label, item_value;
             if (Array.isArray(item) && item.length==2){
@@ -174,7 +176,7 @@ export class RemoteSensing {
                 console.error('The items must be either a string for an array with exactly two elements.')
             }
 
-            const isChecked= (selectedArgs.length==0 || selectedArgs.includes(item_value));
+            const isChecked= (selectedTypes.length==0 || selectedTypes.includes(item_value));
             const checkID=`${item_value}Type_${RemoteSensing.instanceID}`
 
             const checkbox = $('<input>', {
