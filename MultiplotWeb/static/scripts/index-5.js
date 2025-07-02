@@ -11,7 +11,7 @@ function multiPlot(dest){
 class MultiPlot {
     constructor(dest){
         //constructor Function
-        parent=$(dest)
+        parent=$(dest);
 
         // We could skip all this if we just wanted to assume we are loading remote.
         const host=window.location.hostname
@@ -39,41 +39,51 @@ class MultiPlot {
             prefix+=serverPrefix
         }
 
-        // get the CSS headers
-        this.initialized=new Promise((resolve) => {
-            $.get(prefix+'headers')
-            .fail(() => {
-                console.log('Unable to fetch MultiPlot headers');
-            })
-            .done((headers) => {
-                //append the stylesheets to the header
-                const parsedHtml=$.parseHTML(headers,null,true);
-                const stdScripts=[]
+        // get the headers and scripts
+        this.initialized = this._initialize();
+    }
+    
+    async _initialize() {
+        const response = await fetch(prefix+'headers');
+        
+        if(!response.ok){
+            console.log('Unable to fetch MultiPlot headers');
+        }
+        
+        const headers = await response.text();
+        
+        //append the stylesheets to the header
+        const parsedHtml=$.parseHTML(headers,null,true);
+        const stdScripts=[]
 
-                parsedHtml.forEach( (element) => {
-                    let newElement=element; //default, for css/link/etc tags
+        parsedHtml.forEach( (element) => {
+            if(element instanceof HTMLScriptElement){
+                stdScripts.push(loadClassicScript(element));
+            } else {
+                document.head.appendChild(element);
+            }
+        });
 
-                    if(element instanceof HTMLScriptElement){
-                        const loadPromise=loadClassicScript(element);
-                        stdScripts.push(loadPromise);
-                    } else {
-                        document.head.appendChild(newElement);
-                    }
-
-                });
-
-                //now that we have the CSS, load the scripts
-                Promise.all(stdScripts).then(()=>{
-                    loadCoreModules().then(()=>{
-                        this['addPlot']=createPlotDiv;
-                        parent.load(prefix+'body', function(){
-                            parent.addClass('multiplot-top-div');
-                            initMultiPlot(resolve);
-                        })
-                    })
-                })
-            })
-        })
+        //now that we have the "standard" headers, load the modules
+        const scriptsPromise = Promise.all(stdScripts);
+        const modulesPromise = loadCoreModules();
+        const bodyResponsePromise = fetch(`${prefix}body`);
+        
+        // Wait for all of them to finish before proceeding
+        const [_, __, bodyResponse] = await Promise.all([
+            scriptsPromise,
+            modulesPromise,
+            bodyResponsePromise
+        ]);
+        
+        if(!bodyResponse.ok){
+            console.error("Unable to load MultiPlot body HTML");
+            return;
+        }
+        const bodyHTML=await bodyResponse.text();
+        parent.html(bodyHTML);
+        parent.addClass('multiplot-top-div');
+        await initMultiPlot();
     }
 
     setVolcano(volc){
@@ -96,6 +106,11 @@ class MultiPlot {
         return refreshPlots();
     }
 
+    async addPlot(...args){
+        await this.initialized;
+        createPlotDiv(...args);
+    }
+    
     removePlot(idx){
         removePlotDiv.call($('.multiplot-plotContent').eq(idx))
     }

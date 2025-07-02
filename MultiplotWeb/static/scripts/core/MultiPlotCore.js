@@ -1,4 +1,4 @@
-export function initMultiPlot(resolve){
+export async function initMultiPlot(){
     if(localStorage.theme){
         theme=localStorage.getItem('theme');
     }
@@ -39,23 +39,15 @@ export function initMultiPlot(resolve){
 
     $('#multiplot-print').click(sizeAndPrint);
 
-    // Create one plot by default, the color code plot
-    createPlotDiv('General|Color Code')
-
     $('#multiplot-menuGuard').click(hideMenu)
 
     $('#multiplot-plots').sortable({
         handle:'div.multiplot-sort',
         update:refreshPlots
     })
-
-    $.getJSON(prefix+'getDescriptions').
-    done(function(data){
-        plotDescriptions=data
-        if(typeof(resolve)!='undefined'){
-            resolve();
-        }
-    });
+    
+    const response=await fetch(prefix+'getDescriptions');
+    plotDescriptions = response.ok ? await response.json() : {};
 
     if(window.matchMedia) {
         const mediaQueryList=window.matchMedia('print');

@@ -15,7 +15,11 @@
             let plot=null;
 
             $(document).ready(function(){
-                plot=new MultiPlot(document.getElementById('multiplot'))
+                //Initialize the MultiPlot instance
+                plot=new MultiPlot(document.getElementById('multiplot'));
+                
+                // Optional: Create one plot by default, the color code plot
+                plot.addPlot('General|Color Code');
             })
 
         </script>
