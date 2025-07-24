@@ -74,7 +74,7 @@ def rs_detections(volcano, start, end) -> pandas.DataFrame:
 
     types_string = flask.request.args.get('addArgs')
     types_dict = parse_qs(types_string)
-    types = types_dict['types']
+    types = types_dict.get('types', list(rs_types.keys()))
     selectedTypes = []
     for rstype in types:
         selectedTypes += rs_types[rstype]
