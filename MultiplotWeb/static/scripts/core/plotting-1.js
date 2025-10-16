@@ -74,6 +74,8 @@ export async function genPlot(){
     //call getPlotArgs again now that the selector is guaranteed to exist.
     args=getPlotArgs.call(this);
     
+    args['_'] = new Date().getTime(); // Add a unique timestamp to the args object
+
     const plotGenerated=new Promise((resolve,reject)=>{
         $.getJSON(prefix+'getPlot',args).then(async function(data){
             Plotly.purge(plotElement)
@@ -86,7 +88,6 @@ export async function genPlot(){
             // then this will "crash". Arguably, that's as good an option as any, as we can't
             // continue without a valid plot func.
             let [plotData,layout]=plotFunc.call(plotElement,data);
-        
 
             if(isSpatial){
                 plotDiv.addClass('multiplot-spatial');

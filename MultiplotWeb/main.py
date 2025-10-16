@@ -65,7 +65,7 @@ def headers():
             plottypes.append((tag, item))
 
     args['plotTypes'] = json.dumps(plottypes)
-    
+
     return flask.render_template('headers.html', **args)
 
 def longitudeSort(item):
@@ -103,7 +103,7 @@ def get_plot():
         start_date = None
 
     if end_date:
-        end_date = parse(end_date)
+        end_date = parse(end_date).replace(hour=23, minute=59, second=59, microsecond=999999)
     else:
         end_date = None
 

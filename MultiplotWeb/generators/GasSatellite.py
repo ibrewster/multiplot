@@ -20,13 +20,13 @@ def so2_rate(volcano, start, end) -> pandas.DataFrame:
     data = get_detection_data(volcano, start, end)
 
     # only SO2 detections for the rate plot
-    data = data[data['type'] == 9]
+    data = data[data['type'] == 9].copy()
     data.dropna(inplace = True)
     if data.size <= 0:
         raise FileNotFoundError
 
     data['date'] = data['date'].apply(lambda x: x.isoformat())
-    
+
     return data.to_dict(orient = "list")
 
 
