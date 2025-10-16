@@ -33,15 +33,17 @@ export async function plotTypeChanged(addArgs, resolve){
 }
 
 let isSpatial=false;
-export function genPlot(){
+export async function genPlot(){    
     const plotDiv=$(this).parent().siblings('div.multiplot-plotContent');
     const plotContainer=$(this).closest('div.multiplot-plot');
     const plotElement=plotDiv.get(0);
     const showXLabels=plotContainer.is(':last-child');
-    const args=getPlotArgs.call(this);
-    const placeholder=plotDiv.find('.multiplot-placeholder')
+    const placeholder=plotDiv.find('.multiplot-placeholder');
+    let args=getPlotArgs.call(this);
+    const plotType=args.plotType;
 
-    if(typeof(args.plotType)=='undefined'){
+
+    if(typeof(plotType)=='undefined'){
         //no plot selected. Don't do anything
         return;
     }
@@ -49,14 +51,34 @@ export function genPlot(){
     if(placeholder.length>0){
         placeholder.text("Fetching data. Please wait...")
     }
+    
+    //set up selector (if any)
+    //remove any existing custom selectors
+    plotDiv.parent().find('.multiplot-customSelector').remove();
+    // add any custom components needed.
+    // Custom component function is either a function with the same
+    // name as the plot/python function for single-label/selector situations,
+    // or a class for category, with static functions for each label
+    const custFunc=await getFunc(selectorRegistryPromise,plotType);
 
+    //if neither are found, do nothing. Otherwise, run the code and add the HTML block
+    if(custFunc){
+        const content=await custFunc.call(plotDiv, args.addArgs);
+        if(content){
+            const selector=$('<div class="multiplot-customSelector">')
+            selector.append(content);
+            $(plotDiv).parent().find('.multiplot-selectRight').prepend(selector);
+        }
+    }
+    
+    //call getPlotArgs again now that the selector is guaranteed to exist.
+    args=getPlotArgs.call(this);
+    
     const plotGenerated=new Promise((resolve,reject)=>{
         $.getJSON(prefix+'getPlot',args).then(async function(data){
             Plotly.purge(plotElement)
 
             placeholder.remove();
-
-            const plotType=args['plotType']
 
             isSpatial=false;
             const plotFunc=await getFunc(plotterRegistry,plotType,'plot_generic_plot');
@@ -64,26 +86,7 @@ export function genPlot(){
             // then this will "crash". Arguably, that's as good an option as any, as we can't
             // continue without a valid plot func.
             let [plotData,layout]=plotFunc.call(plotElement,data);
-            
-            //set up selector (if any)
-            //remove any existing custom selectors
-            plotDiv.parent().find('.multiplot-customSelector').remove();
         
-            // add any custom components needed.
-            // Custom component function is either a function with the same
-            // name as the plot/python function for single-label/selector situations,
-            // or a class for category, with static functions for each label
-            const custFunc=await getFunc(selectorRegistryPromise,plotType);
-        
-            //if neither are found, do nothing. Otherwise, run the code and add the HTML block
-            if(custFunc){
-                const content=custFunc.call(plotDiv, args['addArgs']);
-                if(content){
-                    const selector=$('<div class="multiplot-customSelector">')
-                    selector.append(content);
-                    $(plotDiv).parent().find('.multiplot-selectRight').prepend(selector);
-                }
-            }
 
             if(isSpatial){
                 plotDiv.addClass('multiplot-spatial');
@@ -93,7 +96,6 @@ export function genPlot(){
             }
 
             const config={'responsive':true}
-
 
             layout=setLayoutDefaults(layout,showXLabels)
 

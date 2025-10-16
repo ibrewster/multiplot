@@ -145,6 +145,15 @@ div.multiplot-typeSelector{
     z-index:101;
 }
 
+div.multiplot-GeodesyOpts form{
+    padding-left:10px;
+    margin-bottom:10px;
+}
+
+select.geodesyStation{
+    margin-left:5px;
+}
+
 div.multiplot-typeHeader{
     font-weight:bold;
     text-align:center;
