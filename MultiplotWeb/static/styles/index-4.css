@@ -74,7 +74,9 @@ div.multiplot-top-div{
     align-self: center;
 }
 
-.multiplot-plot:hover .multiplot-right, .multiplot-plot:hover .multiplot-selectRight{
+.multiplot-plot:hover .multiplot-right, 
+.multiplot-plot:hover .multiplot-selectRight,
+.multiplot-selectRight:focus-within{
     display:block
 }
 
