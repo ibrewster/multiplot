@@ -152,7 +152,11 @@ div.multiplot-GeodesyOpts form{
     margin-bottom:10px;
 }
 
-select.geodesyStation{
+select.geodesySelect{
+    margin-left:5px;
+}
+
+.geodesyOpts label{
     margin-left:5px;
 }
 

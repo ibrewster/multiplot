@@ -84,8 +84,9 @@ export function createPlotDiv(type,addArgs){
                 opt.data('category',curCatTitle)
                 opt.data('label',label)
                 if(typeof(type)!='undefined' && type==tag){
-                    typeDisplay.data('plotType',tag)
-                    typeDisplay.find('.multiplot-typeString').html(`${curCatTitle} - ${label}`)
+                    typeDisplay.data('plotType',tag);
+                    const displayHTML=`${curCatTitle} - ${label}<span class="mp-typeStringSuffix"></span>`
+                    typeDisplay.find('.multiplot-typeString').html(displayHTML);
                 }
                 curCat.append(opt)
             }

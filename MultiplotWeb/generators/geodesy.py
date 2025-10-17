@@ -27,6 +27,7 @@ def plot_geodesy_dataset(volcano, start, end):
     query_string = flask.request.args.get('addArgs', '')
     args = parse_qs(query_string)
     station = args.get('station')
+    base = args.get('base')
    
     if station is None:
         sta_req = requests.get(f'https://apps.avo.alaska.edu/geodesy/api/sites/{volcano}/stations')
@@ -49,6 +50,9 @@ def plot_geodesy_dataset(volcano, start, end):
         'RTULon': volc_info['lon'],
         'output': 'json',
     }
+    
+    if base is not None:
+        data_args['baseline'] = base
     
     data_req = requests.get('https://apps.avo.alaska.edu/geodesy/api/gnss/data', params=data_args)
     if data_req.status_code != 200:

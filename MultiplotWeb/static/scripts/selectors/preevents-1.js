@@ -3,7 +3,7 @@ export class RemoteSensing {
 
     static filterChanged(){
         const wrapper = $(this).closest('.multiplot-typeSelectWrapper');
-        const cur_type = wrapper.find('.multiplot-typeString');
+        const cur_type = wrapper.find('.mp-typeStringSuffix');
 
         if (!cur_type.length) {
             console.warn('No .multiplot-typeString element found in wrapper');
@@ -19,13 +19,12 @@ export class RemoteSensing {
             return isChecked !== defaultState; // Filter active if state differs
         });
 
-        const currentHtml = cur_type.html();
         const filteredText = " (filtered)";
 
-        if (isFiltered && !currentHtml.endsWith(filteredText)) {
-            cur_type.html(currentHtml + filteredText);
-        } else if (!isFiltered && currentHtml.endsWith(filteredText)) {
-            cur_type.html(currentHtml.replace(filteredText, ""));
+        if (isFiltered) {
+            cur_type.html(filteredText);
+        } else {
+            cur_type.empty();
         }
     }
 
