@@ -7,7 +7,7 @@ from flask_cors import CORS
 app = Flask(__name__)
 cors = CORS(app)
 
-from . import main, utils
+from . import main, utils, pdf
 utils.get_volcs()
 
 # Load data retreval "plugins"

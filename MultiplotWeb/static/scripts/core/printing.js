@@ -4,6 +4,60 @@ export function sizeAndPrint(){
     createNewWindowForPrint();
 }
 
+export function generatePDF(){
+    const plots=[];
+    const firstPlot=$('.js-plotly-plot').first();
+    if(!firstPlot.length){
+        alert('No plots to print!');
+        return;
+    }
+    const fudge=20; //fudge factor to get things to match up better
+    const plotWidth=firstPlot.width()-firstPlot[0].layout.margin.l-firstPlot[0].layout.margin.r+fudge;
+    $('.js-plotly-plot').each(function(){
+        const data=this.data;
+        const layout=structuredClone(this.layout); // deep copy the layout;
+        const title=$(this).closest('div.multiplot-plot').find('div.multiplot-typeString').html();
+        layout['title']={
+            'text':title,
+            'x': 0.5,
+            'xanchor': 'center',
+            'font':{
+                'color':'rgb(204,204,220)',
+                'size':12
+            }
+        };
+        layout['margin']['t']+=24; //add space for title
+        layout['margin']['pad']=0;
+        layout['height']=this.offsetHeight+24; //add space for title
+        layout['width']=plotWidth;
+        plots.push({data:data,layout:layout});
+    });
+
+    const payload=JSON.stringify(plots);
+
+    fetch('generatePDF',{
+        method:'POST',
+        headers:{
+            'Content-Type':'application/json'
+        },
+        body:payload
+    })
+    .then(response=>response.blob())
+    .then(blob=>{
+        const url=window.URL.createObjectURL(blob);
+        const a=document.createElement('a');
+        a.href=url;
+        a.download='multiplot.pdf';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+    })
+    .catch(error=>{
+        console.error('Error generating PDF:',error);
+    });
+}
+
 function createNewWindowForPrint(){
     const myWindow=window.open('','PRINT','width=736px,height=1056px')
 

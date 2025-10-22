@@ -1,4 +1,6 @@
 plotly
+kaleido
+pymupdf
 obspy
 matplotlib
 h5py

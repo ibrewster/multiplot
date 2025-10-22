@@ -37,7 +37,7 @@ export async function initMultiPlot(){
     $('.multiplot-rangeDate').blur(refreshPlots);
     $('#multiplot-volcano').change(refreshPlots);
 
-    $('#multiplot-print').click(sizeAndPrint);
+    $('#multiplot-print').click(generatePDF);
 
     $('#multiplot-menuGuard').click(hideMenu)
 
