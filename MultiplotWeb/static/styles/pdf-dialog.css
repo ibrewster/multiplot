@@ -1,0 +1,246 @@
+/* Base styling for the PDF options dialog */
+#mp-pdfOptionsDialog * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+#mp-pdfOptionsDialog {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: grid;
+    grid-template-rows: 15vh auto 1fr;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+
+#mp-pdfOptionsDialog .dialog {
+    background:white;
+    grid-row: 2;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    overflow:hidden;
+    width: 400px;
+    animation: slideUp 0.3s ease-out;
+    transition: background 0.2s, color 0.2s;
+}
+
+#mp-pdfOptionsDialog.dark .dialog {
+    background: #1f2937;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+#mp-pdfOptionsDialog .dialog-header {
+    padding: 24px 24px 20px;
+    border-bottom: 1px solid #e5e7eb;
+    transition: border-color 0.2s;
+}
+
+#mp-pdfOptionsDialog.dark .dialog-header {
+    border-bottom-color: #374151;
+}
+
+#mp-pdfOptionsDialog .dialog-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1f2937;
+    transition: color 0.2s;
+}
+
+#mp-pdfOptionsDialog.dark .dialog-title {
+    color: #f9fafb;
+}
+
+#mp-pdfOptionsDialog .dialog-body {
+    padding: 24px;
+}
+
+#mp-pdfOptionsDialog .option-group {
+    margin-bottom: 28px;
+}
+
+#mp-pdfOptionsDialog .option-group:last-child {
+    margin-bottom: 0;
+}
+
+#mp-pdfOptionsDialog .option-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+#mp-pdfOptionsDialog .option-title {
+    font-size: 16px;
+    font-weight: 500;
+    color: #1f2937;
+    transition: color 0.2s;
+}
+
+#mp-pdfOptionsDialog.dark .option-title {
+    color: #f9fafb;
+}
+
+#mp-pdfOptionsDialog .option-description {
+    font-size: 13px;
+    color: #6b7280;
+    transition: color 0.2s;
+}
+
+#mp-pdfOptionsDialog.dark .option-description {
+    color: #9ca3af;
+}
+
+#mp-pdfOptionsDialog .mode-selector {
+    display: flex;
+    background: #f3f4f6;
+    border-radius: 10px;
+    padding: 3px;
+    transition: background 0.2s;
+}
+
+#mp-pdfOptionsDialog.dark .mode-selector {
+    background: #374151;
+}
+
+#mp-pdfOptionsDialog .mode-option {
+    flex: 1;
+    padding: 8px 16px;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+#mp-pdfOptionsDialog.dark .mode-option {
+    color: #9ca3af;
+}
+
+#mp-pdfOptionsDialog .mode-option.active {
+    background: white;
+    color: #1f2937;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+#mp-pdfOptionsDialog.dark .mode-option.active {
+    background: #1f2937;
+    color: #f9fafb;
+}
+
+#mp-pdfOptionsDialog .dialog-footer {
+    padding: 16px 24px;
+    background: #f9fafb;
+    display: flex;
+    gap: 12px;
+    transition: background 0.2s;
+}
+
+#mp-pdfOptionsDialog.dark .dialog-footer {
+    background: #111827;
+}
+
+#mp-pdfOptionsDialog .btn {
+    flex: 1;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    height: unset;
+}
+
+#mp-pdfOptionsDialog .btn-cancel {
+    background: white;
+    color: #6b7280;
+    border: 1px solid #e5e7eb;
+    transition: all 0.2s;
+}
+
+#mp-pdfOptionsDialog.dark .btn-cancel {
+    background: #374151;
+    color: #d1d5db;
+    border-color: #4b5563;
+}
+
+#mp-pdfOptionsDialog .btn-cancel:hover {
+    background: #f9fafb;
+}
+
+#mp-pdfOptionsDialog.dark .btn-cancel:hover {
+    background: #4b5563;
+}
+
+#mp-pdfOptionsDialog .btn-cancel:active {
+    transform: scale(0.98);
+}
+
+#mp-pdfOptionsDialog .btn-generate {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+}
+
+#mp-pdfOptionsDialog .btn-generate:hover {
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+#mp-pdfOptionsDialog .btn-generate:active {
+    transform: scale(0.98);
+}
+
+#mp-pdfOptionsDialog .btn-generate.loading {
+    pointer-events: none;
+    opacity: 0.8;
+}
+
+#mp-pdfOptionsDialog .btn-generate.loading .btn-text {
+    opacity: 0;
+}
+
+#mp-pdfOptionsDialog .spinner {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+#mp-pdfOptionsDialog .btn-generate.loading .spinner {
+    display: flex;
+}
+
+#mp-pdfOptionsDialog .spinner::after {
+    content: "";
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}

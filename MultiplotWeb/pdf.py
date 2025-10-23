@@ -6,13 +6,16 @@ import pymupdf
 
 from . import app
 
-def clean_layout(layout):
-    layout['paper_bgcolor'] = 'rgb(24, 28, 30)'
+def clean_layout(layout, mode):
+    if mode == 'dark':
+        layout['paper_bgcolor'] = 'rgb(24, 28, 30)'
         
 
 @app.route('/generatePDF', methods=["POST"])
 def generate_pdf():
-    plots = flask.request.json
+    data = flask.request.json
+    plots = data['plots']
+    mode = data['mode']
     
     # Adjust the bottom margin and height of the plot
     plots[-1]['layout']['height'] += plots[-1]['layout']['margin']['b']
@@ -22,7 +25,7 @@ def generate_pdf():
     
     total_height = 0
     for plotDict in plots:
-        clean_layout(plotDict['layout'])
+        clean_layout(plotDict['layout'], mode)
         
         plot = go.Figure(plotDict)
         
@@ -36,25 +39,32 @@ def generate_pdf():
         
         
     width = pdf_buffers[0][0].rect.width
+    left = 0
+    pageWidth = width
     
+    if data.get('widthMode', 'display') == "letter":
+        pageWidth = 612
+        left = (pageWidth - width) / 2
+        
     output = pymupdf.open()
-    output_page = output.new_page(width=width, height=total_height)
+    output_page = output.new_page(width=pageWidth, height=total_height)
     
-    bg_color = (0, 0, 0)
-    rect = output_page.rect
-    output_page.draw_rect(rect, color=None, fill=bg_color)
+    if mode == 'dark':
+        bg_color = (0, 0, 0)
+        rect = output_page.rect
+        output_page.draw_rect(rect, color=None, fill=bg_color)
     
     y_offset = 0
     for plot in pdf_buffers:
         page = plot[0]
         page_height = page.rect.height
         
-        target_rect = pymupdf.Rect(0, y_offset, width, y_offset + page_height)
+        target_rect = pymupdf.Rect(left, y_offset, left + width, y_offset + page_height)
         output_page.show_pdf_page(target_rect, plot, 0)
         y_offset += page_height
     
     output_buffer = io.BytesIO()
-    output.save(output_buffer)
+    output.save(output_buffer, garbage=4, deflate=True)
     output.close()
     output_buffer.seek(0)
     

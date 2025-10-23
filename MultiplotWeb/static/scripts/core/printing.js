@@ -1,149 +1,139 @@
-// -----printing three stage ---//
-// Stage 1: size for print page (8" wide")
-export function sizeAndPrint(){
-    createNewWindowForPrint();
+import { setTheme } from "./ui-1.js";
+
+let originalMode=theme;
+let currentMode=theme;
+function setupPDFDialog() {
+    console.log('Setting up PDF dialog');
+    //set up the PDF generation dialog buttons
+    $(document).on('click','#mp-pdfOptionsDialog .btn-cancel',function(){
+        closePDFDialog();
+    });
+
+    $(document).on('click','#mp-pdfOptionsDialog .btn-generate', async function(){
+        $('#mp-pdfOptionsDialog .btn-generate').addClass('loading');
+        try {
+            await _generatePDF();
+        } catch (error) {
+            alert('Error generating PDF: ' + error);
+            $('#mp-pdfOptionsDialog .btn-generate').removeClass('loading');
+            return;
+        } 
+
+        closePDFDialog();
+    });
+
+    $(document).on('click','#mp-pdfOptionsDialog .mode-option',modeButtonClickHandler);
+}
+
+function closePDFDialog(){
+    $('#mp-pdfOptionsDialog .btn-generate').removeClass('loading');
+    $('#mp-pdfOptionsDialog').hide();
+    setTheme(originalMode, false ); //restore previous mode
+}
+
+function modeButtonClickHandler(){
+    const button = $(this);
+    const parent = this.parentElement;
+    $(parent).find('.mode-option').removeClass('active');
+    $(this).addClass('active');
+
+    if(button.data('mode')){ //dark/light mode option
+        const darkMode = button.data('mode')==='dark';
+        const pdfDialog = $('#mp-pdfOptionsDialog');
+        pdfDialog.toggleClass('dark', darkMode);
+        setTheme(button.data('mode'), false);
+        currentMode=button.data('mode');
+    }
 }
 
 export function generatePDF(){
+    originalMode=theme; //store current theme so we can restore it on close
+
+    // Set the appearance (dark/light) button to match current theme each time dialog opens
+    const pdfDialog = $('#mp-pdfOptionsDialog');
+    pdfDialog.find('.appearance-option').removeClass('active');
+    const match = pdfDialog.find(`.appearance-option[data-mode="${originalMode}"]`);
+    if(match.length){
+        match.addClass('active');
+    }
+    pdfDialog.toggleClass('dark', originalMode === 'dark');
+
+    pdfDialog.show();
+}
+
+async function _generatePDF(){
+    const titleHeight=24;
     const plots=[];
-    const firstPlot=$('.js-plotly-plot').first();
-    if(!firstPlot.length){
+    const plotElements = document.querySelectorAll('.js-plotly-plot');
+    if(!plotElements.length){
         alert('No plots to print!');
         return;
     }
-    const fudge=20; //fudge factor to get things to match up better
-    const plotWidth=firstPlot.width()-firstPlot[0].layout.margin.l-firstPlot[0].layout.margin.r+fudge;
-    $('.js-plotly-plot').each(function(){
-        const data=this.data;
-        const layout=structuredClone(this.layout); // deep copy the layout;
-        const title=$(this).closest('div.multiplot-plot').find('div.multiplot-typeString').html();
+
+    let plotWidth;
+    // target the width-option specifically so appearance-option.active isn't confused for width
+    const widthOption=$('#mp-pdfOptionsDialog .width-option.active').data('width');
+    if(widthOption==='letter'){
+        plotWidth=816 - 96; //letter width minus 0.5 inch margins (plotly uses 96dpi)
+    } else {
+        //use display width
+        const firstPlot=$(plotElements[0]);
+        plotWidth=firstPlot.width()-firstPlot[0].layout.margin.l-firstPlot[0].layout.margin.r;
+    }
+    
+    for (const el of plotElements) {
+        const data=el.data;
+        const layout=structuredClone(el.layout); // deep copy the layout;
+        const title=$(el).closest('div.multiplot-plot').find('div.multiplot-typeString').html();
         layout['title']={
             'text':title,
             'x': 0.5,
             'xanchor': 'center',
             'font':{
-                'color':'rgb(204,204,220)',
                 'size':12
             }
         };
-        layout['margin']['t']+=24; //add space for title
+
+        if(currentMode==='dark'){
+            layout['title']['font']['color']='rgb(204,204,220)';
+        }
+
+        layout['margin']['t']+=titleHeight; //add space for title
         layout['margin']['pad']=0;
-        layout['height']=this.offsetHeight+24; //add space for title
+        layout['height']=el.offsetHeight+titleHeight; //add space for title
         layout['width']=plotWidth;
         plots.push({data:data,layout:layout});
-    });
+    }
 
-    const payload=JSON.stringify(plots);
-
-    fetch('generatePDF',{
+    const args={
+        plots:plots,
+        mode:currentMode,
+        widthMode:widthOption
+    };
+    
+    const payload=JSON.stringify(args);
+    let data;
+    
+    const response = await fetch('generatePDF',{
         method:'POST',
         headers:{
             'Content-Type':'application/json'
         },
         body:payload
-    })
-    .then(response=>response.blob())
-    .then(blob=>{
-        const url=window.URL.createObjectURL(blob);
-        const a=document.createElement('a');
-        a.href=url;
-        a.download='multiplot.pdf';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url);
-    })
-    .catch(error=>{
-        console.error('Error generating PDF:',error);
     });
-}
-
-function createNewWindowForPrint(){
-    const myWindow=window.open('','PRINT','width=736px,height=1056px')
-
-    myWindow.document.write('<html><head>');
-    myWindow.document.write('<script src="https://apps.avo.alaska.edu/multiplot/static/scripts/jquery-3.6.3.min.js"></script>\n');
-    myWindow.document.write('<script src="api"></script>');
-
-    let bodyClass='';
-    if (navigator.appVersion.indexOf("Chrome/") != -1) {
-        bodyClass='class="multiplot-print-chrome"'
+    if (!response.ok) {
+        throw new Error(`Server responded with ${response.status}`);
     }
+    data = await response.blob();
 
-    myWindow.document.write(`</head><body ${bodyClass}>`);
-    myWindow.document.write('<div id="multiplot-print-div" class="multiplot-print" style="width:8in"></div>');
-
-    const dateFrom=$('#multiplot-dateFrom').val();
-    const dateTo=$('#multiplot-dateTo').val();
-    const volc=$('#multiplot-volcano').val();
-    const plots=JSON.stringify(plot.getPlotParams().toArray())
-
-    const initScript=`<script type="text/javascript">
-        $(document).ready(function(){
-            const prefix='${prefix}';
-            const plot=new MultiPlot(document.getElementById('multiplot-print-div'))
-            plot.initialized.then(()=>{
-                setTheme('light',false);
-                plot.removePlot(0);
-                plot.setVolcano('${volc}');
-                plot.setDateRange('${dateFrom}','${dateTo}');
-                const plots=${plots}
-                const plotFutures=plots.map(function(element){
-                    debugger
-                    const type=element['plotType']
-                    const addArgs=element['addArgs']
-                    console.log("Adding plot of type: "+type)
-                    return plot.addPlot(type,addArgs)
-                })
-
-                Promise.all(plotFutures).then(()=>{
-                    debugger
-                    setTheme('light',false); //not really needed, but it "kicks" the display nicely.
-                    calcPageBreaks();
-                    window.print();
-                });
-            });
-        })
-    </script>
-    `
-    myWindow.document.write(initScript)
-
-    myWindow.document.write('</body></html>');
-
-    myWindow.document.close();
-    myWindow.focus();
+    const url=window.URL.createObjectURL(data);
+    const a=document.createElement('a');
+    a.href=url;
+    a.download='multiplot.pdf';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
 }
 
-// Stage 2: Print the page
-function printPage(){
-    calcPageBreaks();
-    window.print();
-}
-
-// Stage 3: Restore to original size
-export function restoreAfterPrint(){
-    //setTheme(multiplotPrePrintStyle);
-}
-
-// ------- Printing Complete ---------//
-const PAGE_HEIGHT=984;
-
-export function calcPageBreaks(){
-    let lastPage=0;
-    const plotsTop=$('#multiplot-plots').offset().top
-    $('div.multiplot-plot').each(function(){
-        const plotContainer=$(this);
-        const plotHeight=$(this).height();
-        // Find the "print" height of the top of this div.
-        const plotTop=plotContainer.offset().top-plotsTop;
-        const plotBottom=plotTop+plotHeight;
-        if(plotBottom>lastPage+PAGE_HEIGHT){
-            plotContainer.addClass('multiplot-pagebreak');
-            lastPage+=PAGE_HEIGHT;
-        }
-        else{
-            plotContainer.removeClass('multiplot-pagebreak');
-        }
-
-    });
-}
+setupPDFDialog();

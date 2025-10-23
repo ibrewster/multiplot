@@ -21,6 +21,47 @@
     </div>
 </div>
 
+<div id="mp-pdfOptionsDialog" class="dialog-overlay dark" style="display:none;">
+    <div class="dialog">
+        <div class="dialog-header">
+            <h2 class="dialog-title">PDF Generation Options</h2>
+        </div>
+        
+        <div class="dialog-body">
+            <div class="option-group">
+                <div class="option-text" style="margin-bottom: 12px;">
+                    <div class="option-title">Mode</div>
+                    <div class="option-description">Choose appearance for the PDF</div>
+                </div>
+                <div class="mode-selector">
+                    <button class="mode-option appearance-option active" data-mode="dark">Dark</button>
+                    <button class="mode-option appearance-option" data-mode="light">Light</button>
+                </div>
+            </div>
+
+            <div class="option-group">
+                <div class="option-text" style="margin-bottom: 12px;">
+                    <div class="option-title">Page Width</div>
+                    <div class="option-description">Choose page dimensions for the PDF</div>
+                </div>
+                <div class="mode-selector">
+                    <button class="mode-option width-option active" data-width="display">Display</button>
+                    <button class="mode-option width-option" data-width="letter">Letter</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="dialog-footer">
+            <button class="btn btn-cancel">Cancel</button>
+            <button class="btn btn-generate">
+                <span class="btn-text">Generate</span>
+                <span class="spinner"></span>
+            </button>
+        </div>
+    </div>
+</div>
+
+
 <div id="multiplot-plots">
 </div>
 
