@@ -28,11 +28,8 @@ def generate_pdf():
         clean_layout(plotDict['layout'], mode)
         
         plot = go.Figure(plotDict)
-        
+    
         img_bytes = plot.to_image(format='pdf')
-        with open('/Users/israel/Downloads/test.pdf', 'wb') as f:
-            f.write(img_bytes)
-            
         pdf = pymupdf.open("pdf", img_bytes)
         total_height += pdf[0].rect.height
         pdf_buffers.append(pdf)
@@ -43,7 +40,7 @@ def generate_pdf():
     pageWidth = width
     
     if data.get('widthMode', 'display') == "letter":
-        pageWidth = 612
+        pageWidth = max(612, width) # Aim for letter, but if our plots somehow came out larger, use that.
         left = (pageWidth - width) / 2
         
     output = pymupdf.open()
