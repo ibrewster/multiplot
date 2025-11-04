@@ -75,6 +75,7 @@ export async function genPlot(){
                 plotDiv.empty().append(placeholder);
             }
             placeholder.text(error.message || error);
+            plotDiv.parent().find('.mp-typeStringSuffix').empty();
             return;
         }
 
