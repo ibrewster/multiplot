@@ -34,12 +34,12 @@ export async function plotTypeChanged(addArgs, resolve){
 }
 
 let isSpatial=false;
-export async function genPlot(){    
+export async function genPlot(){
     const plotDiv=$(this).parent().siblings('div.multiplot-plotContent');
     const plotContainer=$(this).closest('div.multiplot-plot');
     const plotElement=plotDiv.get(0);
     const showXLabels=plotContainer.is(':last-child');
-    const placeholder=plotDiv.find('.multiplot-placeholder');
+    let placeholder=plotDiv.find('.multiplot-placeholder');
     let args=getPlotArgs.call(this);
     const plotType=args.plotType;
 
@@ -52,7 +52,7 @@ export async function genPlot(){
     if(placeholder.length>0){
         placeholder.text("Fetching data. Please wait...")
     }
-    
+
     //set up selector (if any)
     //remove any existing custom selectors
     plotDiv.parent().find('.multiplot-customSelector').remove();
@@ -64,19 +64,33 @@ export async function genPlot(){
 
     //if neither are found, do nothing. Otherwise, run the code and add the HTML block
     if(custFunc){
-        const content=await custFunc.call(plotDiv, args.addArgs);
+        let content;
+        try{
+            content=await custFunc.call(plotDiv, args.addArgs);
+        } catch(error){
+            if (placeholder.length>0){
+                placeholder.addClass('error');
+            } else {
+                placeholder=$('<div class="multiplot-placeholder error">');
+                plotDiv.empty().append(placeholder);
+            }
+            placeholder.text(error.message || error);
+            return;
+        }
+
         if(content){
             const selector=$('<div class="multiplot-customSelector">')
             selector.append(content);
             $(plotDiv).parent().find('.multiplot-selectRight').prepend(selector);
-            
+
             content.onAttached?.();
         }
+
     }
-    
+
     //call getPlotArgs again now that the selector is guaranteed to exist.
     args=getPlotArgs.call(this);
-    
+
     args['_'] = new Date().getTime(); // Add a unique timestamp to the args object
 
     const plotGenerated=new Promise((resolve,reject)=>{
