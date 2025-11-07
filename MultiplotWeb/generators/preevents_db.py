@@ -145,10 +145,12 @@ def plot_preevents_dataset(volcano, start=None, end=None):
         AND volcano_id=%s
     """
 
-    args = {}
+    args = {
+        'volcano_id': utils.VOLC_IDS[volcano],
+    }
 
     data_withs = []
-    data_joins = []
+    data_wheres = []
 
     data_sql = psycopg.sql.SQL("""base AS (
         SELECT dv.*, ds.device_id, ds.volcano_id, ds.dataset_id
@@ -163,10 +165,10 @@ def plot_preevents_dataset(volcano, start=None, end=None):
 
     if start is not None:
         data_base.append(psycopg.sql.SQL(" AND dv.timestamp>=%(start_time)s"))
-        start -= timedelta(days = 366)
+        # start -= timedelta(days = 366)
         args['start_time'] = start
     if end is not None:
-        end += timedelta(days = 366)
+        # end += timedelta(days = 366)
         data_base.append(psycopg.sql.SQL(" AND dv.timestamp<=%(end_time)s"))
         args['end_time'] = end
 
@@ -190,16 +192,16 @@ def plot_preevents_dataset(volcano, start=None, end=None):
         var_param = f"variable_id_{i}"
         value_param = f"value_{i}"
 
-
         filter_sql = psycopg.sql.SQL("""
         {filter_alias} AS (
             SELECT datastream_id, device_id, dataset_id, volcano_id
             FROM datastreams
-            WHERE variable_id={var_id}
+            WHERE variable_id={var_id} AND volcano_id={volc_id}
         )
         """).format(
                filter_alias=filter_alias,
-               var_id=psycopg.sql.Placeholder(var_param)
+               var_id=psycopg.sql.Placeholder(var_param), 
+               volc_id=psycopg.sql.Placeholder("volcano_id")
         )
         data_withs.append(filter_sql)
         args[var_param] = filter_var_id
@@ -214,14 +216,15 @@ def plot_preevents_dataset(volcano, start=None, end=None):
             field_expr = psycopg.sql.Identifier(field)
 
         join_sql = psycopg.sql.SQL("""
-            JOIN {f_alias} f{idx}
-              ON f{idx}.device_id = b.device_id
-              AND f{idx}.dataset_id = b.dataset_id
-              AND f{idx}.volcano_id = b.volcano_id
+        EXISTS (SELECT 1
+            FROM {f_alias} f{idx}
             JOIN datavalues {dv_alias}
-              ON {dv_alias}.timestamp = b.timestamp
-              AND {dv_alias}.datastream_id = f{idx}.datastream_id
+              ON {dv_alias}.datastream_id = f{idx}.datastream_id
+              AND {dv_alias}.timestamp = b.timestamp
               AND {dv_alias}.{field} {op} {threshold}
+            WHERE f{idx}.device_id = b.device_id
+            AND f{idx}.dataset_id = b.dataset_id
+        )
         """).format(
             f_alias=filter_alias,
             dv_alias=datavalue_alias,
@@ -230,20 +233,26 @@ def plot_preevents_dataset(volcano, start=None, end=None):
             op=psycopg.sql.SQL(operator),
             threshold=psycopg.sql.Placeholder(value_param)
         )
-        data_joins.append(join_sql)
+        data_wheres.append(join_sql)
         args[value_param] = value
 
+
+    wheres_sql = (
+        psycopg.sql.SQL("WHERE ") + psycopg.sql.SQL('\nAND ').join(data_wheres)
+        if data_wheres
+        else psycopg.sql.SQL("")
+    )
 
     data_sql = psycopg.sql.SQL("""
     WITH {withs}
     SELECT b.timestamp, b.datavalue, d.device_name
     FROM base b
-    {joins}
     JOIN devices d ON d.device_id=b.device_id
+    {wheres}
     ORDER BY d.device_name, b.timestamp
     """).format(
         withs=psycopg.sql.SQL(',\n').join(data_withs),
-        joins=psycopg.sql.SQL('\n').join(data_joins)
+        wheres=wheres_sql
     )
 
     meta_args = [category, title, utils.VOLC_IDS[volcano]]
