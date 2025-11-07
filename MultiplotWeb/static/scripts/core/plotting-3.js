@@ -39,6 +39,7 @@ export async function genPlot(){
     const plotContainer=$(this).closest('div.multiplot-plot');
     const plotElement=plotDiv.get(0);
     const showXLabels=plotContainer.is(':last-child');
+    plotDiv.empty().append("<div class='multiplot-placeholder'>");
     let placeholder=plotDiv.find('.multiplot-placeholder');
     let args=getPlotArgs.call(this);
     const plotType=args.plotType;
