@@ -2,6 +2,7 @@
 
 import decimal
 import re
+import time
 
 from datetime import timedelta
 from urllib.parse import parse_qs
@@ -186,12 +187,12 @@ def plot_preevents_dataset(volcano, start=None, end=None):
         {filter_alias} AS (
             SELECT datastream_id, device_id, dataset_id, volcano_id
             FROM datastreams
-            WHERE variable_id={var_id} AND volcano_id={volc_id}
+            WHERE variable_id={var_id}
+            AND volcano_id=%(volcano_id)s
         )
         """).format(
                filter_alias=filter_alias,
-               var_id=psycopg.sql.Placeholder(var_param), 
-               volc_id=psycopg.sql.Placeholder("volcano_id")
+               var_id=psycopg.sql.Placeholder(var_param),
         )
         data_withs.append(filter_sql)
         args[var_param] = filter_var_id
@@ -214,6 +215,8 @@ def plot_preevents_dataset(volcano, start=None, end=None):
               AND {dv_alias}.{field} {op} {threshold}
             WHERE f{idx}.device_id = d.device_id
             AND f{idx}.dataset_id = ds.dataset_id
+            AND {dv_alias}.timestamp>=%(start_time)s
+            AND {dv_alias}.timestamp<=%(end_time)s
         )
         """).format(
             f_alias=filter_alias,
@@ -232,7 +235,7 @@ def plot_preevents_dataset(volcano, start=None, end=None):
         if data_wheres
         else psycopg.sql.SQL("")
     )
-    
+
     with_sql = (
         psycopg.sql.SQL("WITH ") + psycopg.sql.SQL(',\n').join(data_withs)
         if data_withs
@@ -280,7 +283,9 @@ def plot_preevents_dataset(volcano, start=None, end=None):
         args['datastream_ids'] = datastreams
 
         # Compose the data request SQL statement
+        t1 = time.time()
         cursor.execute(data_sql, args)
+        app.logger.warning(f"Ran preevents query in {time.time() - t1}")
         df = pandas.DataFrame(cursor, columns=['datetime', 'value', 'type'])
 
     if len(df) == 0:
