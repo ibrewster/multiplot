@@ -4,10 +4,11 @@ import decimal
 import re
 import time
 
-from datetime import timedelta
 from urllib.parse import parse_qs
 
 from cachetools.func import ttl_cache
+from cachetools import TTLCache, cached
+from cachetools.keys import hashkey
 
 import flask
 import pandas
@@ -114,20 +115,29 @@ def parse_condition(condition):
 
     return is_jsonb, column, key, operator, value
 
-
-@generator(get_preevents_labels)
-def plot_preevents_dataset(volcano, start=None, end=None):
-    """Get plot data for a specified dataset from the database"""
-
-    tag = utils.current_plot_tag.get()
-
+@app.route('/preeventsMeta')
+def preevents_metadata_web():
+    volcano = flask.request.args['volcano']
+    tag = flask.request.args['tag']
     category, title = tag.split("|")
-    query_string = flask.request.args.get('addArgs', '')
-    query_args = parse_qs(query_string)
-    requested_types = query_args.get('types')
-    requested_filters = query_args.get('filters', [])
+    meta_args = [category, title, utils.VOLC_IDS[volcano]]
 
+    metadata = get_preevents_metadata(meta_args)
 
+    return flask.jsonify(metadata)
+
+def meta_key(meta_args, cursor = None, requested_types = ()):
+    return hashkey(*meta_args, tuple(requested_types))
+
+@cached(cache = TTLCache(maxsize = 128, ttl = 86400), key = meta_key)
+def get_preevents_metadata(meta_args, cursor = None, requested_types = None ):
+    if cursor is None:
+        with utils.PREEVENTSSQLCursor() as cursor:
+            return _fetch_preevents_metadata(meta_args, cursor, requested_types)
+    else:
+        return _fetch_preevents_metadata(meta_args, cursor, requested_types)
+
+def _fetch_preevents_metadata(meta_args, cursor, requested_types):
     METADATA_SQL = """SELECT
         array_agg(datastream_id),
         array_agg(device_name),
@@ -145,6 +155,30 @@ def plot_preevents_dataset(volcano, start=None, end=None):
         AND displayname=%s
         AND volcano_id=%s
     """
+
+    if requested_types is not None:
+        METADATA_SQL += " AND device_name=ANY(%s)"
+        meta_args.append(requested_types)
+
+    METADATA_SQL += """
+    GROUP BY datastreams.dataset_id, datastreams.variable_id
+    ORDER BY datastreams.dataset_id"""
+
+    cursor.execute(METADATA_SQL, meta_args)
+    return cursor.fetchone()
+
+
+@generator(get_preevents_labels)
+def plot_preevents_dataset(volcano, start=None, end=None):
+    """Get plot data for a specified dataset from the database"""
+
+    tag = utils.current_plot_tag.get()
+
+    category, title = tag.split("|")
+    query_string = flask.request.args.get('addArgs', '')
+    query_args = parse_qs(query_string)
+    requested_types = query_args.get('types')
+    requested_filters = query_args.get('filters', [])
 
     args = {
         'volcano_id': utils.VOLC_IDS[volcano],
@@ -257,19 +291,9 @@ def plot_preevents_dataset(volcano, start=None, end=None):
 
     meta_args = [category, title, utils.VOLC_IDS[volcano]]
 
-    # If the user has requested specific types, filter query by requested types.
-    if requested_types is not None:
-        METADATA_SQL += " AND device_name=ANY(%s)"
-        meta_args.append(requested_types)
-
-    METADATA_SQL += """
-    GROUP BY datastreams.dataset_id, datastreams.variable_id
-    ORDER BY datastreams.dataset_id"""
-
 
     with utils.PREEVENTSSQLCursor() as cursor:
-        cursor.execute(METADATA_SQL, meta_args)
-        metadata = cursor.fetchone()
+        metadata = get_preevents_metadata(meta_args, cursor, requested_types)
 
         if metadata is None:
             raise FileNotFoundError(f"Unable to locate config for {category} - {title}")

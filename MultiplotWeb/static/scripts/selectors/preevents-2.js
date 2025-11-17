@@ -52,13 +52,17 @@ export class RemoteSensing {
         return RemoteSensing.HotLINKGeneric.call(this, addArgs);
     }
 
-    static HotLINKGeneric(selectedArgs, label, header){
+    static async HotLINKGeneric(selectedArgs, label, header){
         RemoteSensing.instanceID++;
         label=label ?? "Select Filters...";
         header=header ?? "Select Plot Filters"
 
-        const plotType=$(this).data('plotType');
-        const typeList=$(this).data('datasetTypes') || []; //custom for preevents DB
+        const plotType=$(this).closest('.multiplot-plot').find('.multiplot-plotSelect').data('plotType');
+        const volcano=$('#multiplot-volcano').val();
+        const response=await fetch(`preeventsMeta?volcano=${encodeURIComponent(volcano)}&tag=${encodeURIComponent(plotType)}`);
+        const metadata=await response.json();
+
+        const typeList=metadata[1] || []; //custom for preevents DB
 
         if(typeof(selectedArgs)!='undefined'){
             selectedArgs=new URLSearchParams(selectedArgs);
@@ -68,7 +72,7 @@ export class RemoteSensing {
         }
         const selectedTypes=selectedArgs.getAll('types');
         const selectedFilters=selectedArgs.getAll('filters');
-        
+
 
         const selButton = $('<button>', {
             text: label,
