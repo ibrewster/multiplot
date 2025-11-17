@@ -156,17 +156,6 @@ def plot_preevents_dataset(volcano, start=None, end=None):
         psycopg.sql.SQL("dv.datavalue::text!='NaN'")
     ]
 
-    # data_sql = psycopg.sql.SQL("""base AS (
-        # SELECT dv.*, ds.device_id, ds.volcano_id, ds.dataset_id
-        # FROM datavalues dv
-        # INNER JOIN datastreams ds ON ds.datastream_id=dv.datastream_id
-        # WHERE dv.datastream_id = ANY(%(datastream_ids)s)
-        # AND dv.datavalue IS NOT NULL
-        # AND dv.datavalue::text!='NaN'
-        # """)
-
-    # data_base = [data_sql]
-
     if start is not None:
         data_wheres.append(psycopg.sql.SQL("dv.timestamp>=%(start_time)s"))
         # start -= timedelta(days = 366)
@@ -175,9 +164,6 @@ def plot_preevents_dataset(volcano, start=None, end=None):
         # end += timedelta(days = 366)
         data_wheres.append(psycopg.sql.SQL("dv.timestamp<=%(end_time)s"))
         args['end_time'] = end
-
-    # data_base.append(psycopg.sql.SQL(")"))
-    # data_withs.append(psycopg.sql.Composed(data_base))
 
     for i, filter_value in enumerate(requested_filters):
         try:
