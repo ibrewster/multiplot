@@ -8,7 +8,11 @@
     <div>
         Volcano: <select id="multiplot-volcano">
             {% for volc in volcanoes %}
-            <option data-loc="{{volc[1]|safe}}">{{volc[0]}}</option>
+            <option data-loc="{{volc[1][:3]|safe}}" data-children='{% if volc[1][-1] -%}
+                {{ volc[1][-1] | safe }}
+            {%- else -%}
+                []
+            {%- endif %}'>{{volc[0]}}</option>
             {%endfor%}
         </select>
         Date Range:
@@ -26,7 +30,7 @@
         <div class="dialog-header">
             <h2 class="dialog-title">PDF Generation Options</h2>
         </div>
-        
+
         <div class="dialog-body">
             <div class="option-group">
                 <div class="option-text" style="margin-bottom: 12px;">

@@ -62,7 +62,7 @@ export class RemoteSensing {
         const response=await fetch(`preeventsMeta?volcano=${encodeURIComponent(volcano)}&tag=${encodeURIComponent(plotType)}`);
         const metadata=await response.json();
 
-        const typeList=metadata[1] || []; //custom for preevents DB
+        const typeList=metadata?.[1] || []; //custom for preevents DB
 
         if(typeof(selectedArgs)!='undefined'){
             selectedArgs=new URLSearchParams(selectedArgs);
@@ -72,6 +72,7 @@ export class RemoteSensing {
         }
         const selectedTypes=selectedArgs.getAll('types');
         const selectedFilters=selectedArgs.getAll('filters');
+        const selectedFeature=selectedArgs.get('subFeature');
 
 
         const selButton = $('<button>', {
@@ -103,11 +104,11 @@ export class RemoteSensing {
 
         const filterContainer=$('<div>',{
             class: 'multiplot-selectorTypes',
-            style: 'border-top:3px groove;'
+            style: 'border-top:1px solid;padding-top:3px;'
         });
 
         const filterTitle=$('<div>',{
-            style: 'text-align:center;grid-column:1/-1',
+            style: 'text-align:center;grid-column:1/-1;padding-bottom:5px;',
             html: '<b>Data Filters</b>'
         });
 
@@ -139,6 +140,12 @@ export class RemoteSensing {
             });
 
             filterContainer.append(checkbox,labelElement);
+        }
+
+        //create a sub-feature selector, if the volcano has sub-features.
+        const $subFeature=generateSubFeatureSelect()
+        if(subFeature){
+            filterContainer.append($subFeature);
         }
 
         // add the selectors to the form

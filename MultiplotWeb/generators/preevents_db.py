@@ -172,6 +172,7 @@ def _fetch_preevents_metadata(meta_args, cursor, requested_types):
 def plot_preevents_dataset(volcano, start=None, end=None):
     """Get plot data for a specified dataset from the database"""
 
+    volc_id = utils.VOLC_IDS[volcano]
     tag = utils.current_plot_tag.get()
 
     category, title = tag.split("|")
@@ -179,9 +180,12 @@ def plot_preevents_dataset(volcano, start=None, end=None):
     query_args = parse_qs(query_string)
     requested_types = query_args.get('types')
     requested_filters = query_args.get('filters', [])
+    requested_subFeature = query_args.get('subFeature', ['__NONE__'])[0]
+    if requested_subFeature != "__NONE__":
+        volc_id = requested_subFeature
 
     args = {
-        'volcano_id': utils.VOLC_IDS[volcano],
+        'volcano_id': volc_id,
     }
 
     data_withs = []
@@ -289,8 +293,7 @@ def plot_preevents_dataset(volcano, start=None, end=None):
         wheres=wheres_sql
     )
 
-    meta_args = [category, title, utils.VOLC_IDS[volcano]]
-
+    meta_args = [category, title, volc_id]
 
     with utils.PREEVENTSSQLCursor() as cursor:
         metadata = get_preevents_metadata(meta_args, cursor, requested_types)

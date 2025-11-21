@@ -105,14 +105,36 @@ def get_volcs():
     #Default is Geodiva
     with MYSQLCursor(DB = 'geodiva') as cursor:
         cursor.execute(
-            "SELECT volcano_id, volcano_name,latitude,longitude FROM volcano WHERE volcano_name in %s OR (observatory='avo' AND monitored=true AND volcano_id=volcano_parent_id) ORDER BY longitude DESC", # OR (observatory='avo' and volcano_id=volcano_parent_id)", # AND monitored=true)",
+            """SELECT
+                volcano_id,
+                volcano_name,
+                latitude,
+                longitude,
+                (
+                    SELECT JSON_ARRAYAGG(
+                        JSON_OBJECT('id', child.volcano_id, 'name', child.volcano_name)
+                    )
+                    FROM volcano child
+                    WHERE child.volcano_parent_id = parent.volcano_id
+                    AND child.volcano_id != parent.volcano_id
+                ) AS child_volcano_ids
+            FROM volcano parent
+            WHERE volcano_name in %s
+            OR (
+                observatory='avo'
+                AND monitored=true
+                AND volcano_id=volcano_parent_id
+            )
+            ORDER BY longitude DESC""",
             (volcs, )
         )
 
         for volc in cursor:
             (volc_id, volc_name,
-             latitude, longitude) = volc
+             latitude, longitude, children) = volc
 
             VOLC_IDS[volc_name] = volc_id
             if volc_name not in VOLCANOES:
-                VOLCANOES[volc_name] = [latitude, longitude, 10]
+                VOLCANOES[volc_name] = [latitude, longitude, 10, children]
+            else:
+                VOLCANOES[volc_name].append(children)

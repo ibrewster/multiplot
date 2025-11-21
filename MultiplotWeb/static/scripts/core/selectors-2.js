@@ -67,3 +67,48 @@ export function generate_type_selector(types, selectedArgs, header, label){
     wrapper.append(selectorHTML);
     return wrapper;
 }
+
+export function generateSubFeatureSelect(){
+    const childrenArray = $('#multiplot-volcano option:selected').data('children');
+    if(!childrenArray || childrenArray.length===0){
+        return //undefined
+    }
+
+    const $featureWrapper=$('<div>',{
+        class:"hotlink-sub-feature",
+        style:"grid-column:1/-1;padding-top:10px;"
+    });
+
+    $featureWrapper.append('<label>Sub Feature:</label>')
+    const $featureSelect=$('<select>',{
+        class:"hotlink-sub-select",
+        name:"subFeature",
+        style:"margin-left:5px;"
+    });
+
+    //none option: use the main feature
+    const $noneOption = $('<option>', {
+        value: '__NONE__',
+        text: 'None',
+        selected: 'selected'
+    });
+
+    $featureSelect.append($noneOption);
+
+    childrenArray.forEach(child => {
+        const $option = $('<option>', {
+            value: child.id,
+            text: child.name
+        });
+
+        if(selectedFeature==child.id){
+            $option.attr('selected',true);
+        }
+
+        $featureSelect.append($option);
+    });
+
+    $featureWrapper.append($featureSelect);
+
+    return $featureWrapper
+}
