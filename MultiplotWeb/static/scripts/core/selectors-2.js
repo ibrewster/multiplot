@@ -68,7 +68,7 @@ export function generate_type_selector(types, selectedArgs, header, label){
     return wrapper;
 }
 
-export function generateSubFeatureSelect(){
+export function generateSubFeatureSelect(selectedFeature){
     const childrenArray = $('#multiplot-volcano option:selected').data('children');
     if(!childrenArray || childrenArray.length===0){
         return //undefined
