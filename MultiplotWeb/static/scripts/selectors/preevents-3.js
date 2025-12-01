@@ -144,7 +144,7 @@ export class RemoteSensing {
 
         //create a sub-feature selector, if the volcano has sub-features.
         const $subFeature=generateSubFeatureSelect(selectedFeature)
-        if(subFeature){
+        if($subFeature){
             filterContainer.append($subFeature);
         }
 
