@@ -16,18 +16,19 @@ from .database import plot_db_dataset
 from . import utils, app, generator, config
 
 
-def so2_rate(volcano, start, end) -> pandas.DataFrame:
+def so2_data(volcano, start, end) -> pandas.DataFrame:
     data = get_detection_data(volcano, start, end)
 
     # only SO2 detections for the rate plot
     data = data[data['type'] == 9].copy()
-    data.dropna(inplace = True)
+    # Get rid of rows without any data
+    data = data[~((data['rate'].isna()) & (data['mass'].isna()))]
     if data.size <= 0:
         raise FileNotFoundError
 
     data['date'] = data['date'].apply(lambda x: x.isoformat())
 
-    return data.to_dict(orient = "list")
+    return data
 
 
 def so2_rate_fioletov(volcano, start, end):
@@ -59,7 +60,9 @@ def so2_em_rate_combined(volcano, start, end):
 
     if 'AVO' in requested:
         try:
-            avo = so2_rate(volcano, start, end)
+            avo = so2_data(volcano, start, end)
+            avo.dropna(inplace=True)
+            avo = avo.to_dict(orient = "list")
             ret_data['avo'] = avo
         except FileNotFoundError:
             app.logger.error("Unable to load so2 rate (AVO) for selected options")
@@ -71,7 +74,11 @@ def so2_em_rate_combined(volcano, start, end):
 ####################
 def so2_mass(volcano, start, end) -> pandas.DataFrame:
     # No calculations needed, so just use the same function here.
-    return so2_rate(volcano, start, end)
+    data = so2_data(volcano, start, end)
+
+    #Drop the rate column, we don't care about it, and it can cause issues if it is NaN
+    data = data.drop(columns=['rate']).dropna()
+    return data.to_dict(orient = "list")
 
 
 def so2_mass_carn(volcano, start, end):
@@ -119,6 +126,7 @@ def so2_mass_combined(volcano, start, end):
     if 'AVO' in requested:
         try:
             avo = so2_mass(volcano, start, end)
+
             ret_data['AVO'] = avo
         except FileNotFoundError:
             app.logger.error('Unable to load SO@ Mass for AVO dataset')
