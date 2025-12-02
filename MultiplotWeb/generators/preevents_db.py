@@ -330,6 +330,18 @@ def plot_preevents_dataset(volcano, start=None, end=None):
         if overrides is not None:
             overrides = overrides[0]
 
+    # Set a log Y Axis for the specified plot types if value exceeds threshold
+    log_types = {'HotLINK Radiative Power'}
+    log_threshold = 10000000
+    if title in  log_types and df['value'].max() > log_threshold:
+        #  Ensure the overrides dictionary exists
+        overrides = overrides or {}
+
+        # Set a default for the layout key to make sure *it* exists
+        overrides.setdefault('layout', {})
+        overrides['layout'].setdefault('yaxis', {})
+        overrides['layout']['yaxis']['type'] = 'log'
+
     result ={
         'types': types,
         'labels': units,
