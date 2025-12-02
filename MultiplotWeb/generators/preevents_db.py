@@ -6,6 +6,7 @@ import time
 
 from urllib.parse import parse_qs
 
+import numpy
 from cachetools.func import ttl_cache
 from cachetools import TTLCache, cached
 from cachetools.keys import hashkey
@@ -333,7 +334,7 @@ def plot_preevents_dataset(volcano, start=None, end=None):
     # Set a log Y Axis for the specified plot types if value exceeds threshold
     log_types = {'HotLINK Radiative Power'}
     log_threshold = 10000000
-    if title in  log_types and df['value'].max() > log_threshold:
+    if title in log_types and want_log(df['value']):
         #  Ensure the overrides dictionary exists
         overrides = overrides or {}
 
@@ -365,3 +366,28 @@ def plot_preevents_dataset(volcano, start=None, end=None):
 
 
     return result
+
+def want_log(data_array, min_orders_of_magnitude = 3):
+    # 1. Filter out non-positive values (0 or less)
+        # Log scales require positive values.
+        positive_data = data_array[data_array > 0]
+
+        # 2. Handle edge case: All data is zero or the array is empty
+        if positive_data.size < 2:
+            return False
+
+        data_min = positive_data.min()
+        data_max = positive_data.max()
+
+        # 3. Calculate the Ratio (Max / Min)
+        if data_min == 0:
+            # Should not happen due to step 1, but as a safeguard:
+            return False
+
+        # Calculate the orders of magnitude (log10 of the ratio)
+        dynamic_range_log = numpy.log10(data_max / data_min)
+
+        # 4. Apply the Threshold
+        # If the range spans more than, say, 3.5 orders of magnitude (about 3162x),
+        # a linear plot will heavily compress the small values.
+        return dynamic_range_log >= min_orders_of_magnitude
