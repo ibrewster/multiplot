@@ -63,12 +63,14 @@ export class RemoteSensing {
         const metadata=await response.json();
 
         const typeList=metadata?.[1] || []; //custom for preevents DB
+        const defaultHotLINKFilters=["24|categoryvalue->>day_night=N", '3|datavalue>0.75']
 
         if(typeof(selectedArgs)!='undefined'){
             selectedArgs=new URLSearchParams(selectedArgs);
         }
         else{
             selectedArgs=new URLSearchParams();
+            defaultHotLINKFilters.forEach(value => selectedArgs.append('filters', value));
         }
         const selectedTypes=selectedArgs.getAll('types');
         const selectedFilters=selectedArgs.getAll('filters');
