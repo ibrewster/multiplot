@@ -130,7 +130,7 @@ def preevents_metadata_web():
 def meta_key(meta_args, cursor = None, requested_types = ()):
     return hashkey(*meta_args, tuple(requested_types))
 
-@cached(cache = TTLCache(maxsize = 128, ttl = 86400), key = meta_key)
+#@cached(cache = TTLCache(maxsize = 128, ttl = 86400), key = meta_key)
 def get_preevents_metadata(meta_args, cursor = None, requested_types = None ):
     if cursor is None:
         with utils.PREEVENTSSQLCursor() as cursor:
@@ -143,12 +143,13 @@ def _fetch_preevents_metadata(meta_args, cursor, requested_types):
         array_agg(datastream_id),
         array_agg(device_name),
         array_agg(unit_name),
+        array_agg(distinct(table_name)),
         datastreams.dataset_id,
         datastreams.variable_id
     FROM datastreams
     INNER JOIN datasets ON datastreams.dataset_id=datasets.dataset_id
     INNER JOIN disciplines ON disciplines.discipline_id=datasets.discipline_id
-    INNER JOIN devices ON devices.device_id=datastreams.device_id
+    LEFT JOIN devices ON devices.device_id=datastreams.device_id
     INNER JOIN variables ON variables.variable_id=datastreams.variable_id
     INNER JOIN displaynames ON variables.displayname_id=displaynames.displayname_id
     INNER JOIN units ON variables.unit_id=units.unit_id
@@ -284,15 +285,12 @@ def plot_preevents_dataset(volcano, start=None, end=None):
     data_sql = psycopg.sql.SQL("""
     {withs}
     SELECT dv.timestamp, dv.datavalue, d.device_name
-    FROM datavalues dv
+    FROM {table} dv
     INNER JOIN datastreams ds ON ds.datastream_id=dv.datastream_id
-    JOIN devices d ON d.device_id=ds.device_id
+    LEFT JOIN devices d ON d.device_id=ds.device_id
     {wheres}
     ORDER BY d.device_name, dv.timestamp
-    """).format(
-        withs=with_sql,
-        wheres=wheres_sql
-    )
+    """)
 
     meta_args = [category, title, volc_id]
 
@@ -300,18 +298,32 @@ def plot_preevents_dataset(volcano, start=None, end=None):
         metadata = get_preevents_metadata(meta_args, cursor, requested_types)
 
         if metadata is None:
-            raise FileNotFoundError(f"Unable to locate config for {category} - {title}")
+            raise FileNotFoundError(f"Unable to locate metadata for {category} - {title}")
 
-        datastreams, types, units, dataset_id, variable_id = metadata
+        datastreams, types, units, tables, dataset_id, variable_id = metadata
         units = [u if u != 'unitless' else '' for u in units]
         if all(x == units[0] for x in units):
             units = units[0]
         else:
             units = dict(zip(types, units))
+
+        if len(set(tables)) != 1:
+            # If this is something we want to deal with, we can re-structure the data_sql
+            # to do a UNION_ALL of selects (the section after the withs but before the ORDER BY)
+            # built off of all the tables.
+            raise ValueError("Multiple data tables found!")
+        else:
+            table = tables[0]
+
         args['datastream_ids'] = datastreams
 
         # Compose the data request SQL statement
         t1 = time.time()
+        data_sql = data_sql.format(
+            withs=with_sql,
+            wheres=wheres_sql,
+            table = psycopg.sql.Identifier(table)
+        )
         cursor.execute(data_sql, args)
         app.logger.warning(f"Ran preevents query in {time.time() - t1}")
         df = pandas.DataFrame(cursor, columns=['datetime', 'value', 'type'])
@@ -333,7 +345,6 @@ def plot_preevents_dataset(volcano, start=None, end=None):
 
     # Set a log Y Axis for the specified plot types if value exceeds threshold
     log_types = {'HotLINK Radiative Power'}
-    log_threshold = 10000000
     if title in log_types and want_log(df['value']):
         #  Ensure the overrides dictionary exists
         overrides = overrides or {}
@@ -353,11 +364,15 @@ def plot_preevents_dataset(volcano, start=None, end=None):
     if len(df) > 0 and isinstance(df['value'].iloc[0], decimal.Decimal):
         df['value'] = df['value'].astype(float)
 
-    if types is not None:
+    valid_types = [t for t in types if t is not None] if types else []
+
+    if valid_types:
+        df['type'] = df['type'].fillna('None')
         type_df = df.groupby("type")
         for record_type in types:
+            lookup_type = 'None' if record_type is None else record_type
             try:
-                result[record_type] = type_df.get_group(record_type).to_dict(orient='list')
+                result[lookup_type] = type_df.get_group(lookup_type).to_dict(orient='list')
             except KeyError:
                 if type(units) == dict and record_type in units:
                     del units[record_type]
