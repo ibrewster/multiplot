@@ -128,9 +128,11 @@ def preevents_metadata_web():
     return flask.jsonify(metadata)
 
 def meta_key(meta_args, cursor = None, requested_types = ()):
+    if requested_types is None:
+        requested_types = ()    
     return hashkey(*meta_args, tuple(requested_types))
 
-#@cached(cache = TTLCache(maxsize = 128, ttl = 86400), key = meta_key)
+@cached(cache = TTLCache(maxsize = 128, ttl = 86400), key = meta_key)
 def get_preevents_metadata(meta_args, cursor = None, requested_types = None ):
     if cursor is None:
         with utils.PREEVENTSSQLCursor() as cursor:
@@ -143,8 +145,8 @@ def _fetch_preevents_metadata(meta_args, cursor, requested_types):
         array_agg(datastream_id),
         array_agg(device_name),
         array_agg(unit_name),
---        array_agg(distinct(table_name)),
-        ARRAY['datavalues']::text[],
+        array_agg(distinct(datasets.observation_table)),
+--        ARRAY['datavalues']::text[],
         datastreams.dataset_id,
         datastreams.variable_id
     FROM datastreams
