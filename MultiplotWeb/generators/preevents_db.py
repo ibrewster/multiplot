@@ -143,7 +143,8 @@ def _fetch_preevents_metadata(meta_args, cursor, requested_types):
         array_agg(datastream_id),
         array_agg(device_name),
         array_agg(unit_name),
-        array_agg(distinct(table_name)),
+--        array_agg(distinct(table_name)),
+        ARRAY['datavalues']::text[],
         datastreams.dataset_id,
         datastreams.variable_id
     FROM datastreams
