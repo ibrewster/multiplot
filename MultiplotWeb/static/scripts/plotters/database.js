@@ -28,6 +28,9 @@ function gen_db_data_def(data, name, idx, dataOverrides, plotErr){
     }
 
     if(dataOverrides!=null){
+        if (dataOverrides.type === 'bar') {
+            delete data_def.mode;
+        }
         data_def=mergeDeep(data_def,dataOverrides);
     }
 
