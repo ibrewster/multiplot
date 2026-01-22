@@ -1,25 +1,40 @@
 // This is the default exporter function. It will simply create a CSV with x and y from the plot.
 export function genericExport(plotDiv){
     const data=plotDiv.get(0).data
-    const headers=['date']
-    const vals=[]
 
     if(data.length==0){
         alert("Unable to get data to export");
         return;
     }
-
-    //x axis/date/time
-    vals.push(data[0].x)
+    
+    const dateMap = new Map();
+    const seriesNames = [];
 
     data.forEach((item)=>{
         const name=item.name || 'value';
-        const val=item.y;
-        headers.push(name);
-        vals.push(val);
-    })
+        seriesNames.push(name);
+        
+        const xVals = item.x || [];
+        const yVals = item.y || [];
 
-    return [headers,vals]
+        xVals.forEach((date, idx) => {
+            if (!dateMap.has(date)) {
+                dateMap.set(date, {});
+            }
+            dateMap.get(date)[name] = yVals[idx];
+        });
+    });
+    
+    const sortedDates = Array.from(dateMap.keys()).sort();
+    const headers = ['date', ...seriesNames];
+    const vals = [sortedDates];  // First column is dates
+    
+    seriesNames.forEach(name => {
+        const column = sortedDates.map(date => dateMap.get(date)[name] ?? '');
+        vals.push(column);
+    });
+
+    return [headers,vals];
 }
 
 export function color_code(plotDiv){
