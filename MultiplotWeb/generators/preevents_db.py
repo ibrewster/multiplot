@@ -132,7 +132,8 @@ def meta_key(meta_args, cursor = None, requested_types = ()):
         requested_types = ()    
     return hashkey(*meta_args, tuple(requested_types))
 
-@cached(cache = TTLCache(maxsize = 128, ttl = 86400), key = meta_key)
+##### DEBUG: REMOVE COMMENT #####
+#@cached(cache = TTLCache(maxsize = 128, ttl = 86400), key = meta_key)
 def get_preevents_metadata(meta_args, cursor = None, requested_types = None ):
     if cursor is None:
         with utils.PREEVENTSSQLCursor() as cursor:

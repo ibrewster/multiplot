@@ -183,7 +183,7 @@ export class RemoteSensing {
             } else if (typeof item === 'string'){
                 item_label=item;
                 //strip any HTML tags and remove spaces
-                item_value=$('<div>').html(item_label).text().replace(' ','');
+                item_value=item;
             } else {
                 console.error('The items must be either a string for an array with exactly two elements.')
             }

@@ -95,6 +95,7 @@ export function generateSubFeatureSelect(selectedFeature){
 
     $featureSelect.append($noneOption);
 
+    selectedFeature=selectedFeature ?? 'ak171' //Korovin by default, though this only applies to Atka...
     childrenArray.forEach(child => {
         const $option = $('<option>', {
             value: child.id,
