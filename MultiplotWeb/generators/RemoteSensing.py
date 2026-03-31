@@ -7,6 +7,7 @@ DESCRIPTION: Data obtained via remote sensing methods, such as satelite.
 """
 CATEGORY = "Remote Sensing"
 
+import json
 from urllib.parse import parse_qs
 
 import flask
@@ -19,7 +20,16 @@ def get_detection_data(volcano: str, start, end) -> pandas.DataFrame:
     volc_id = utils.VOLC_IDS[volcano]
     args = [volc_id]
 
-    SQL = """
+    ###### SPECIAL CASE: Atka (include korovin) #########
+#    if "Atka" in volcano:
+    # Only wanted/needed for Atka, but written generically because good practice.
+    children = utils.VOLCANOES[volcano][3] or [] # Guard for None children
+    for child in json.loads(children):
+        args.append(child['id'])
+
+    placeholders = ",".join(['%s'] * len(args))
+
+    SQL = f"""
 SELECT DISTINCT
     date,
     ((mass_prelim*1000)/plume_age)*24 as rate,
@@ -33,7 +43,7 @@ LEFT JOIN report_volcano_keyword_meta AS rvkm  ON rvk.report_volcano_keyword_id=
 INNER JOIN keyword ON keyword.keyword_id=rvk.keyword_id
 WHERE report.published='yes'
 AND keyword.keyword_id in (4,9,35,40,45,25)
-AND volcano_id=%s
+AND volcano_id in ({placeholders})
 """
 
     if start is not None:
