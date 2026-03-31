@@ -23,7 +23,7 @@ def get_detection_data(volcano: str, start, end) -> pandas.DataFrame:
     ###### SPECIAL CASE: Atka (include korovin) #########
 #    if "Atka" in volcano:
     # Only wanted/needed for Atka, but written generically because good practice.
-    children = utils.VOLCANOES[volcano][3] or [] # Guard for None children
+    children = utils.VOLCANOES[volcano][3] or "[]" # Guard for None children
     for child in json.loads(children):
         args.append(child['id'])
 
