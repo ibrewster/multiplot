@@ -22,7 +22,9 @@ VOLCANOES = {
     'Pavlof': [55.4173, -161.8937, 11],
     'Shishaldin': [54.7554, -163.9711, 11],
     'Veniaminof': [56.1979, -159.3931, 10],
+    'Kupreanof': [56.0126, -159.7912, 11]
 }
+
 VOLC_IDS = {}
 
 current_plot_tag = ContextVar("current_plot_tag")
@@ -100,7 +102,6 @@ def haversine_np(lon1, lat1, lon2, lat2):
 
 
 def get_volcs():
-    # Default is Geodiva
     volcs = tuple(VOLCANOES.keys())
     #Default is Geodiva
     with MYSQLCursor(DB = 'geodiva') as cursor:
