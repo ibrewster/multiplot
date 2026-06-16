@@ -64,7 +64,7 @@ def get_data(url: str = 'https://novac-community.org/data/cleveland_data') -> Da
     else:
         GOOGLE_DRIVE_CSV_FILE_ID = path_parts[-2]
 
-    print(f"Google Drive CSV File ID: {GOOGLE_DRIVE_CSV_FILE_ID}")
+    #print(f"Google Drive CSV File ID: {GOOGLE_DRIVE_CSV_FILE_ID}")
 
     service = discovery.build('drive', 'v3', credentials=auth())
 
@@ -155,7 +155,7 @@ def ingest_data(df, volcano_name):
         cursor.executemany(query, data)
         inserted_count = cursor.rowcount
         cursor.connection.commit()
-        print(f"Inserted {inserted_count} new records; skipped {len(data) - inserted_count} duplicates.")
+        #print(f"Inserted {inserted_count} new records; skipped {len(data) - inserted_count} duplicates.")
 
 
 if __name__ == "__main__":
