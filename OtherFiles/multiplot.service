@@ -3,10 +3,10 @@ Description = Multidisciplinary graphing tool
 After = network.target
 
 [Service]
-ExecStart = /apps/multiplot/env/bin/gunicorn -c /apps/multiplot/OtherFiles/gunicorn.conf.py
-WorkingDirectory=/apps/multiplot
-User=nginx
-Group=nginx
+ExecStart = /shared/apps/multiplot/multiplot-env/bin/gunicorn -c /shared/apps/multiplot/web/OtherFiles/gunicorn.conf.py
+WorkingDirectory=/shared/apps/multiplot/web
+User=www-data
+Group=www-data
 RuntimeDirectory = multiplot
 RuntimeDirectoryMode = 777
 Restart=on-failure

@@ -5,9 +5,9 @@ script_dir = os.path.abspath(os.path.join(script_dir,'..'))
 
 wsgi_app = "MultiplotWeb:create_app()"
 chdir = script_dir
-# user = "mapgen"
-# group = "nginx"
-bind = ['unix:/var/run/multiplot/multiplot.sock']
+user = "www-data"
+group = "www-data"
+bind = ['unix:/run/multiplot/multiplot.sock']
 workers = 8
 threads = 50
 worker_connections = 51
