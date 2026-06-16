@@ -41,7 +41,6 @@ def so2_rate_fioletov(volcano, start, end):
     db_data = db_data.drop(columns = 'datetime')
     return db_data.to_dict(orient = "list")
 
-
 @generator("SO<sub>2</sub> Emission Rate")
 def so2_em_rate_combined(volcano, start, end):
     ret_data = {}

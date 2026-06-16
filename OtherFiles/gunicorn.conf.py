@@ -3,7 +3,7 @@ import os
 script_dir = os.path.dirname(__file__)
 script_dir = os.path.abspath(os.path.join(script_dir,'..'))
 
-wsgi_app = "MultiplotWeb:app"
+wsgi_app = "MultiplotWeb:create_app()"
 chdir = script_dir
 # user = "mapgen"
 # group = "nginx"

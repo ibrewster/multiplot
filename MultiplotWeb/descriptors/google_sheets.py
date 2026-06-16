@@ -1,5 +1,5 @@
 """
-Simple code to pull "global" descriptions in from a google sheets sheet.
+Simple code to pull "global" descriptions in from a Google sheets sheet.
 """
 
 import os

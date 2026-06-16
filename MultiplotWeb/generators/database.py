@@ -16,7 +16,7 @@ def get_db_labels():
         return cursor.fetchall()
 
 
-generator(get_db_labels)
+@generator(get_db_labels)
 def plot_db_dataset(volcano, start=None, end=None):
     """Get plot data for a specified dataset from the database"""
 
