@@ -80,13 +80,13 @@ def plot_db_dataset(volcano, start=None, end=None):
         columns = [x[0] for x in cursor]
         result_cols = ['datetime', 'value']
         fields = [field]
-        if('error' in columns):
+        if 'error' in columns:
             fields.append('error')
             result_cols.append('error')
-        if('error2' in columns):
+        if 'error2' in columns:
             fields.append('error2')
             result_cols.append('error2')
-        if('type' in columns):
+        if 'type' in columns:
             fields.append('type')
             result_cols.append('type')
             if requested_types:
