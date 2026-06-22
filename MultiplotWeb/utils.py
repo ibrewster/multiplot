@@ -59,7 +59,7 @@ class PostgreSQLCursor():
 
     def __enter__(self) -> Psycopg3Cursor:
         self._conn = psycopg.connect(user = self._user, password = self._pass,
-                                     dbname = self._db, host = self._server)
+                                     dbname = self._db, host = self._server, connect_timeout = 15)
         return self._conn.cursor(row_factory = self._row_factory)
 
     def __exit__(self, *args, **kwargs) -> None:

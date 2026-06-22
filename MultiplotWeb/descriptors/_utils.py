@@ -68,7 +68,7 @@ def get_descriptions():
             try:
                 item = item()
             except Exception as e:
-                print(f"Unable to get description from {func.__name__}: {e}")
+                print(f"Unable to get description from {item.__name__}: {e}")
                 item = None
     
         if item is not None:

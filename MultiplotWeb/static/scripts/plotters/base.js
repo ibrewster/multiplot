@@ -40,7 +40,7 @@ export function generic_plot(data,ylabel,ydata,type){
         {
             type: type,
             x: data['date'],
-            y: ydata,
+            y: ydata
         }
     ]
 

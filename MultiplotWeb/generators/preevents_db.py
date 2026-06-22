@@ -66,12 +66,15 @@ def get_preevents_labels():
             for x in cursor
         }
 
-    labels = preevents_label_query()
-    labels = [
-        label[:2]
-        for label in preevents_label_query()
-        if not display_flags.get(label[2:4], False)
-    ]
+    try:
+        labels = [
+            label[:2]
+            for label in preevents_label_query()
+            if not display_flags.get(label[2:4], False)
+        ]
+    except Exception as e:
+        app.logger.error(f"Error getting preevents labels: {e}")
+        labels = []
     return labels
 
 ######## Processing #################
