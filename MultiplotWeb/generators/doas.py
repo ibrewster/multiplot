@@ -1,6 +1,6 @@
 from psycopg import sql
 
-CATEGORY = "Gas - Terrestrial"
+CATEGORY = "Ground-Based DOAS"
 
 from urllib.parse import parse_qs
 
@@ -9,11 +9,17 @@ import pandas
 
 from . import utils, generator
 column_mapping = {
-    'DOAS SO<sub>2</sub> rate': 'so2_rate_t_d',
-    'DOAS Wind Speed': 'wind_speed',
-    'DOAS Wind Direction': 'wind_direction',
-    'DOAS Temperature': 'temperature',
-    'DOAS Plume Height': 'plume_height'
+    'SO<sub>2</sub> rate': ('so2_rate_t_d', 'SO<sub>2</sub> EM Rate (t/d)'),
+    'Wind Speed': ('wind_speed',"Wind Speed (m/s)"),
+    'Wind Direction': ('wind_direction', "Wind Direction (deg)"),
+    'Temperature': ('temperature', "Temperature (degC)"),
+    'Battery Voltage': ('battery_voltage', "Battery Voltage (V)"),
+    'Plume Completeness': ('plume_completeness', "Plume Completeness"),
+    'Plume Center': (
+        'plume_center',
+        "Plume Center (deg)",
+    ),
+    'Plume Height': ('plume_height', "Plume Height (m)"),
 }
 
 @generator(column_mapping.keys())
@@ -22,7 +28,7 @@ def plot_doas(volcano, start=None, end=None):
     tag = utils.current_plot_tag.get()
 
     category, title = tag.split("|")
-    column = column_mapping[title]
+    column,label = column_mapping[title]
     # query_string = flask.request.args.get('addArgs', '')
     # args = parse_qs(query_string)
     # station = args.get('station', 'clne')
@@ -45,13 +51,14 @@ def plot_doas(volcano, start=None, end=None):
     grouped_df = df.groupby('type')
 
     result = {
-        str(x): {
+        str(x).upper(): {
             'date':grp['date'].tolist(),
             'y':grp['y'].tolist(),
             'plume_complete': grp['complete'].tolist()
         }
         for x, grp in grouped_df
     }
+    result['ylabel'] = label
     return result
 
 @generator("DOAS Availability")

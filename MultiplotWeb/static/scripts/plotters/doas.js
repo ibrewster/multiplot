@@ -11,6 +11,8 @@ function so2_plot(data, type) {
 }
 
 export function plot_doas(data) {
+    const ylabel=data['ylabel']
+    delete data['ylabel']
     const stations = Object.keys(data)
     let plotData = []
 
@@ -19,7 +21,10 @@ export function plot_doas(data) {
         margin: {t: 5, b: 20},
         yaxis: {
             linecolor: 'black',
-            zeroline: true
+            zeroline: true,
+            title: {
+                text: ylabel
+            }
         },
         xaxis: {
             type: 'date'
