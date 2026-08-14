@@ -33,7 +33,8 @@ ADD_VOLCS=(
     'Seguam',
     'Chiginagak',
     'Amukta',
-    'Douglas'
+    'Douglas',
+    'Herbert'
 )
 
 VOLC_IDS = {}
