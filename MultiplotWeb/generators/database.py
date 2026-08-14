@@ -6,15 +6,18 @@ import flask
 import pandas
 import psycopg
 
-from . import utils, generator
+from . import utils, generator,app
 
 
 def get_db_labels():
     """Get a list of datasets from the database"""
-    with utils.PostgreSQLCursor("multiplot") as cursor:
-        cursor.execute("SELECT title, categories.name FROM plotinfo INNER JOIN categories ON categories.id=category WHERE visible=true")
-        return cursor.fetchall()
-
+    try:
+        with utils.PostgreSQLCursor("multiplot") as cursor:
+            cursor.execute("SELECT title, categories.name FROM plotinfo INNER JOIN categories ON categories.id=category WHERE visible=true")
+            return cursor.fetchall()
+    except Exception as e:
+        app.logger.error(f"Error getting database labels: {e}")
+        return []
 
 @generator(get_db_labels)
 def plot_db_dataset(volcano, start=None, end=None):

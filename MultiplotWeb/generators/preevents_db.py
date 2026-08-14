@@ -59,12 +59,16 @@ ORDER BY discipline_name, enhanced_displayname
         return cursor.fetchall()
 
 def get_preevents_labels():
-    with utils.PostgreSQLCursor("multiplot") as cursor:
-        cursor.execute("SELECT dataset_id,variable_id,hidden FROM preevents")
-        display_flags = {
-            (x[0], x[1]): x[2]
-            for x in cursor
-        }
+    try:
+        with utils.PostgreSQLCursor("multiplot") as cursor:
+            cursor.execute("SELECT dataset_id,variable_id,hidden FROM preevents")
+            display_flags = {
+                (x[0], x[1]): x[2]
+                for x in cursor
+            }
+    except Exception as e:
+        app.logger.error(f"Error getting preevents display flags: {e}")
+        display_flags = {}
 
     try:
         labels = [

@@ -22,8 +22,19 @@ VOLCANOES = {
     'Pavlof': [55.4173, -161.8937, 11],
     'Shishaldin': [54.7554, -163.9711, 11],
     'Veniaminof': [56.1979, -159.3931, 10],
-    'Kupreanof': [56.0126, -159.7912, 11]
+    'Kupreanof': [56.0126, -159.7912, 11],
 }
+
+# These will be added with default view parameters
+# Center volc, zoom 10
+ADD_VOLCS=(
+    'Kasatochi',
+    'Kiska',
+    'Seguam',
+    'Chiginagak',
+    'Amukta',
+    'Douglas'
+)
 
 VOLC_IDS = {}
 
@@ -102,7 +113,7 @@ def haversine_np(lon1, lat1, lon2, lat2):
 
 
 def get_volcs():
-    volcs = tuple(VOLCANOES.keys())
+    volcs = tuple(VOLCANOES.keys())+ADD_VOLCS
     #Default is Geodiva
     with MYSQLCursor(DB = 'geodiva') as cursor:
         cursor.execute(
