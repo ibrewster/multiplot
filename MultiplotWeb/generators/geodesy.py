@@ -1,12 +1,63 @@
 CATEGORY = "Geodesy"
 
+from pathlib import Path
 from urllib.parse import parse_qs
 
 import flask
+import h5py
 import pandas
 import requests
 
-from . import utils, generator
+from . import utils, generator, config, app
+
+@generator("LOS Deformation")
+def plot_los_deformation(volcano, start, end):
+    from . import _insar_utils # Only import if needed
+    with utils.PostgreSQLCursor("multiplot") as cursor:
+        try:
+            cursor.execute(
+                """SELECT 
+                       label, 
+                       insar_pixel_selection.latitude, 
+                       insar_pixel_selection.longitude, 
+                       ref_latitude, 
+                       ref_longitude, 
+                       source_file 
+                   FROM insar_pixel_selection
+                   INNER JOIN volcano ON volcano.volcano_id=insar_pixel_selection.volcano_id
+                   WHERE is_active=TRUE AND volcano_name=%s""",
+                (volcano,)
+            )
+        except Exception as e:
+            app.logger.error(f"Unable to load metadata: {e}")
+            raise
+
+        metadata = cursor.fetchall()
+    if not metadata:
+        raise FileNotFoundError("No source pixel found for this volcano")
+    source=metadata[0]
+    source_point= (source[1], source[2])
+    ref_point= (source[3], source[4])
+
+    # Find the source file in the Overlay directory
+    source_opts=config.OVERLAY_DIR.rglob(f"*/insar/timeseries_{source[5]}.h5")
+
+    source_file:str|None=None
+    for source_opt in source_opts:
+        if source_opt.is_file():
+            source_file=source_opt
+            break
+
+    if source_file is None:
+        raise FileNotFoundError("No source file found for this volcano")
+
+    insar_data = _insar_utils.process_insar_timeseries(source_file,source_point,ref_point)
+
+    return {
+        'date': insar_data['dates'],
+        'y': insar_data['ts'],
+        "ylabel": "cm/year"
+    }
 
 @generator([
     'Radial Deformation',
