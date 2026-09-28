@@ -8,11 +8,11 @@
     <div>
         Volcano: <select id="multiplot-volcano">
             {% for volc in volcanoes %}
-            <option data-loc="{{volc[1][:3]|safe}}" data-children='{% if volc[1][-1] -%}
-                {{ volc[1][-1] | safe }}
+            <option data-loc="{{volc[1][:3]}}" data-children="{% if volc[1][-1] -%}
+                {{ volc[1][-1] }}
             {%- else -%}
                 []
-            {%- endif %}'>{{volc[0]}}</option>
+            {%- endif %}">{{volc[0]}}</option>
             {%endfor%}
         </select>
         Date Range:
